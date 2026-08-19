@@ -41,15 +41,37 @@ export interface User {
 
 export type BreadcrumbItemType = BreadcrumbItem;
 
+export interface ChecklistItem {
+    id: number;
+    checklist_id: number;
+    name: string;
+    is_checked: boolean;
+    position: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Checklist {
+    id: number;
+    card_id: number;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    items: ChecklistItem[];
+}
+
 export interface Card {
     id: number;
     board_list_id: number;
     name: string;
     description: string | null;
     position: number;
+    color: string | null;
+    due_date: string | null;
     archived_at: string | null;
     created_at: string;
     updated_at: string;
+    checklists?: Checklist[];
 }
 
 export interface BoardList {
@@ -57,6 +79,7 @@ export interface BoardList {
     board_id: number;
     name: string;
     position: number;
+    color: string | null;
     archived_at: string | null;
     created_at: string;
     updated_at: string;

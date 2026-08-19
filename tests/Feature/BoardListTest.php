@@ -51,6 +51,28 @@ test('a user can rename a list', function () {
     expect($list->fresh()->name)->toBe('New');
 });
 
+test('a user can change a list\'s color', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create(['color' => null]);
+
+    $response = $this->actingAs($user)->patch("/lists/{$list->id}", ['color' => '#4bce97']);
+
+    $response->assertRedirect();
+    expect($list->fresh()->color)->toBe('#4bce97');
+});
+
+test('a user can clear a list\'s color', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create(['color' => '#4bce97']);
+
+    $response = $this->actingAs($user)->patch("/lists/{$list->id}", ['color' => null]);
+
+    $response->assertRedirect();
+    expect($list->fresh()->color)->toBeNull();
+});
+
 test('a user can reorder lists on their board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

@@ -45,6 +45,56 @@ test('a user can update a card\'s name and description', function () {
     expect($card->fresh()->description)->toBe('Updated description');
 });
 
+test('a user can change and clear a card\'s color', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['color' => null]);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['color' => '#f87168'])->assertRedirect();
+    expect($card->fresh()->color)->toBe('#f87168');
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['color' => null])->assertRedirect();
+    expect($card->fresh()->color)->toBeNull();
+});
+
+test('a user can set and clear a card\'s due date', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01'])->assertRedirect();
+    expect($card->fresh()->due_date)->toBe('2026-09-01');
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => null])->assertRedirect();
+    expect($card->fresh()->due_date)->toBeNull();
+});
+
+test('setting a due date requires a valid date', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => 'not-a-date']);
+
+    $response->assertSessionHasErrors('due_date');
+});
+
+test('a user cannot set a due date on a card on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertForbidden();
+    expect($card->fresh()->due_date)->toBeNull();
+});
+
 test('a user can reorder cards within a list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import CardChecklist from '@/components/boards/CardChecklist.vue';
+import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Card } from '@/types';
-import { useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
+import { computed, watch } from 'vue';
 
 const props = defineProps<{
     card: Card | null;
@@ -17,6 +19,8 @@ const open = defineModel<boolean>('open', { default: false });
 const form = useForm({
     name: '',
     description: '' as string | null,
+    color: null as string | null,
+    due_date: '' as string,
 });
 
 watch(
@@ -25,6 +29,8 @@ watch(
         if (isOpen && props.card) {
             form.name = props.card.name;
             form.description = props.card.description;
+            form.color = props.card.color;
+            form.due_date = props.card.due_date ?? '';
         }
     },
     { immediate: true },
@@ -42,11 +48,21 @@ function submit() {
         },
     });
 }
+
+const checklist = computed(() => props.card?.checklists?.[0] ?? null);
+
+function addChecklist() {
+    if (!props.card) {
+        return;
+    }
+
+    router.post(route('checklists.store', props.card.id), {}, { preserveScroll: true });
+}
 </script>
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent v-if="card">
+        <DialogContent v-if="card" class="max-h-[85vh] overflow-y-auto sm:max-w-xl">
             <DialogHeader>
                 <DialogTitle>Edit card</DialogTitle>
             </DialogHeader>
@@ -69,10 +85,35 @@ function submit() {
                     <InputError :message="form.errors.description" />
                 </div>
 
+                <div class="grid gap-2">
+                    <Label>Color</Label>
+                    <ColorSwatchPicker v-model="form.color" />
+                    <InputError :message="form.errors.color" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="card-due-date">Due date</Label>
+                    <div class="flex items-center gap-2">
+                        <Input id="card-due-date" v-model="form.due_date" type="date" class="w-auto" />
+                        <Button v-if="form.due_date" type="button" variant="ghost" size="sm" @click="form.due_date = ''">Clear</Button>
+                    </div>
+                    <InputError :message="form.errors.due_date" />
+                </div>
+
                 <DialogFooter>
                     <Button type="submit" :disabled="form.processing">Save</Button>
                 </DialogFooter>
             </form>
+
+            <div class="space-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                <Label>Checklist</Label>
+
+                <CardChecklist v-if="checklist" :checklist="checklist" />
+
+                <Button v-else variant="ghost" size="sm" class="justify-start text-muted-foreground" @click="addChecklist">
+                    + Add checklist
+                </Button>
+            </div>
         </DialogContent>
     </Dialog>
 </template>

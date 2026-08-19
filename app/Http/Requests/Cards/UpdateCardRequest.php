@@ -19,6 +19,8 @@ class UpdateCardRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
+            'color' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'due_date' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

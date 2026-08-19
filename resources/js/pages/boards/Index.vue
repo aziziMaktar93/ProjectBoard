@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,6 +55,19 @@ function submit() {
                                     <Input id="board-name" v-model="form.name" required autofocus />
                                     <InputError :message="form.errors.name" />
                                 </div>
+                                <div class="grid gap-2">
+                                    <Label for="board-color">Color</Label>
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            id="board-color"
+                                            v-model="form.background_color"
+                                            type="color"
+                                            class="h-9 w-14 cursor-pointer rounded-md border border-input bg-transparent p-1"
+                                        />
+                                        <span class="text-sm text-muted-foreground">{{ form.background_color }}</span>
+                                    </div>
+                                    <InputError :message="form.errors.background_color" />
+                                </div>
                                 <DialogFooter>
                                     <Button type="submit" :disabled="form.processing">Create</Button>
                                 </DialogFooter>
@@ -67,16 +79,14 @@ function submit() {
 
             <p v-if="boards.length === 0" class="text-sm text-muted-foreground">No boards yet — create your first one.</p>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                <Link v-for="board in boards" :key="board.id" :href="route('boards.show', board.id)">
-                    <Card
-                        class="border-t-4 transition hover:border-sidebar-border"
-                        :style="{ borderTopColor: board.background_color ?? undefined }"
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <Link v-for="board in boards" :key="board.id" :href="route('boards.show', board.id)" class="group block">
+                    <div
+                        class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
+                        :style="{ backgroundColor: board.background_color || '#44546f' }"
                     >
-                        <CardHeader>
-                            <CardTitle>{{ board.name }}</CardTitle>
-                        </CardHeader>
-                    </Card>
+                        <p class="line-clamp-2 font-semibold text-white drop-shadow-sm">{{ board.name }}</p>
+                    </div>
                 </Link>
             </div>
         </div>

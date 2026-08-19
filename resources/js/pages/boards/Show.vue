@@ -2,15 +2,23 @@
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
 import CardDetailModal from '@/components/boards/CardDetailModal.vue';
+import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { MoreHorizontal } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     board: Board;
@@ -31,6 +39,22 @@ watch(
     () => props.board.lists,
     (newLists: BoardList[] | undefined) => {
         lists.value = newLists ?? [];
+
+        // The card detail modal holds its own snapshot (`activeCard`) of whichever
+        // card is open. Without this, checklist/edit actions taken while the modal
+        // is open would persist correctly server-side but never appear in the
+        // modal itself, since `activeCard` would keep pointing at the pre-update
+        // object — the same staleness this file's `lists` resync exists to avoid.
+        if (activeCard.value) {
+            for (const list of lists.value) {
+                const match = list.cards.find((card: Card) => card.id === activeCard.value?.id);
+
+                if (match) {
+                    activeCard.value = match;
+                    break;
+                }
+            }
+        }
     },
 );
 
@@ -153,6 +177,36 @@ function archiveBoard() {
 
     router.patch(route('boards.archive', props.board.id));
 }
+
+const isEditingBoardName = ref(false);
+const boardNameInput = ref<HTMLInputElement | null>(null);
+
+const boardNameForm = useForm({
+    name: props.board.name,
+});
+
+async function startEditingBoardName() {
+    boardNameForm.name = props.board.name;
+    isEditingBoardName.value = true;
+    await nextTick();
+    boardNameInput.value?.focus();
+    boardNameInput.value?.select();
+}
+
+function saveBoardName() {
+    isEditingBoardName.value = false;
+
+    if (!boardNameForm.name.trim() || boardNameForm.name === props.board.name) {
+        boardNameForm.name = props.board.name;
+        return;
+    }
+
+    boardNameForm.patch(route('boards.update', props.board.id), { preserveScroll: true });
+}
+
+function onBoardColorChange(color: string | null) {
+    router.patch(route('boards.update', props.board.id), { background_color: color }, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -171,52 +225,93 @@ function archiveBoard() {
             </button>
         </div>
 
-        <div class="flex items-center justify-between p-4">
-            <h1 class="text-lg font-semibold">{{ board.name }}</h1>
-
-            <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <button type="button" aria-label="Board actions">
-                            <MoreHorizontal class="size-4" />
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </div>
-
-        <VueDraggable
-            v-model="lists"
-            item-key="id"
-            :animation="150"
-            handle=".list-drag-handle"
-            class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0"
-            @start="onListDragStart"
-            @end="onListDragEnd"
+        <div
+            class="flex flex-1 flex-col rounded-xl"
+            :style="board.background_color ? { backgroundColor: `${board.background_color}1a` } : undefined"
         >
-            <BoardListColumn
-                v-for="list in lists"
-                :key="list.id"
-                :list="list"
-                :group="cardGroup"
-                @open-card="openCard"
-                @card-drag-start="onCardDragStart"
-                @card-drag-end="onCardDragEnd"
-            />
-        </VueDraggable>
+            <div class="flex items-center justify-between p-4">
+                <div class="flex min-w-0 items-center gap-2">
+                    <span v-if="board.background_color" class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: board.background_color }" />
+                    <input
+                        v-if="isEditingBoardName"
+                        ref="boardNameInput"
+                        v-model="boardNameForm.name"
+                        class="min-w-0 rounded bg-transparent px-1 text-xl font-semibold tracking-tight outline-none ring-2 ring-ring"
+                        @blur="saveBoardName"
+                        @keydown.enter="saveBoardName"
+                        @keydown.escape="isEditingBoardName = false"
+                    />
+                    <h1
+                        v-else
+                        class="min-w-0 cursor-text truncate rounded px-1 text-xl font-semibold tracking-tight hover:bg-accent"
+                        @click="startEditingBoardName"
+                    >
+                        {{ board.name }}
+                    </h1>
+                </div>
 
-        <div class="p-4 pt-0">
-            <Button v-if="!showAddList" variant="secondary" size="sm" @click="showAddList = true">Add list</Button>
-            <form v-else class="flex max-w-xs gap-2" @submit.prevent="submitAddList">
-                <Input v-model="addListForm.name" placeholder="List name" autofocus />
-                <Button type="submit" size="sm" :disabled="addListForm.processing">Add</Button>
-                <Button type="button" variant="ghost" size="sm" @click="showAddList = false">Cancel</Button>
-            </form>
+                <div class="flex items-center gap-2">
+                    <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <button
+                                type="button"
+                                class="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                aria-label="Board actions"
+                            >
+                                <MoreHorizontal class="size-4" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-56">
+                            <DropdownMenuItem @click="startEditingBoardName">Rename board</DropdownMenuItem>
+                            <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Board color</DropdownMenuLabel>
+                            <div class="px-2 pb-1">
+                                <ColorSwatchPicker :model-value="board.background_color" @update:model-value="onBoardColorChange" />
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+
+            <VueDraggable
+                v-model="lists"
+                item-key="id"
+                :animation="150"
+                handle=".list-drag-handle"
+                class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0"
+                @start="onListDragStart"
+                @end="onListDragEnd"
+            >
+                <BoardListColumn
+                    v-for="list in lists"
+                    :key="list.id"
+                    :list="list"
+                    :group="cardGroup"
+                    @open-card="openCard"
+                    @card-drag-start="onCardDragStart"
+                    @card-drag-end="onCardDragEnd"
+                />
+            </VueDraggable>
+
+            <div class="p-4 pt-0">
+                <Button
+                    v-if="!showAddList"
+                    variant="ghost"
+                    size="sm"
+                    class="border border-dashed border-neutral-300 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                    @click="showAddList = true"
+                >
+                    + Add another list
+                </Button>
+                <form v-else class="flex max-w-xs gap-2" @submit.prevent="submitAddList">
+                    <Input v-model="addListForm.name" placeholder="List name" autofocus />
+                    <Button type="submit" size="sm" :disabled="addListForm.processing">Add</Button>
+                    <Button type="button" variant="ghost" size="sm" @click="showAddList = false">Cancel</Button>
+                </form>
+            </div>
         </div>
 
         <CardDetailModal v-model:open="showCardModal" :card="activeCard" />

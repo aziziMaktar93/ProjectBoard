@@ -52,6 +52,8 @@ class BoardController extends Controller
         $board->load([
             'lists' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
             'lists.cards' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
+            'lists.cards.checklists' => fn ($query) => $query->orderBy('position'),
+            'lists.cards.checklists.items' => fn ($query) => $query->orderBy('position'),
         ]);
 
         $archivedLists = $board->lists()->whereNotNull('archived_at')->orderByDesc('archived_at')->get();

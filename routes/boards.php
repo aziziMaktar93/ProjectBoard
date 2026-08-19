@@ -3,6 +3,8 @@
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\ChecklistController;
+use App\Http\Controllers\ChecklistItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -28,4 +30,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('cards/{card}/archive', [CardController::class, 'archive'])->name('cards.archive');
     Route::patch('cards/{card}/restore', [CardController::class, 'restore'])->name('cards.restore');
     Route::delete('cards/{card}', [CardController::class, 'destroy'])->name('cards.destroy');
+
+    Route::post('cards/{card}/checklists', [ChecklistController::class, 'store'])->name('checklists.store');
+    Route::delete('checklists/{checklist}', [ChecklistController::class, 'destroy'])->name('checklists.destroy');
+
+    Route::post('checklists/{checklist}/items', [ChecklistItemController::class, 'store'])->name('checklist-items.store');
+    Route::patch('checklist-items/{checklistItem}', [ChecklistItemController::class, 'update'])->name('checklist-items.update');
+    Route::delete('checklist-items/{checklistItem}', [ChecklistItemController::class, 'destroy'])->name('checklist-items.destroy');
 });

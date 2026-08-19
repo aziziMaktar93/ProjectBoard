@@ -18,6 +18,7 @@ class StoreBoardListRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'color' => ['sometimes', 'nullable', 'string', 'max:32'],
         ];
     }
 }

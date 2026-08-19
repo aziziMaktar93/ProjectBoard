@@ -31,4 +31,11 @@ class CardFactory extends Factory
             'archived_at' => now(),
         ]);
     }
+
+    public function overdue(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'due_date' => now()->subDay()->toDateString(),
+        ]);
+    }
 }
