@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ArchivePanel from '@/components/boards/ArchivePanel.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
 import CardDetailModal from '@/components/boards/CardDetailModal.vue';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import { computed, ref } from 'vue';
 
 const props = defineProps<{
     board: Board;
+    archivedLists: BoardList[];
+    archivedCards: Card[];
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -78,6 +81,7 @@ function submitAddList() {
 
 const activeCard = ref<Card | null>(null);
 const showCardModal = ref(false);
+const showArchive = ref(false);
 
 function openCard(card: Card) {
     activeCard.value = card;
@@ -100,16 +104,20 @@ function archiveBoard() {
         <div class="flex items-center justify-between p-4">
             <h1 class="text-lg font-semibold">{{ board.name }}</h1>
 
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <button type="button" aria-label="Board actions">
-                        <MoreHorizontal class="size-4" />
-                    </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <div class="flex items-center gap-2">
+                <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <button type="button" aria-label="Board actions">
+                            <MoreHorizontal class="size-4" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
 
         <VueDraggable
@@ -140,5 +148,6 @@ function archiveBoard() {
         </div>
 
         <CardDetailModal v-model:open="showCardModal" :card="activeCard" />
+        <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
     </AppLayout>
 </template>
