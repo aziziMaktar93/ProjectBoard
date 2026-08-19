@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Boards\StoreBoardRequest;
 use App\Http\Requests\Boards\UpdateBoardRequest;
 use App\Models\Board;
+use App\Models\Card;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -53,8 +54,16 @@ class BoardController extends Controller
             'lists.cards' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
         ]);
 
+        $archivedLists = $board->lists()->whereNotNull('archived_at')->orderByDesc('archived_at')->get();
+        $archivedCards = Card::whereIn('board_list_id', $board->lists()->pluck('id'))
+            ->whereNotNull('archived_at')
+            ->orderByDesc('archived_at')
+            ->get();
+
         return Inertia::render('boards/Show', [
             'board' => $board,
+            'archivedLists' => $archivedLists,
+            'archivedCards' => $archivedCards,
         ]);
     }
 
