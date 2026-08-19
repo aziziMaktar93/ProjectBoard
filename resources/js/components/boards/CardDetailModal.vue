@@ -20,11 +20,11 @@ const form = useForm({
 });
 
 watch(
-    () => props.card,
-    (card) => {
-        if (card) {
-            form.name = card.name;
-            form.description = card.description;
+    open,
+    (isOpen: boolean) => {
+        if (isOpen && props.card) {
+            form.name = props.card.name;
+            form.description = props.card.description;
         }
     },
     { immediate: true },
