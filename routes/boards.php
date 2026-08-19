@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardListController;
+use App\Http\Controllers\CardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -20,4 +21,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('lists/{boardList}/archive', [BoardListController::class, 'archive'])->name('board-lists.archive');
     Route::patch('lists/{boardList}/restore', [BoardListController::class, 'restore'])->name('board-lists.restore');
     Route::delete('lists/{boardList}', [BoardListController::class, 'destroy'])->name('board-lists.destroy');
+
+    Route::post('lists/{boardList}/cards', [CardController::class, 'store'])->name('cards.store');
+    Route::patch('boards/{board}/cards/reorder', [CardController::class, 'reorder'])->name('cards.reorder');
+    Route::patch('cards/{card}', [CardController::class, 'update'])->name('cards.update');
+    Route::patch('cards/{card}/archive', [CardController::class, 'archive'])->name('cards.archive');
+    Route::patch('cards/{card}/restore', [CardController::class, 'restore'])->name('cards.restore');
+    Route::delete('cards/{card}', [CardController::class, 'destroy'])->name('cards.destroy');
 });

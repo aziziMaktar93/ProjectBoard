@@ -20,6 +20,7 @@ class Card extends Model
         'name',
         'description',
         'position',
+        'archived_at',
     ];
 
     /**
