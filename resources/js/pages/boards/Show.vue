@@ -10,7 +10,7 @@ import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { MoreHorizontal } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
     board: Board;
@@ -25,6 +25,13 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const lists = ref<BoardList[]>(props.board.lists ?? []);
 const cardGroup = `cards-board-${props.board.id}`;
+
+watch(
+    () => props.board.lists,
+    (newLists: BoardList[] | undefined) => {
+        lists.value = newLists ?? [];
+    },
+);
 
 function onListDragEnd() {
     router.patch(
