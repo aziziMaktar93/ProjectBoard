@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
+import CardDetailModal from '@/components/boards/CardDetailModal.vue';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BreadcrumbItem, Card } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { MoreHorizontal } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -32,9 +35,20 @@ function submitAddList() {
     });
 }
 
+const activeCard = ref<Card | null>(null);
+const showCardModal = ref(false);
+
 function openCard(card: Card) {
-    // Wired up to CardDetailModal in the next task.
-    console.log('open card', card);
+    activeCard.value = card;
+    showCardModal.value = true;
+}
+
+function archiveBoard() {
+    if (!confirm(`Archive the board "${props.board.name}"?`)) {
+        return;
+    }
+
+    router.patch(route('boards.archive', props.board.id));
 }
 </script>
 
@@ -44,6 +58,17 @@ function openCard(card: Card) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex items-center justify-between p-4">
             <h1 class="text-lg font-semibold">{{ board.name }}</h1>
+
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <button type="button" aria-label="Board actions">
+                        <MoreHorizontal class="size-4" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
 
         <div class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0">
@@ -58,5 +83,7 @@ function openCard(card: Card) {
                 <Button type="button" variant="ghost" size="sm" @click="showAddList = false">Cancel</Button>
             </form>
         </div>
+
+        <CardDetailModal v-model:open="showCardModal" :card="activeCard" />
     </AppLayout>
 </template>
