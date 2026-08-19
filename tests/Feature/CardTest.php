@@ -130,6 +130,53 @@ test('reorder rejects a target_ordered_ids array with a duplicate id', function 
     $response->assertSessionHasErrors('target_ordered_ids.1');
 });
 
+test('reorder rejects source_ordered_ids without a source_list_id', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}/cards/reorder", [
+        'target_list_id' => $list->id,
+        'target_ordered_ids' => [$card->id],
+        'source_ordered_ids' => [$card->id],
+    ]);
+
+    $response->assertSessionHasErrors('source_list_id');
+});
+
+test('reorder rejects a null source_list_id when source_ordered_ids is present', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}/cards/reorder", [
+        'source_list_id' => null,
+        'target_list_id' => $list->id,
+        'target_ordered_ids' => [$card->id],
+        'source_ordered_ids' => [$card->id],
+    ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('source_list_id');
+});
+
+test('reorder rejects target_list_id sent as an array', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}/cards/reorder", [
+        'target_list_id' => ['1', '2'],
+        'target_ordered_ids' => [$card->id],
+    ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('target_list_id');
+});
+
 test('a user can archive and restore a card', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

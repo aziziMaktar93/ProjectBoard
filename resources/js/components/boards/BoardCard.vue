@@ -28,7 +28,7 @@ function archive() {
 
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <button type="button" class="opacity-0 group-hover:opacity-100" aria-label="Card actions">
+                <button type="button" class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" aria-label="Card actions">
                     <MoreHorizontal class="size-4" />
                 </button>
             </DropdownMenuTrigger>

@@ -25,6 +25,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const lists = ref<BoardList[]>(props.board.lists ?? []);
 const cardGroup = `cards-board-${props.board.id}`;
+const reorderError = ref<string | null>(null);
 
 watch(
     () => props.board.lists,
@@ -33,12 +34,40 @@ watch(
     },
 );
 
+// Snapshots captured at drag-start, since vue-draggable-plus mutates the
+// v-model array as soon as the item is dropped — by the time the "end"
+// handlers below run, `lists.value` already reflects the new (unsaved)
+// order. These snapshots preserve the last known-good order so we can roll
+// back if the server rejects or fails to persist the change.
+let listOrderSnapshot: BoardList[] | null = null;
+let cardOrderSnapshot: Map<number, Card[]> | null = null;
+
+function onListDragStart() {
+    listOrderSnapshot = [...lists.value];
+}
+
 function onListDragEnd() {
+    const previousOrder = listOrderSnapshot ?? [...lists.value];
+
     router.patch(
         route('board-lists.reorder', props.board.id),
         { ordered_ids: lists.value.map((list) => list.id) },
-        { preserveScroll: true, preserveState: true },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                reorderError.value = null;
+            },
+            onError: () => {
+                lists.value = previousOrder;
+                reorderError.value = 'Could not save the new list order. Please try again.';
+            },
+        },
     );
+}
+
+function onCardDragStart() {
+    cardOrderSnapshot = new Map(lists.value.map((list: BoardList): [number, Card[]] => [list.id, [...list.cards]]));
 }
 
 function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
@@ -49,6 +78,8 @@ function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
     if (!targetList) {
         return;
     }
+
+    const snapshot = cardOrderSnapshot;
 
     const payload: Record<string, unknown> = {
         target_list_id: toListId,
@@ -67,6 +98,26 @@ function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
     router.patch(route('cards.reorder', props.board.id), payload, {
         preserveScroll: true,
         preserveState: true,
+        onSuccess: () => {
+            reorderError.value = null;
+        },
+        onError: () => {
+            if (snapshot) {
+                const target = lists.value.find((list: BoardList) => list.id === toListId);
+                if (target) {
+                    target.cards = snapshot.get(toListId) ?? target.cards;
+                }
+
+                if (fromListId !== toListId) {
+                    const source = lists.value.find((list: BoardList) => list.id === fromListId);
+                    if (source) {
+                        source.cards = snapshot.get(fromListId) ?? source.cards;
+                    }
+                }
+            }
+
+            reorderError.value = 'Could not save the new card order. Please try again.';
+        },
     });
 }
 
@@ -108,6 +159,18 @@ function archiveBoard() {
     <Head :title="board.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
+        <div v-if="reorderError" class="mx-4 mt-4 flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
+            <p class="text-sm text-red-600 dark:text-red-500">{{ reorderError }}</p>
+            <button
+                type="button"
+                class="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-300"
+                aria-label="Dismiss error"
+                @click="reorderError = null"
+            >
+                &times;
+            </button>
+        </div>
+
         <div class="flex items-center justify-between p-4">
             <h1 class="text-lg font-semibold">{{ board.name }}</h1>
 
@@ -133,6 +196,7 @@ function archiveBoard() {
             :animation="150"
             handle=".list-drag-handle"
             class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0"
+            @start="onListDragStart"
             @end="onListDragEnd"
         >
             <BoardListColumn
@@ -141,6 +205,7 @@ function archiveBoard() {
                 :list="list"
                 :group="cardGroup"
                 @open-card="openCard"
+                @card-drag-start="onCardDragStart"
                 @card-drag-end="onCardDragEnd"
             />
         </VueDraggable>

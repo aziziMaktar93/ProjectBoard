@@ -25,14 +25,14 @@ class ReorderCardsRequest extends FormRequest
         // both of which are already confirmed to belong to this board above. Without
         // this, a caller could smuggle a card id belonging to a different user's board
         // into the payload and have it silently reassigned into this board's list.
-        $listIds = array_filter([$this->input('target_list_id'), $this->input('source_list_id')]);
+        $listIds = array_filter([$this->integer('target_list_id'), $this->integer('source_list_id')]);
 
         return [
-            'source_list_id' => ['nullable', 'integer', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
+            'source_list_id' => ['nullable', 'integer', 'required_with:source_ordered_ids', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
             'target_list_id' => ['required', 'integer', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
             'target_ordered_ids' => ['required', 'array'],
             'target_ordered_ids.*' => ['integer', 'distinct', Rule::exists('cards', 'id')->whereIn('board_list_id', $listIds)],
-            'source_ordered_ids' => ['array'],
+            'source_ordered_ids' => ['array', 'required_with:source_list_id'],
             'source_ordered_ids.*' => ['integer', 'distinct', Rule::exists('cards', 'id')->whereIn('board_list_id', $listIds)],
         ];
     }

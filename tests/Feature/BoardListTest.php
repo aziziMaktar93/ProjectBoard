@@ -2,6 +2,7 @@
 
 use App\Models\Board;
 use App\Models\BoardList;
+use App\Models\Card;
 use App\Models\User;
 
 test('a user can add a list to their board', function () {
@@ -141,6 +142,21 @@ test('an archived list can be permanently deleted', function () {
 
     $response->assertRedirect();
     expect(BoardList::find($list->id))->toBeNull();
+});
+
+test('permanently deleting a list also deletes all of its cards, archived or not', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->archived()->create();
+    $activeCard = Card::factory()->for($list)->create();
+    $archivedCard = Card::factory()->for($list)->archived()->create();
+
+    $response = $this->actingAs($user)->delete("/lists/{$list->id}");
+
+    $response->assertRedirect();
+    expect(BoardList::find($list->id))->toBeNull();
+    expect(Card::find($activeCard->id))->toBeNull();
+    expect(Card::find($archivedCard->id))->toBeNull();
 });
 
 test('a user cannot modify a list on another user\'s board', function () {

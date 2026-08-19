@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'open-card': [card: Card];
+    'card-drag-start': [];
     'card-drag-end': [event: { from: HTMLElement; to: HTMLElement }];
 }>();
 
@@ -37,6 +38,10 @@ function submitAddCard() {
 
 function archiveList() {
     router.patch(route('board-lists.archive', props.list.id), {}, { preserveScroll: true });
+}
+
+function onCardDragStart() {
+    emit('card-drag-start');
 }
 
 function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
@@ -69,6 +74,7 @@ function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
             :animation="150"
             :data-list-id="list.id"
             class="flex flex-col gap-2"
+            @start="onCardDragStart"
             @end="onCardDragEnd"
         >
             <BoardCard v-for="card in list.cards" :key="card.id" :card="card" @open="emit('open-card', $event)" />

@@ -16,7 +16,7 @@ function restoreList(list: BoardList) {
 }
 
 function deleteList(list: BoardList) {
-    if (!confirm(`Permanently delete the list "${list.name}"? This cannot be undone.`)) {
+    if (!confirm(`Permanently delete the list "${list.name}" and all its cards? This cannot be undone.`)) {
         return;
     }
 

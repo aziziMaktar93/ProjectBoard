@@ -46,11 +46,13 @@ class CardController extends Controller
                 ]);
             }
 
-            foreach ($data['source_ordered_ids'] ?? [] as $position => $id) {
-                Card::where('id', $id)->update([
-                    'board_list_id' => $data['source_list_id'],
-                    'position' => $position,
-                ]);
+            if (! empty($data['source_list_id'])) {
+                foreach ($data['source_ordered_ids'] ?? [] as $position => $id) {
+                    Card::where('id', $id)->update([
+                        'board_list_id' => $data['source_list_id'],
+                        'position' => $position,
+                    ]);
+                }
             }
         });
 
