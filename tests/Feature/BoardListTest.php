@@ -78,6 +78,21 @@ test('reorder rejects a list id that does not belong to the board', function () 
     $response->assertSessionHasErrors('ordered_ids.1');
 });
 
+test('reorder rejects a duplicate list id', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $first = BoardList::factory()->for($board)->create(['position' => 0]);
+    $second = BoardList::factory()->for($board)->create(['position' => 1]);
+
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}/lists/reorder", [
+        'ordered_ids' => [$first->id, $first->id],
+    ]);
+
+    $response->assertSessionHasErrors('ordered_ids.0');
+    expect($first->fresh()->position)->toBe(0);
+    expect($second->fresh()->position)->toBe(1);
+});
+
 test('a user can archive and restore a list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
@@ -137,4 +152,44 @@ test('a user cannot modify a list on another user\'s board', function () {
     $this->actingAs($other)->patch("/lists/{$list->id}", ['name' => 'Hacked'])->assertForbidden();
     $this->actingAs($other)->patch("/lists/{$list->id}/archive")->assertForbidden();
     expect($list->fresh()->name)->not->toBe('Hacked');
+});
+
+test('a user cannot reorder lists on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $first = BoardList::factory()->for($board)->create(['position' => 0]);
+    $second = BoardList::factory()->for($board)->create(['position' => 1]);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/boards/{$board->id}/lists/reorder", [
+        'ordered_ids' => [$second->id, $first->id],
+    ]);
+
+    $response->assertForbidden();
+    expect($first->fresh()->position)->toBe(0);
+    expect($second->fresh()->position)->toBe(1);
+});
+
+test('a user cannot restore an archived list on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->archived()->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/lists/{$list->id}/restore");
+
+    $response->assertForbidden();
+    expect($list->fresh()->archived_at)->not->toBeNull();
+});
+
+test('a user cannot permanently delete an archived list on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->archived()->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->delete("/lists/{$list->id}");
+
+    $response->assertForbidden();
+    expect(BoardList::find($list->id))->not->toBeNull();
 });

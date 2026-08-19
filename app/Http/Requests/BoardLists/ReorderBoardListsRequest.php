@@ -23,7 +23,7 @@ class ReorderBoardListsRequest extends FormRequest
 
         return [
             'ordered_ids' => ['required', 'array', 'min:1'],
-            'ordered_ids.*' => ['integer', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
+            'ordered_ids.*' => ['integer', 'distinct', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
         ];
     }
 }
