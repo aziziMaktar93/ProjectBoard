@@ -20,6 +20,7 @@ class Board extends Model
         'user_id',
         'name',
         'background_color',
+        'archived_at',
     ];
 
     /**
