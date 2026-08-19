@@ -22,6 +22,7 @@ class BoardList extends Model
         'board_id',
         'name',
         'position',
+        'archived_at',
     ];
 
     /**
