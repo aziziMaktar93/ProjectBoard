@@ -6,14 +6,17 @@ import { Input } from '@/components/ui/input';
 import type { BoardList, Card } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { MoreHorizontal, Plus } from 'lucide-vue-next';
+import { VueDraggable } from 'vue-draggable-plus';
 import { ref } from 'vue';
 
 const props = defineProps<{
     list: BoardList;
+    group: string;
 }>();
 
 const emit = defineEmits<{
     'open-card': [card: Card];
+    'card-drag-end': [event: { from: HTMLElement; to: HTMLElement }];
 }>();
 
 const showAddCard = ref(false);
@@ -35,12 +38,16 @@ function submitAddCard() {
 function archiveList() {
     router.patch(route('board-lists.archive', props.list.id), {}, { preserveScroll: true });
 }
+
+function onCardDragEnd(event: { from: HTMLElement; to: HTMLElement }) {
+    emit('card-drag-end', event);
+}
 </script>
 
 <template>
     <div class="flex w-72 shrink-0 flex-col rounded-xl bg-muted/50 p-3">
         <div class="mb-2 flex items-center justify-between gap-2">
-            <p class="truncate px-1 text-sm font-medium">{{ list.name }}</p>
+            <p class="list-drag-handle truncate px-1 text-sm font-medium">{{ list.name }}</p>
 
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
@@ -54,9 +61,19 @@ function archiveList() {
             </DropdownMenu>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <!-- eslint-disable vue/no-mutating-props -->
+        <VueDraggable
+            v-model="list.cards"
+            :group="group"
+            item-key="id"
+            :animation="150"
+            :data-list-id="list.id"
+            class="flex flex-col gap-2"
+            @end="onCardDragEnd"
+        >
             <BoardCard v-for="card in list.cards" :key="card.id" :card="card" @open="emit('open-card', $event)" />
-        </div>
+        </VueDraggable>
+        <!-- eslint-enable vue/no-mutating-props -->
 
         <Button v-if="!showAddCard" variant="ghost" size="sm" class="mt-2 justify-start" @click="showAddCard = true">
             <Plus class="size-4" /> Add card
