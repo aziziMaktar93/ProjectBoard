@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type Board, type BreadcrumbItem } from '@/types';
+import type { Board, BreadcrumbItem, Workspace } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 
-defineProps<{
+const props = defineProps<{
+    workspace: Workspace;
     boards: Board[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Boards', href: '/boards' },
-    { title: 'Archived', href: '/boards/archived' },
+    { title: 'Workspaces', href: '/workspaces' },
+    { title: props.workspace.name, href: route('workspaces.show', props.workspace.id) },
+    { title: 'Archived', href: route('boards.archived', props.workspace.id) },
 ];
 
 function restore(board: Board) {
@@ -32,8 +34,8 @@ function destroy(board: Board) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-lg font-semibold">Archived boards</h1>
-                <Link :href="route('boards.index')" class="text-sm text-muted-foreground underline">Back to boards</Link>
+                <h1 class="text-lg font-semibold">Archived boards — {{ workspace.name }}</h1>
+                <Link :href="route('workspaces.show', workspace.id)" class="text-sm text-muted-foreground underline">Back to workspace</Link>
             </div>
 
             <p v-if="boards.length === 0" class="text-sm text-muted-foreground">No archived boards.</p>

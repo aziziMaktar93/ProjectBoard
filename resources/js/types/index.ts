@@ -86,13 +86,26 @@ export interface BoardList {
     cards: Card[];
 }
 
+export interface Workspace {
+    id: number;
+    owner_id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+    boards_count?: number;
+    members?: User[];
+}
+
 export interface Board {
     id: number;
     user_id: number;
+    workspace_id: number;
     name: string;
     background_color: string | null;
     archived_at: string | null;
     created_at: string;
     updated_at: string;
     lists?: BoardList[];
+    members?: User[];
+    workspace?: Workspace;
 }

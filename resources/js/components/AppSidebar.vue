@@ -14,8 +14,8 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Boards',
-        href: '/boards',
+        title: 'Workspaces',
+        href: '/workspaces',
         icon: Kanban,
     },
 ];
