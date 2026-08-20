@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
+import BoardMemberPanel from '@/components/boards/BoardMemberPanel.vue';
 import CardDetailModal from '@/components/boards/CardDetailModal.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,8 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: 'Boards', href: route('boards.index') },
+    { title: 'Workspaces', href: route('workspaces.index') },
+    { title: props.board.workspace?.name ?? '', href: route('workspaces.show', props.board.workspace_id) },
     { title: props.board.name, href: route('boards.show', props.board.id) },
 ]);
 
@@ -164,6 +166,7 @@ function submitAddList() {
 const activeCard = ref<Card | null>(null);
 const showCardModal = ref(false);
 const showArchive = ref(false);
+const showMembers = ref(false);
 
 function openCard(card: Card) {
     activeCard.value = card;
@@ -251,6 +254,7 @@ function onBoardColorChange(color: string | null) {
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <Button variant="outline" size="sm" @click="showMembers = true">Members ({{ (board.members ?? []).length }})</Button>
                     <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
 
                     <DropdownMenu>
@@ -316,5 +320,6 @@ function onBoardColorChange(color: string | null) {
 
         <CardDetailModal v-model:open="showCardModal" :card="activeCard" />
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
+        <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" />
     </AppLayout>
 </template>
