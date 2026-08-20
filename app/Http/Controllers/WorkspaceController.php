@@ -37,7 +37,11 @@ class WorkspaceController extends Controller
     {
         Gate::authorize('view', $workspace);
 
-        $boards = $workspace->boards()->whereNull('archived_at')->latest()->get();
+        $boards = $workspace->boards()
+            ->whereHas('members', fn ($query) => $query->whereKey($request->user()->id))
+            ->whereNull('archived_at')
+            ->latest()
+            ->get();
         $members = $workspace->members()->orderBy('name')->get();
 
         return Inertia::render('workspaces/Show', [

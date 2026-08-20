@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Board;
+use App\Models\BoardList;
+use App\Models\Card;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -95,6 +98,48 @@ test('a member cannot remove another member', function () {
 
     $response->assertForbidden();
     expect($workspace->members()->where('users.id', $memberB->id)->exists())->toBeTrue();
+});
+
+test('removing a workspace member revokes their board and card membership in that workspace', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+    $card->members()->attach($member->id);
+
+    expect($this->actingAs($member)->get("/boards/{$board->id}")->status())->toBe(200);
+
+    $response = $this->actingAs($owner)->delete("/workspaces/{$workspace->id}/members/{$member->id}");
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseMissing('board_user', ['board_id' => $board->id, 'user_id' => $member->id]);
+    $this->assertDatabaseMissing('card_user', ['card_id' => $card->id, 'user_id' => $member->id]);
+
+    $this->actingAs($member)->get("/boards/{$board->id}")->assertForbidden();
+});
+
+test('removing a workspace member leaves other users board and card membership intact', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $card->members()->attach($owner->id);
+
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $this->actingAs($owner)->delete("/workspaces/{$workspace->id}/members/{$member->id}");
+
+    $this->assertDatabaseHas('board_user', ['board_id' => $board->id, 'user_id' => $owner->id]);
+    $this->assertDatabaseHas('card_user', ['card_id' => $card->id, 'user_id' => $owner->id]);
 });
 
 test('the owner cannot be removed from the workspace, even by themselves', function () {

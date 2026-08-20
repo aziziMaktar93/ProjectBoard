@@ -37,10 +37,14 @@ watch(query, async (value) => {
         const response = await fetch(`${route('workspace-members.search', props.workspace.id)}?q=${encodeURIComponent(trimmed)}`, {
             headers: { Accept: 'application/json' },
         });
-        const data = await response.json();
+        const data = (await response.json()) as { users: User[] };
 
         if (token === searchToken) {
             results.value = data.users;
+        }
+    } catch {
+        if (token === searchToken) {
+            results.value = [];
         }
     } finally {
         if (token === searchToken) {

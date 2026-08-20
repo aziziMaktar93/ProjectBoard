@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Workspace;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -64,6 +65,43 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
+    expect($user->fresh())->toBeNull();
+});
+
+test('user cannot delete their account while owning a shared workspace', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $workspace->members()->attach(User::factory()->create()->id);
+
+    $response = $this
+        ->actingAs($user)
+        ->from('/settings/profile')
+        ->delete('/settings/profile', [
+            'password' => 'password',
+        ]);
+
+    $response
+        ->assertSessionHasErrors('password')
+        ->assertRedirect('/settings/profile');
+
+    expect($user->fresh())->not->toBeNull();
+    $this->assertAuthenticated();
+});
+
+test('user can delete their account while owning a workspace they are the only member of', function () {
+    $user = User::factory()->create();
+    Workspace::factory()->for($user, 'owner')->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->delete('/settings/profile', [
+            'password' => 'password',
+        ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/');
+
     expect($user->fresh())->toBeNull();
 });
 

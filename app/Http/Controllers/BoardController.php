@@ -20,6 +20,7 @@ class BoardController extends Controller
         Gate::authorize('view', $workspace);
 
         $boards = $workspace->boards()
+            ->whereHas('members', fn ($query) => $query->whereKey($request->user()->id))
             ->whereNotNull('archived_at')
             ->latest('archived_at')
             ->get();

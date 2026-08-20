@@ -13,41 +13,43 @@ return new class extends Migration
             $table->foreignId('workspace_id')->nullable()->after('user_id')->constrained()->cascadeOnDelete();
         });
 
-        $userIds = DB::table('boards')->whereNull('workspace_id')->distinct()->pluck('user_id');
+        $users = DB::table('users')->get(['id', 'name']);
 
-        foreach ($userIds as $userId) {
-            $user = DB::table('users')->find($userId);
-
-            if (! $user) {
-                continue;
-            }
-
-            $workspaceId = DB::table('workspaces')->insertGetId([
-                'owner_id' => $userId,
-                'name' => "{$user->name}'s Workspace",
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            DB::table('workspace_user')->insert([
-                'workspace_id' => $workspaceId,
-                'user_id' => $userId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $boardIds = DB::table('boards')->where('user_id', $userId)->pluck('id');
-
-            DB::table('boards')->where('user_id', $userId)->update(['workspace_id' => $workspaceId]);
-
-            foreach ($boardIds as $boardId) {
-                DB::table('board_user')->insert([
-                    'board_id' => $boardId,
-                    'user_id' => $userId,
+        foreach ($users as $user) {
+            DB::transaction(function () use ($user) {
+                $workspaceId = DB::table('workspaces')->insertGetId([
+                    'owner_id' => $user->id,
+                    'name' => "{$user->name}'s Workspace",
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            }
+
+                DB::table('workspace_user')->insert([
+                    'workspace_id' => $workspaceId,
+                    'user_id' => $user->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $boardIds = DB::table('boards')
+                    ->where('user_id', $user->id)
+                    ->whereNull('workspace_id')
+                    ->pluck('id');
+
+                DB::table('boards')
+                    ->where('user_id', $user->id)
+                    ->whereNull('workspace_id')
+                    ->update(['workspace_id' => $workspaceId]);
+
+                foreach ($boardIds as $boardId) {
+                    DB::table('board_user')->insert([
+                        'board_id' => $boardId,
+                        'user_id' => $user->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
         }
     }
 

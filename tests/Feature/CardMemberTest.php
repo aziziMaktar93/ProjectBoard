@@ -60,6 +60,20 @@ test('a board member can unassign a card member', function () {
     expect($card->members()->where('users.id', $owner->id)->exists())->toBeFalse();
 });
 
+test('a non-board-member cannot unassign a card member', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $card->members()->attach($owner->id);
+    $outsider = User::factory()->create();
+
+    $response = $this->actingAs($outsider)->delete("/cards/{$card->id}/members/{$owner->id}");
+
+    $response->assertForbidden();
+    expect($card->members()->where('users.id', $owner->id)->exists())->toBeTrue();
+});
+
 test('the board show page includes card members', function () {
     $owner = User::factory()->create();
     $board = Board::factory()->for($owner)->create();

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Board;
+use App\Models\BoardList;
+use App\Models\Card;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -68,6 +70,58 @@ test('a board member can remove themselves (leave)', function () {
 
     $response->assertRedirect();
     expect($board->members()->where('users.id', $member->id)->exists())->toBeFalse();
+});
+
+test('removing a board member clears their card assignments on that board', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+    $card->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->delete("/boards/{$board->id}/members/{$member->id}");
+
+    $response->assertRedirect();
+    $this->assertDatabaseMissing('card_user', ['card_id' => $card->id, 'user_id' => $member->id]);
+    expect($board->members()->where('users.id', $member->id)->exists())->toBeFalse();
+});
+
+test('removing a board member does not touch their card assignments on other boards', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $otherBoard = Board::factory()->for($workspace)->for($owner)->create();
+    $otherCard = Card::factory()->for(BoardList::factory()->for($otherBoard))->create();
+
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+    $otherBoard->members()->attach($member->id);
+    $otherCard->members()->attach($member->id);
+
+    $this->actingAs($owner)->delete("/boards/{$board->id}/members/{$member->id}");
+
+    $this->assertDatabaseHas('card_user', ['card_id' => $otherCard->id, 'user_id' => $member->id]);
+});
+
+test('a non-board-member cannot remove a board member', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+    $outsider = User::factory()->create();
+
+    $response = $this->actingAs($outsider)->delete("/boards/{$board->id}/members/{$member->id}");
+
+    $response->assertForbidden();
+    expect($board->members()->where('users.id', $member->id)->exists())->toBeTrue();
 });
 
 test('the board creator cannot be removed', function () {

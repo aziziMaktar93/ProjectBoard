@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BreadcrumbItem, SharedData, User, Workspace } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { MoreHorizontal } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 const props = defineProps<{
     workspace: Workspace;
@@ -44,6 +44,32 @@ function submitBoard() {
 
 const showMembers = ref(false);
 
+const isEditingWorkspaceName = ref(false);
+const workspaceNameInput = ref<HTMLInputElement | null>(null);
+
+const workspaceNameForm = useForm({
+    name: props.workspace.name,
+});
+
+async function startEditingWorkspaceName() {
+    workspaceNameForm.name = props.workspace.name;
+    isEditingWorkspaceName.value = true;
+    await nextTick();
+    workspaceNameInput.value?.focus();
+    workspaceNameInput.value?.select();
+}
+
+function saveWorkspaceName() {
+    isEditingWorkspaceName.value = false;
+
+    if (!workspaceNameForm.name.trim() || workspaceNameForm.name === props.workspace.name) {
+        workspaceNameForm.name = props.workspace.name;
+        return;
+    }
+
+    workspaceNameForm.patch(route('workspaces.update', props.workspace.id), { preserveScroll: true });
+}
+
 function deleteWorkspace() {
     if (!confirm(`Delete the workspace "${props.workspace.name}"? This permanently deletes all its boards too.`)) {
         return;
@@ -59,7 +85,25 @@ function deleteWorkspace() {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-lg font-semibold">{{ workspace.name }}</h1>
+                <div class="flex min-w-0 items-center gap-2">
+                    <input
+                        v-if="isEditingWorkspaceName"
+                        ref="workspaceNameInput"
+                        v-model="workspaceNameForm.name"
+                        class="min-w-0 rounded bg-transparent px-1 text-lg font-semibold outline-none ring-2 ring-ring"
+                        @blur="saveWorkspaceName"
+                        @keydown.enter="saveWorkspaceName"
+                        @keydown.escape="isEditingWorkspaceName = false"
+                    />
+                    <h1
+                        v-else
+                        class="min-w-0 truncate rounded px-1 text-lg font-semibold"
+                        :class="isOwner ? 'cursor-text hover:bg-accent' : undefined"
+                        @click="isOwner && startEditingWorkspaceName()"
+                    >
+                        {{ workspace.name }}
+                    </h1>
+                </div>
                 <div class="flex items-center gap-2">
                     <Link :href="route('boards.archived', workspace.id)" class="text-sm text-muted-foreground underline">Archived boards</Link>
                     <Button variant="outline" size="sm" @click="showMembers = true">Members ({{ members.length }})</Button>
@@ -107,6 +151,7 @@ function deleteWorkspace() {
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem @click="startEditingWorkspaceName">Rename workspace</DropdownMenuItem>
                             <DropdownMenuItem @click="deleteWorkspace">Delete workspace</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

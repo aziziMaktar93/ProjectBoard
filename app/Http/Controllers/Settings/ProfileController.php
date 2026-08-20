@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +51,12 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($user->ownedWorkspaces()->has('members', '>', 1)->exists()) {
+            throw ValidationException::withMessages([
+                'password' => 'You own one or more shared workspaces. Delete or leave them first, or remove all other members, before deleting your account.',
+            ]);
+        }
 
         Auth::logout();
 

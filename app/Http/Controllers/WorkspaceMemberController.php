@@ -7,6 +7,7 @@ use App\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class WorkspaceMemberController extends Controller
@@ -57,7 +58,26 @@ class WorkspaceMemberController extends Controller
 
         abort_if($user->id === $workspace->owner_id, 422, 'The workspace owner cannot be removed.');
 
-        $workspace->members()->detach($user->id);
+        DB::transaction(function () use ($workspace, $user) {
+            $boardIds = $workspace->boards()->pluck('id');
+
+            DB::table('card_user')
+                ->whereIn('card_id', function ($query) use ($boardIds) {
+                    $query->select('cards.id')
+                        ->from('cards')
+                        ->join('board_lists', 'board_lists.id', '=', 'cards.board_list_id')
+                        ->whereIn('board_lists.board_id', $boardIds);
+                })
+                ->where('user_id', $user->id)
+                ->delete();
+
+            DB::table('board_user')
+                ->whereIn('board_id', $boardIds)
+                ->where('user_id', $user->id)
+                ->delete();
+
+            $workspace->members()->detach($user->id);
+        });
 
         return back();
     }
