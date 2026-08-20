@@ -13,6 +13,6 @@ defineProps<Props>();
         <AppLogoIcon class="size-8 rounded-md" />
     </div>
     <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate font-semibold leading-none">Trellow</span>
+        <span class="mb-0.5 truncate font-semibold leading-none">ProjectBoard</span>
     </div>
 </template>

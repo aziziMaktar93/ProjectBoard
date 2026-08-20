@@ -19,7 +19,7 @@ defineProps<{
             <div class="flex flex-col gap-8">
                 <div class="flex flex-col items-center gap-4">
                     <Link :href="route('home')" class="rounded-2xl bg-white p-4 shadow-md">
-                        <img src="/logo-wordmark.png" alt="Trellow" class="w-40" />
+                        <img src="/logo-wordmark.png" alt="ProjectBoard" class="w-40" />
                         <span class="sr-only">{{ title }}</span>
                     </Link>
                     <div class="space-y-1 text-center">
