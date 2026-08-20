@@ -10,28 +10,32 @@ defineProps<{
 
 <template>
     <header
-        class="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 px-6 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:px-4"
+        class="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 bg-sidebar px-6 text-sidebar-foreground transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:px-4"
     >
         <div class="flex items-center gap-2">
             <SidebarTrigger class="-ml-1" />
             <template v-if="breadcrumbs.length > 0">
-                <Breadcrumb>
-                    <BreadcrumbList>
-                        <template v-for="(item, index) in breadcrumbs" :key="index">
-                            <BreadcrumbItem>
-                                <template v-if="index === breadcrumbs.length - 1">
-                                    <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
-                                </template>
-                                <template v-else>
-                                    <BreadcrumbLink :href="item.href">
-                                        {{ item.title }}
-                                    </BreadcrumbLink>
-                                </template>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator v-if="index !== breadcrumbs.length - 1" />
-                        </template>
-                    </BreadcrumbList>
-                </Breadcrumb>
+                <div
+                    class="rounded-lg border border-black/5 bg-black/[0.03] px-3 py-1.5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
+                >
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <template v-for="(item, index) in breadcrumbs" :key="index">
+                                <BreadcrumbItem>
+                                    <template v-if="index === breadcrumbs.length - 1">
+                                        <BreadcrumbPage class="font-medium">{{ item.title }}</BreadcrumbPage>
+                                    </template>
+                                    <template v-else>
+                                        <BreadcrumbLink :href="item.href">
+                                            {{ item.title }}
+                                        </BreadcrumbLink>
+                                    </template>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator v-if="index !== breadcrumbs.length - 1" />
+                            </template>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </div>
             </template>
         </div>
     </header>

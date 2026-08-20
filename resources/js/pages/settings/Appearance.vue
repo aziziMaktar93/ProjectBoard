@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
+import ColorThemeSwatches from '@/components/ColorThemeSwatches.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { type BreadcrumbItem } from '@/types';
 
@@ -24,6 +25,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
             <div class="space-y-6">
                 <HeadingSmall title="Appearance settings" description="Update your account's appearance settings" />
                 <AppearanceTabs />
+
+                <HeadingSmall title="Color theme" description="Choose an accent color for buttons, links, and highlights" />
+                <ColorThemeSwatches />
             </div>
         </SettingsLayout>
     </AppLayout>

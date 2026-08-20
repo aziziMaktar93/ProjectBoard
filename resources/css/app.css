@@ -71,12 +71,130 @@ html {
         --chart-5: 340 75% 55%;
         --sidebar-background: 0 0% 7%;
         --sidebar-foreground: 0 0% 95.9%;
-        --sidebar-primary: 360, 100%, 100%;
-        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-primary: 0 0% 98%;
+        --sidebar-primary-foreground: 0 0% 9%;
         --sidebar-accent: 0 0% 15.9%;
         --sidebar-accent-foreground: 240 4.8% 95.9%;
         --sidebar-border: 0 0% 15.9%;
         --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+
+    /* Accent color themes — layered on top of the light/dark tokens above via
+       a `data-color-theme` attribute on <html>, independent of the `.dark`
+       class. Each pairs a light-mode and dark-mode variant of the same hue.
+       `--sidebar-gradient` paints over the flat `--sidebar-background` (kept
+       as a solid fallback) via the `.bg-sidebar` rule further below. */
+    [data-color-theme='blue'] {
+        --primary: 221.2 83.2% 53.3%;
+        --primary-foreground: 210 40% 98%;
+        --ring: 221.2 83.2% 53.3%;
+        --sidebar-primary: 221.2 83.2% 53.3%;
+        --sidebar-ring: 221.2 83.2% 53.3%;
+        --sidebar-background: 221.2 60% 96%;
+        --sidebar-border: 221.2 40% 89%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(221.2 75% 97%) 0%, hsl(217 70% 93%) 55%, hsl(221.2 55% 89%) 100%);
+    }
+    .dark[data-color-theme='blue'] {
+        --primary: 217.2 91.2% 59.8%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --ring: 224.3 76.3% 48%;
+        --sidebar-primary: 217.2 91.2% 59.8%;
+        --sidebar-ring: 224.3 76.3% 48%;
+        --sidebar-background: 221.2 35% 10%;
+        --sidebar-border: 221.2 30% 18%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(221.2 50% 15%) 0%, hsl(224 45% 11%) 55%, hsl(221.2 40% 7%) 100%);
+    }
+
+    [data-color-theme='green'] {
+        --primary: 142.1 76.2% 36.3%;
+        --primary-foreground: 355.7 100% 97.3%;
+        --ring: 142.1 76.2% 36.3%;
+        --sidebar-primary: 142.1 76.2% 36.3%;
+        --sidebar-ring: 142.1 76.2% 36.3%;
+        --sidebar-background: 142.1 45% 95%;
+        --sidebar-border: 142.1 35% 87%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(152 55% 96%) 0%, hsl(142.1 48% 91%) 55%, hsl(158 45% 87%) 100%);
+    }
+    .dark[data-color-theme='green'] {
+        --primary: 142.1 70.6% 45.3%;
+        --primary-foreground: 144.9 80.4% 10%;
+        --ring: 142.4 71.8% 29.2%;
+        --sidebar-primary: 142.1 70.6% 45.3%;
+        --sidebar-ring: 142.4 71.8% 29.2%;
+        --sidebar-background: 142.1 30% 9%;
+        --sidebar-border: 142.1 25% 17%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(152 40% 14%) 0%, hsl(142.1 35% 10%) 55%, hsl(158 35% 7%) 100%);
+    }
+
+    [data-color-theme='orange'] {
+        --primary: 24.6 95% 53.1%;
+        --primary-foreground: 60 9.1% 97.8%;
+        --ring: 24.6 95% 53.1%;
+        --sidebar-primary: 24.6 95% 53.1%;
+        --sidebar-ring: 24.6 95% 53.1%;
+        --sidebar-background: 24.6 70% 95%;
+        --sidebar-border: 24.6 50% 87%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(38 85% 96%) 0%, hsl(24.6 75% 91%) 55%, hsl(14 65% 87%) 100%);
+    }
+    .dark[data-color-theme='orange'] {
+        --primary: 20.5 90.2% 48.2%;
+        --primary-foreground: 60 9.1% 97.8%;
+        --ring: 20.5 90.2% 48.2%;
+        --sidebar-primary: 20.5 90.2% 48.2%;
+        --sidebar-ring: 20.5 90.2% 48.2%;
+        --sidebar-background: 20.5 35% 10%;
+        --sidebar-border: 20.5 30% 18%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(32 50% 15%) 0%, hsl(20.5 48% 11%) 55%, hsl(10 45% 8%) 100%);
+    }
+
+    [data-color-theme='rose'] {
+        --primary: 346.8 77.2% 49.8%;
+        --primary-foreground: 355.7 100% 97.3%;
+        --ring: 346.8 77.2% 49.8%;
+        --sidebar-primary: 346.8 77.2% 49.8%;
+        --sidebar-ring: 346.8 77.2% 49.8%;
+        --sidebar-background: 346.8 65% 96%;
+        --sidebar-border: 346.8 45% 89%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(330 80% 97%) 0%, hsl(346.8 65% 92%) 55%, hsl(360 60% 88%) 100%);
+    }
+    .dark[data-color-theme='rose'] {
+        --primary: 346.8 77.2% 49.8%;
+        --primary-foreground: 355.7 100% 97.3%;
+        --ring: 346.8 77.2% 49.8%;
+        --sidebar-primary: 346.8 77.2% 49.8%;
+        --sidebar-ring: 346.8 77.2% 49.8%;
+        --sidebar-background: 346.8 35% 10%;
+        --sidebar-border: 346.8 30% 18%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(330 50% 15%) 0%, hsl(346.8 45% 11%) 55%, hsl(360 40% 8%) 100%);
+    }
+
+    [data-color-theme='violet'] {
+        --primary: 262.1 83.3% 57.8%;
+        --primary-foreground: 210 40% 98%;
+        --ring: 262.1 83.3% 57.8%;
+        --sidebar-primary: 262.1 83.3% 57.8%;
+        --sidebar-ring: 262.1 83.3% 57.8%;
+        --sidebar-background: 262.1 60% 96%;
+        --sidebar-border: 262.1 40% 89%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(280 70% 97%) 0%, hsl(262.1 60% 92%) 55%, hsl(246 55% 88%) 100%);
+    }
+    .dark[data-color-theme='violet'] {
+        --primary: 263.4 70% 50.4%;
+        --primary-foreground: 210 40% 98%;
+        --ring: 263.4 70% 50.4%;
+        --sidebar-primary: 263.4 70% 50.4%;
+        --sidebar-ring: 263.4 70% 50.4%;
+        --sidebar-background: 262.1 35% 11%;
+        --sidebar-border: 262.1 30% 19%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(280 45% 16%) 0%, hsl(262.1 42% 12%) 55%, hsl(246 38% 8%) 100%);
+    }
+
+    /* Paints the gradient over the flat --sidebar-background wherever it's
+       used (the sidebar rail and the top bar both use bg-sidebar). Themes
+       that don't define --sidebar-gradient (i.e. Neutral) fall back to
+       `none`, leaving the flat --sidebar-background color untouched. */
+    .bg-sidebar {
+        background-image: var(--sidebar-gradient, none);
     }
 }
 

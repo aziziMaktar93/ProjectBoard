@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarSeparator,
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Kanban, LayoutGrid } from 'lucide-vue-next';
@@ -35,9 +44,13 @@ const mainNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarSeparator class="mx-3" />
+
+        <SidebarContent class="pt-2">
             <NavMain :items="mainNavItems" />
         </SidebarContent>
+
+        <SidebarSeparator class="mx-3" />
 
         <SidebarFooter>
             <NavUser />

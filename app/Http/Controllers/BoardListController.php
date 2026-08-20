@@ -44,6 +44,52 @@ class BoardListController extends Controller
         return back();
     }
 
+    public function duplicate(Request $request, BoardList $boardList): RedirectResponse
+    {
+        Gate::authorize('update', $boardList->board);
+
+        DB::transaction(function () use ($boardList) {
+            $board = $boardList->board;
+
+            $board->lists()
+                ->whereNull('archived_at')
+                ->where('position', '>', $boardList->position)
+                ->increment('position');
+
+            $newList = $board->lists()->create([
+                'name' => "{$boardList->name} (copy)",
+                'color' => $boardList->color,
+                'position' => $boardList->position + 1,
+            ]);
+
+            foreach ($boardList->cards()->whereNull('archived_at')->orderBy('position')->get() as $card) {
+                $newCard = $newList->cards()->create([
+                    'name' => $card->name,
+                    'description' => $card->description,
+                    'color' => $card->color,
+                    'due_date' => $card->due_date,
+                    'position' => $card->position,
+                ]);
+
+                $checklist = $card->checklists()->first();
+
+                if ($checklist) {
+                    $newChecklist = $newCard->checklists()->create(['position' => $checklist->position]);
+
+                    foreach ($checklist->items()->orderBy('position')->get() as $item) {
+                        $newChecklist->items()->create([
+                            'name' => $item->name,
+                            'is_checked' => $item->is_checked,
+                            'position' => $item->position,
+                        ]);
+                    }
+                }
+            }
+        });
+
+        return back();
+    }
+
     public function archive(Request $request, BoardList $boardList): RedirectResponse
     {
         Gate::authorize('update', $boardList->board);

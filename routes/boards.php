@@ -3,6 +3,7 @@
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\BoardMemberController;
+use App\Http\Controllers\CardActivityController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\CardMemberController;
 use App\Http\Controllers\ChecklistController;
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('boards/{board}/lists', [BoardListController::class, 'store'])->name('board-lists.store');
     Route::patch('boards/{board}/lists/reorder', [BoardListController::class, 'reorder'])->name('board-lists.reorder');
     Route::patch('lists/{boardList}', [BoardListController::class, 'update'])->name('board-lists.update');
+    Route::post('lists/{boardList}/duplicate', [BoardListController::class, 'duplicate'])->name('board-lists.duplicate');
     Route::patch('lists/{boardList}/archive', [BoardListController::class, 'archive'])->name('board-lists.archive');
     Route::patch('lists/{boardList}/restore', [BoardListController::class, 'restore'])->name('board-lists.restore');
     Route::delete('lists/{boardList}', [BoardListController::class, 'destroy'])->name('board-lists.destroy');
@@ -42,4 +44,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('cards/{card}/members', [CardMemberController::class, 'store'])->name('card-members.store');
     Route::delete('cards/{card}/members/{user}', [CardMemberController::class, 'destroy'])->name('card-members.destroy');
+
+    Route::post('cards/{card}/activities', [CardActivityController::class, 'store'])->name('card-activities.store');
 });

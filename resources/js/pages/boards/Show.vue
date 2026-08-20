@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { MoreHorizontal } from 'lucide-vue-next';
@@ -228,11 +229,8 @@ function onBoardColorChange(color: string | null) {
             </button>
         </div>
 
-        <div
-            class="flex flex-1 flex-col rounded-xl"
-            :style="board.background_color ? { backgroundColor: `${board.background_color}1a` } : undefined"
-        >
-            <div class="flex items-center justify-between p-4">
+        <div class="flex flex-1 flex-col rounded-xl" :style="{ backgroundImage: washGradient(board.background_color) }">
+            <div class="flex items-center justify-between border-b border-black/5 p-4 dark:border-white/5">
                 <div class="flex min-w-0 items-center gap-2">
                     <span v-if="board.background_color" class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: board.background_color }" />
                     <input
@@ -305,7 +303,7 @@ function onBoardColorChange(color: string | null) {
                     v-if="!showAddList"
                     variant="ghost"
                     size="sm"
-                    class="border border-dashed border-neutral-300 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                    class="border border-dashed border-neutral-300 bg-white/80 text-neutral-600 shadow-sm hover:bg-white hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
                     @click="showAddList = true"
                 >
                     + Add another list

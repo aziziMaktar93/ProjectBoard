@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/composables/useInitials';
+import { tileGradient } from '@/lib/colorGradient';
+import { colorForUser } from '@/lib/memberColor';
 import type { User } from '@/types';
 import { computed } from 'vue';
 
@@ -17,12 +19,13 @@ const { getInitials } = useInitials();
 
 // Compute whether we should show the avatar image
 const showAvatar = computed(() => props.user.avatar && props.user.avatar !== '');
+const gradient = computed(() => tileGradient(colorForUser(props.user.id)));
 </script>
 
 <template>
-    <Avatar class="h-8 w-8 overflow-hidden rounded-lg">
+    <Avatar class="h-8 w-8 overflow-hidden rounded-lg ring-2 ring-white dark:ring-neutral-900">
         <AvatarImage v-if="showAvatar" :src="user.avatar" :alt="user.name" />
-        <AvatarFallback class="rounded-lg text-black dark:text-white">
+        <AvatarFallback class="flex h-full w-full items-center justify-center font-semibold text-white" :style="{ backgroundImage: gradient }">
             {{ getInitials(user.name) }}
         </AvatarFallback>
     </Avatar>

@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import WorkspaceMemberPanel from '@/components/boards/WorkspaceMemberPanel.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tileGradient, washGradient } from '@/lib/colorGradient';
 import type { Board, BreadcrumbItem, SharedData, User, Workspace } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { MoreHorizontal } from 'lucide-vue-next';
@@ -70,6 +79,10 @@ function saveWorkspaceName() {
     workspaceNameForm.patch(route('workspaces.update', props.workspace.id), { preserveScroll: true });
 }
 
+function onWorkspaceColorChange(color: string | null) {
+    router.patch(route('workspaces.update', props.workspace.id), { background_color: color }, { preserveScroll: true });
+}
+
 function deleteWorkspace() {
     if (!confirm(`Delete the workspace "${props.workspace.name}"? This permanently deletes all its boards too.`)) {
         return;
@@ -83,7 +96,7 @@ function deleteWorkspace() {
     <Head :title="workspace.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-col gap-4 p-4">
+        <div class="flex flex-1 flex-col gap-4 rounded-xl p-4" :style="{ backgroundImage: washGradient(workspace.background_color) }">
             <div class="flex items-center justify-between">
                 <div class="flex min-w-0 items-center gap-2">
                     <input
@@ -150,9 +163,14 @@ function deleteWorkspace() {
                                 <MoreHorizontal class="size-4" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" class="w-56">
                             <DropdownMenuItem @click="startEditingWorkspaceName">Rename workspace</DropdownMenuItem>
                             <DropdownMenuItem @click="deleteWorkspace">Delete workspace</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Workspace color</DropdownMenuLabel>
+                            <div class="px-2 pb-1">
+                                <ColorSwatchPicker :model-value="workspace.background_color" @update:model-value="onWorkspaceColorChange" />
+                            </div>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -164,7 +182,7 @@ function deleteWorkspace() {
                 <Link v-for="board in boards" :key="board.id" :href="route('boards.show', board.id)" class="group block">
                     <div
                         class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
-                        :style="{ backgroundColor: board.background_color || '#44546f' }"
+                        :style="{ backgroundImage: tileGradient(board.background_color) }"
                     >
                         <p class="line-clamp-2 font-semibold text-white drop-shadow-sm">{{ board.name }}</p>
                     </div>

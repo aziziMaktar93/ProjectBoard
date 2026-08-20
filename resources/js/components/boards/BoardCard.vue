@@ -9,6 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { stripGradient } from '@/lib/colorGradient';
 import type { Card, ChecklistItem } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Calendar, MoreHorizontal, SquareCheck } from 'lucide-vue-next';
@@ -66,9 +67,9 @@ function onColorChange(color: string | null) {
 
 <template>
     <div
-        class="group overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-neutral-600"
+        class="group overflow-hidden rounded-lg border border-neutral-200/80 bg-white text-sm shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-none dark:hover:border-neutral-600"
     >
-        <div v-if="card.color" class="h-1.5" :style="{ backgroundColor: card.color }" />
+        <div v-if="card.color" class="h-1.5" :style="{ backgroundImage: stripGradient(card.color) }" />
 
         <div class="flex items-start justify-between gap-2 p-3">
             <button type="button" class="flex-1 text-left" @click="emit('open', card)">
@@ -101,14 +102,8 @@ function onColorChange(color: string | null) {
                         <span class="opacity-75">({{ checklistSummary.percentage }}%)</span>
                     </div>
                 </div>
-                <div v-if="card.members?.length" class="mt-2 flex -space-x-2">
-                    <MemberAvatar
-                        v-for="member in card.members"
-                        :key="member.id"
-                        :user="member"
-                        size="xs"
-                        class="ring-2 ring-white dark:ring-neutral-800"
-                    />
+                <div v-if="card.members?.length" class="mt-2 flex flex-wrap gap-1">
+                    <MemberAvatar v-for="member in card.members" :key="member.id" :user="member" size="xs" />
                 </div>
             </button>
 

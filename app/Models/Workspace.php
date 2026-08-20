@@ -20,6 +20,7 @@ class Workspace extends Model
     protected $fillable = [
         'owner_id',
         'name',
+        'background_color',
     ];
 
     public function owner(): BelongsTo

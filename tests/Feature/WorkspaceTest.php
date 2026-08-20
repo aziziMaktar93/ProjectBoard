@@ -14,6 +14,14 @@ test('a user can create a workspace and becomes its owner and member', function 
     expect($workspace->members()->where('users.id', $user->id)->exists())->toBeTrue();
 });
 
+test('a user can set a color when creating a workspace', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/workspaces', ['name' => 'Acme Team', 'background_color' => '#0079BF']);
+
+    expect(Workspace::first()->background_color)->toBe('#0079BF');
+});
+
 test('creating a workspace requires a name', function () {
     $user = User::factory()->create();
 
@@ -50,6 +58,16 @@ test('the workspace owner can rename it', function () {
 
     $response->assertRedirect();
     expect($workspace->fresh()->name)->toBe('New');
+});
+
+test('the workspace owner can change its color', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+
+    $response = $this->actingAs($owner)->patch("/workspaces/{$workspace->id}", ['background_color' => '#61BD4F']);
+
+    $response->assertRedirect();
+    expect($workspace->fresh()->background_color)->toBe('#61BD4F');
 });
 
 test('a non-owner member cannot rename the workspace', function () {

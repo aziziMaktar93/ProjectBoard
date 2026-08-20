@@ -18,6 +18,7 @@ class StoreWorkspaceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'background_color' => ['nullable', 'string', 'max:32'],
         ];
     }
 }

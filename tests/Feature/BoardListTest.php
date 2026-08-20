@@ -116,6 +116,76 @@ test('reorder rejects a duplicate list id', function () {
     expect($second->fresh()->position)->toBe(1);
 });
 
+test('a user can duplicate a list', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create(['name' => 'To Do', 'color' => '#4bce97', 'position' => 0]);
+
+    $response = $this->actingAs($user)->post("/lists/{$list->id}/duplicate");
+
+    $response->assertRedirect();
+    $duplicate = $board->lists()->where('name', 'To Do (copy)')->first();
+    expect($duplicate)->not->toBeNull();
+    expect($duplicate->color)->toBe('#4bce97');
+    expect($duplicate->position)->toBe(1);
+});
+
+test('duplicating a list copies its active cards, checklist, and items', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create(['position' => 0]);
+    $card = Card::factory()->for($list)->create([
+        'name' => 'Fix bug',
+        'description' => 'Details here',
+        'color' => '#eb5a46',
+        'due_date' => '2026-09-01',
+        'position' => 0,
+    ]);
+    Card::factory()->for($list)->archived()->create(['name' => 'Old card']);
+    $checklist = $card->checklists()->create(['position' => 0]);
+    $checklist->items()->create(['name' => 'Step 1', 'is_checked' => true, 'position' => 0]);
+    $checklist->items()->create(['name' => 'Step 2', 'is_checked' => false, 'position' => 1]);
+
+    $this->actingAs($user)->post("/lists/{$list->id}/duplicate");
+
+    $duplicateList = $board->lists()->where('id', '!=', $list->id)->first();
+    expect($duplicateList->cards)->toHaveCount(1);
+
+    $duplicateCard = $duplicateList->cards->first();
+    expect($duplicateCard->name)->toBe('Fix bug');
+    expect($duplicateCard->description)->toBe('Details here');
+    expect($duplicateCard->color)->toBe('#eb5a46');
+    expect($duplicateCard->due_date)->toBe('2026-09-01');
+
+    $duplicateChecklist = $duplicateCard->checklists()->first();
+    expect($duplicateChecklist)->not->toBeNull();
+    expect($duplicateChecklist->items)->toHaveCount(2);
+    expect($duplicateChecklist->items()->where('name', 'Step 1')->first()->is_checked)->toBeTrue();
+});
+
+test('duplicating a list shifts the position of lists after it', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $first = BoardList::factory()->for($board)->create(['position' => 0]);
+    $second = BoardList::factory()->for($board)->create(['position' => 1]);
+
+    $this->actingAs($user)->post("/lists/{$first->id}/duplicate");
+
+    expect($second->fresh()->position)->toBe(2);
+});
+
+test('a user cannot duplicate a list on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->post("/lists/{$list->id}/duplicate");
+
+    $response->assertForbidden();
+    expect($board->lists()->count())->toBe(1);
+});
+
 test('a user can archive and restore a list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

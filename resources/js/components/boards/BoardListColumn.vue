@@ -11,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { stripGradient } from '@/lib/colorGradient';
 import type { BoardList, Card } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { MoreHorizontal, Plus } from 'lucide-vue-next';
@@ -46,6 +47,10 @@ function submitAddCard() {
 
 function archiveList() {
     router.patch(route('board-lists.archive', props.list.id), {}, { preserveScroll: true });
+}
+
+function duplicateList() {
+    router.post(route('board-lists.duplicate', props.list.id), {}, { preserveScroll: true });
 }
 
 function onCardDragStart() {
@@ -89,9 +94,9 @@ function onColorChange(color: string | null) {
 
 <template>
     <div
-        class="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+        class="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-neutral-200/70 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none"
     >
-        <div v-if="list.color" class="h-1.5 shrink-0" :style="{ backgroundColor: list.color }" />
+        <div v-if="list.color" class="h-1.5 shrink-0" :style="{ backgroundImage: stripGradient(list.color) }" />
 
         <div class="p-3 pb-0">
             <div class="list-drag-handle mb-2 flex cursor-grab items-center justify-between gap-2 active:cursor-grabbing">
@@ -134,6 +139,7 @@ function onColorChange(color: string | null) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" class="w-56">
                         <DropdownMenuItem @click="startEditingName">Rename list</DropdownMenuItem>
+                        <DropdownMenuItem @click="duplicateList">Duplicate list</DropdownMenuItem>
                         <DropdownMenuItem @click="archiveList">Archive list</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>List color</DropdownMenuLabel>
