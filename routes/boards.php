@@ -4,6 +4,7 @@ use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\BoardMemberController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\CardMemberController;
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistItemController;
 use Illuminate\Support\Facades\Route;
@@ -38,4 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('checklists/{checklist}/items', [ChecklistItemController::class, 'store'])->name('checklist-items.store');
     Route::patch('checklist-items/{checklistItem}', [ChecklistItemController::class, 'update'])->name('checklist-items.update');
     Route::delete('checklist-items/{checklistItem}', [ChecklistItemController::class, 'destroy'])->name('checklist-items.destroy');
+
+    Route::post('cards/{card}/members', [CardMemberController::class, 'store'])->name('card-members.store');
+    Route::delete('cards/{card}/members/{user}', [CardMemberController::class, 'destroy'])->name('card-members.destroy');
 });
