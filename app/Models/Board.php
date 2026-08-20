@@ -6,6 +6,7 @@ use Database\Factories\BoardFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Board extends Model
@@ -18,6 +19,7 @@ class Board extends Model
      */
     protected $fillable = [
         'user_id',
+        'workspace_id',
         'name',
         'background_color',
         'archived_at',
@@ -41,5 +43,15 @@ class Board extends Model
     public function lists(): HasMany
     {
         return $this->hasMany(BoardList::class);
+    }
+
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'board_user')->withTimestamps();
     }
 }
