@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
 import CardChecklist from '@/components/boards/CardChecklist.vue';
+import CardMemberPicker from '@/components/boards/CardMemberPicker.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Card } from '@/types';
+import type { Card, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 
 const props = defineProps<{
     card: Card | null;
+    boardMembers: User[];
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
@@ -104,6 +106,11 @@ function addChecklist() {
                     <Button type="submit" :disabled="form.processing">Save</Button>
                 </DialogFooter>
             </form>
+
+            <div class="space-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                <Label>Members</Label>
+                <CardMemberPicker v-if="card" :card="card" :board-members="boardMembers" />
+            </div>
 
             <div class="space-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
                 <Label>Checklist</Label>

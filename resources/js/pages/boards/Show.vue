@@ -318,7 +318,7 @@ function onBoardColorChange(color: string | null) {
             </div>
         </div>
 
-        <CardDetailModal v-model:open="showCardModal" :card="activeCard" />
+        <CardDetailModal v-model:open="showCardModal" :card="activeCard" :board-members="board.members ?? []" />
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
         <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" />
     </AppLayout>

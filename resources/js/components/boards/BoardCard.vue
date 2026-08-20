@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MemberAvatar from '@/components/MemberAvatar.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import {
     DropdownMenu,
@@ -99,6 +100,15 @@ function onColorChange(color: string | null) {
                         <span>{{ checklistSummary.checked }}/{{ checklistSummary.total }}</span>
                         <span class="opacity-75">({{ checklistSummary.percentage }}%)</span>
                     </div>
+                </div>
+                <div v-if="card.members?.length" class="mt-2 flex -space-x-2">
+                    <MemberAvatar
+                        v-for="member in card.members"
+                        :key="member.id"
+                        :user="member"
+                        size="xs"
+                        class="ring-2 ring-white dark:ring-neutral-800"
+                    />
                 </div>
             </button>
 

@@ -72,6 +72,7 @@ export interface Card {
     created_at: string;
     updated_at: string;
     checklists?: Checklist[];
+    members?: User[];
 }
 
 export interface BoardList {
