@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BoardController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceMemberController;
 use Illuminate\Support\Facades\Route;
@@ -14,4 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('workspaces/{workspace}/members/search', [WorkspaceMemberController::class, 'search'])->name('workspace-members.search');
     Route::post('workspaces/{workspace}/members', [WorkspaceMemberController::class, 'store'])->name('workspace-members.store');
     Route::delete('workspaces/{workspace}/members/{user}', [WorkspaceMemberController::class, 'destroy'])->name('workspace-members.destroy');
+
+    Route::post('workspaces/{workspace}/boards', [BoardController::class, 'store'])->name('workspaces.boards.store');
+    Route::get('workspaces/{workspace}/boards/archived', [BoardController::class, 'archived'])->name('boards.archived');
 });

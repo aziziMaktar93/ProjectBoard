@@ -2,32 +2,33 @@
 
 use App\Models\Board;
 use App\Models\User;
+use App\Models\Workspace;
 
-test('index lists only the authenticated user\'s active boards', function () {
+test('a workspace shows only its own active boards', function () {
     $user = User::factory()->create();
-    $otherUser = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $activeBoard = Board::factory()->for($workspace)->for($user)->create(['name' => 'Active Board']);
+    Board::factory()->for($workspace)->for($user)->archived()->create(['name' => 'Archived Board']);
+    Board::factory()->for($user)->create(['name' => 'Different Workspace Board']);
 
-    $activeBoard = Board::factory()->for($user)->create(['name' => 'Active Board']);
-    Board::factory()->for($user)->archived()->create(['name' => 'Archived Board']);
-    Board::factory()->for($otherUser)->create(['name' => 'Other User Board']);
-
-    $response = $this->actingAs($user)->get('/boards');
+    $response = $this->actingAs($user)->get("/workspaces/{$workspace->id}");
 
     $response->assertOk();
     $response->assertInertia(
         fn ($page) => $page
-            ->component('boards/Index')
+            ->component('workspaces/Show')
             ->has('boards', 1)
             ->where('boards.0.id', $activeBoard->id)
     );
 });
 
-test('archived lists only the authenticated user\'s archived boards', function () {
+test('archived lists only the workspace\'s archived boards', function () {
     $user = User::factory()->create();
-    Board::factory()->for($user)->create();
-    $archivedBoard = Board::factory()->for($user)->archived()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    Board::factory()->for($workspace)->for($user)->create();
+    $archivedBoard = Board::factory()->for($workspace)->for($user)->archived()->create();
 
-    $response = $this->actingAs($user)->get('/boards/archived');
+    $response = $this->actingAs($user)->get("/workspaces/{$workspace->id}/boards/archived");
 
     $response->assertOk();
     $response->assertInertia(
@@ -38,30 +39,43 @@ test('archived lists only the authenticated user\'s archived boards', function (
     );
 });
 
-test('a user can create a board', function () {
+test('a workspace member can create a board in the workspace', function () {
     $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
 
-    $response = $this->actingAs($user)->post('/boards', [
+    $response = $this->actingAs($user)->post("/workspaces/{$workspace->id}/boards", [
         'name' => 'My New Board',
         'background_color' => '#0079BF',
     ]);
 
-    $board = Board::first();
+    $board = Board::where('name', 'My New Board')->first();
 
     $response->assertRedirect("/boards/{$board->id}");
+    expect($board->workspace_id)->toBe($workspace->id);
     expect($board->user_id)->toBe($user->id);
-    expect($board->name)->toBe('My New Board');
+    expect($board->members()->where('users.id', $user->id)->exists())->toBeTrue();
 });
 
 test('creating a board requires a name', function () {
     $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
 
-    $response = $this->actingAs($user)->post('/boards', ['name' => '']);
+    $response = $this->actingAs($user)->post("/workspaces/{$workspace->id}/boards", ['name' => '']);
 
     $response->assertSessionHasErrors('name');
 });
 
-test('a user can view their own board', function () {
+test('a user who is not a workspace member cannot create a board in it', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->post("/workspaces/{$workspace->id}/boards", ['name' => 'Sneaky Board']);
+
+    $response->assertForbidden();
+});
+
+test('a board member can view the board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
 
@@ -75,7 +89,7 @@ test('a user can view their own board', function () {
     );
 });
 
-test('a user cannot view another user\'s board', function () {
+test('a user who is not a board member cannot view the board', function () {
     $owner = User::factory()->create();
     $board = Board::factory()->for($owner)->create();
     $other = User::factory()->create();
@@ -85,26 +99,49 @@ test('a user cannot view another user\'s board', function () {
     $response->assertForbidden();
 });
 
+test('a workspace member who is not a board member cannot view the board', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $workspaceOnlyMember = User::factory()->create();
+    $workspace->members()->attach($workspaceOnlyMember->id);
+
+    $response = $this->actingAs($workspaceOnlyMember)->get("/boards/{$board->id}");
+
+    $response->assertForbidden();
+});
+
+test('an added board member can view and update the board', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create(['name' => 'Old name']);
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $this->actingAs($member)->get("/boards/{$board->id}")->assertOk();
+
+    $response = $this->actingAs($member)->patch("/boards/{$board->id}", ['name' => 'New name']);
+    $response->assertRedirect();
+    expect($board->fresh()->name)->toBe('New name');
+});
+
 test('a user can rename their board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create(['name' => 'Old name']);
 
-    $response = $this->actingAs($user)->patch("/boards/{$board->id}", [
-        'name' => 'New name',
-    ]);
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}", ['name' => 'New name']);
 
     $response->assertRedirect();
     expect($board->fresh()->name)->toBe('New name');
 });
 
-test('a user cannot rename another user\'s board', function () {
+test('a non-member cannot rename the board', function () {
     $owner = User::factory()->create();
     $board = Board::factory()->for($owner)->create(['name' => 'Old name']);
     $other = User::factory()->create();
 
-    $response = $this->actingAs($other)->patch("/boards/{$board->id}", [
-        'name' => 'New name',
-    ]);
+    $response = $this->actingAs($other)->patch("/boards/{$board->id}", ['name' => 'New name']);
 
     $response->assertForbidden();
     expect($board->fresh()->name)->toBe('Old name');
@@ -114,10 +151,10 @@ test('a user can archive and restore their board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
 
-    $this->actingAs($user)->patch("/boards/{$board->id}/archive")->assertRedirect('/boards');
+    $this->actingAs($user)->patch("/boards/{$board->id}/archive")->assertRedirect("/workspaces/{$board->workspace_id}");
     expect($board->fresh()->archived_at)->not->toBeNull();
 
-    $this->actingAs($user)->patch("/boards/{$board->id}/restore")->assertRedirect('/boards/archived');
+    $this->actingAs($user)->patch("/boards/{$board->id}/restore")->assertRedirect("/workspaces/{$board->workspace_id}/boards/archived");
     expect($board->fresh()->archived_at)->toBeNull();
 });
 
@@ -131,14 +168,28 @@ test('a non archived board cannot be permanently deleted', function () {
     expect(Board::find($board->id))->not->toBeNull();
 });
 
-test('an archived board can be permanently deleted', function () {
+test('an archived board can be permanently deleted by its creator', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->archived()->create();
 
     $response = $this->actingAs($user)->delete("/boards/{$board->id}");
 
-    $response->assertRedirect('/boards/archived');
+    $response->assertRedirect("/workspaces/{$board->workspace_id}/boards/archived");
     expect(Board::find($board->id))->toBeNull();
+});
+
+test('a board member who is not the creator cannot permanently delete the board', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->archived()->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $response = $this->actingAs($member)->delete("/boards/{$board->id}");
+
+    $response->assertForbidden();
+    expect(Board::find($board->id))->not->toBeNull();
 });
 
 test('a user cannot delete another user\'s archived board', function () {
