@@ -47,6 +47,11 @@ class Card extends Model
         return $this->hasMany(Checklist::class);
     }
 
+    public function activities(): HasMany
+    {
+        return $this->hasMany(CardActivity::class);
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'card_user')->withTimestamps();

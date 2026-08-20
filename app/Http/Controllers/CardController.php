@@ -8,6 +8,7 @@ use App\Http\Requests\Cards\UpdateCardRequest;
 use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
+use App\Models\CardActivity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,21 @@ class CardController extends Controller
     {
         $data = $request->validated();
 
-        DB::transaction(function () use ($data) {
+        DB::transaction(function () use ($data, $request) {
+            $movedCardId = null;
+            $fromListName = null;
+
+            if (! empty($data['source_list_id'])) {
+                $movedCard = Card::whereIn('id', $data['target_ordered_ids'])
+                    ->where('board_list_id', $data['source_list_id'])
+                    ->first();
+
+                if ($movedCard) {
+                    $movedCardId = $movedCard->id;
+                    $fromListName = $movedCard->boardList->name;
+                }
+            }
+
             foreach ($data['target_ordered_ids'] as $position => $id) {
                 Card::where('id', $id)->update([
                     'board_list_id' => $data['target_list_id'],
@@ -54,6 +69,18 @@ class CardController extends Controller
                     ]);
                 }
             }
+
+            if ($movedCardId) {
+                CardActivity::create([
+                    'card_id' => $movedCardId,
+                    'user_id' => $request->user()->id,
+                    'type' => 'moved',
+                    'data' => [
+                        'from_list' => $fromListName,
+                        'to_list' => BoardList::find($data['target_list_id'])->name,
+                    ],
+                ]);
+            }
         });
 
         return back();
@@ -65,6 +92,12 @@ class CardController extends Controller
 
         $card->update(['archived_at' => now()]);
 
+        CardActivity::create([
+            'card_id' => $card->id,
+            'user_id' => $request->user()->id,
+            'type' => 'archived',
+        ]);
+
         return back();
     }
 
@@ -73,6 +106,12 @@ class CardController extends Controller
         Gate::authorize('update', $card->boardList->board);
 
         $card->update(['archived_at' => null]);
+
+        CardActivity::create([
+            'card_id' => $card->id,
+            'user_id' => $request->user()->id,
+            'type' => 'restored',
+        ]);
 
         return back();
     }

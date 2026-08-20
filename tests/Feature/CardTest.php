@@ -135,6 +135,24 @@ test('a user can move a card to a different list', function () {
     expect($remainingCard->fresh()->position)->toBe(0);
 });
 
+test('a user can move the last card out of a list, leaving it empty', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $sourceList = BoardList::factory()->for($board)->create();
+    $targetList = BoardList::factory()->for($board)->create();
+    $movedCard = Card::factory()->for($sourceList)->create(['position' => 0]);
+
+    $response = $this->actingAs($user)->patch("/boards/{$board->id}/cards/reorder", [
+        'source_list_id' => $sourceList->id,
+        'source_ordered_ids' => [],
+        'target_list_id' => $targetList->id,
+        'target_ordered_ids' => [$movedCard->id],
+    ]);
+
+    $response->assertRedirect();
+    expect($movedCard->fresh()->board_list_id)->toBe($targetList->id);
+});
+
 test('reorder rejects a target list id that does not belong to the board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

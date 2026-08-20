@@ -32,7 +32,10 @@ class ReorderCardsRequest extends FormRequest
             'target_list_id' => ['required', 'integer', Rule::exists('board_lists', 'id')->where('board_id', $board->id)],
             'target_ordered_ids' => ['required', 'array'],
             'target_ordered_ids.*' => ['integer', 'distinct', Rule::exists('cards', 'id')->whereIn('board_list_id', $listIds)],
-            'source_ordered_ids' => ['array', 'required_with:source_list_id'],
+            // `present_with` (not `required_with`) so dragging the last remaining
+            // card out of a list — leaving an empty `source_ordered_ids: []` — is
+            // still valid; `required_with` treats an empty array as absent.
+            'source_ordered_ids' => ['array', 'present_with:source_list_id'],
             'source_ordered_ids.*' => ['integer', 'distinct', Rule::exists('cards', 'id')->whereIn('board_list_id', $listIds)],
         ];
     }

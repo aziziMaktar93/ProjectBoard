@@ -60,6 +60,28 @@ export interface Checklist {
     items: ChecklistItem[];
 }
 
+export type CardActivityType =
+    | 'comment'
+    | 'moved'
+    | 'checklist_item_completed'
+    | 'checklist_item_uncompleted'
+    | 'member_added'
+    | 'member_removed'
+    | 'archived'
+    | 'restored';
+
+export interface CardActivity {
+    id: number;
+    card_id: number;
+    user_id: number;
+    type: CardActivityType;
+    body: string | null;
+    data: Record<string, string> | null;
+    created_at: string;
+    updated_at: string;
+    user: User;
+}
+
 export interface Card {
     id: number;
     board_list_id: number;
@@ -73,6 +95,7 @@ export interface Card {
     updated_at: string;
     checklists?: Checklist[];
     members?: User[];
+    activities?: CardActivity[];
 }
 
 export interface BoardList {
@@ -91,6 +114,7 @@ export interface Workspace {
     id: number;
     owner_id: number;
     name: string;
+    background_color: string | null;
     created_at: string;
     updated_at: string;
     boards_count?: number;
