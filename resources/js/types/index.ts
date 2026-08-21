@@ -54,6 +54,7 @@ export interface ChecklistItem {
 export interface Checklist {
     id: number;
     card_id: number;
+    name: string;
     position: number;
     created_at: string;
     updated_at: string;
@@ -67,6 +68,10 @@ export type CardActivityType =
     | 'checklist_item_uncompleted'
     | 'member_added'
     | 'member_removed'
+    | 'label_added'
+    | 'label_removed'
+    | 'attachment_added'
+    | 'attachment_removed'
     | 'archived'
     | 'restored';
 
@@ -92,6 +97,28 @@ export interface CardActivity {
     };
 }
 
+export interface CardLabel {
+    id: number;
+    board_id: number;
+    name: string;
+    color: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CardAttachment {
+    id: number;
+    card_id: number;
+    user_id: number;
+    name: string;
+    path: string;
+    size: number;
+    mime_type: string;
+    created_at: string;
+    updated_at: string;
+    user?: User;
+}
+
 export interface Card {
     id: number;
     board_list_id: number;
@@ -105,6 +132,8 @@ export interface Card {
     updated_at: string;
     checklists?: Checklist[];
     members?: User[];
+    labels?: CardLabel[];
+    attachments?: CardAttachment[];
     activities?: CardActivity[];
 }
 
@@ -160,5 +189,6 @@ export interface Board {
     updated_at: string;
     lists?: BoardList[];
     members?: User[];
+    labels?: CardLabel[];
     workspace?: Workspace;
 }

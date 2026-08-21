@@ -14,6 +14,14 @@ export function sentenceFor(activity: CardActivity): string {
             return `added ${data.member_name} to this card`;
         case 'member_removed':
             return `removed ${data.member_name} from this card`;
+        case 'label_added':
+            return `added the ${data.label_name} label to this card`;
+        case 'label_removed':
+            return `removed the ${data.label_name} label from this card`;
+        case 'attachment_added':
+            return `added ${data.attachment_name} to this card`;
+        case 'attachment_removed':
+            return `removed ${data.attachment_name} from this card`;
         case 'archived':
             return 'archived this card';
         case 'restored':

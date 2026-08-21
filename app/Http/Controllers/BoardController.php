@@ -50,11 +50,14 @@ class BoardController extends Controller
         $board->load([
             'workspace.members',
             'members' => fn ($query) => $query->orderBy('name'),
+            'labels' => fn ($query) => $query->orderBy('name'),
             'lists' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
             'lists.cards' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
             'lists.cards.checklists' => fn ($query) => $query->orderBy('position'),
             'lists.cards.checklists.items' => fn ($query) => $query->orderBy('position'),
             'lists.cards.members',
+            'lists.cards.labels',
+            'lists.cards.attachments' => fn ($query) => $query->latest(),
             'lists.cards.activities' => fn ($query) => $query->latest(),
             'lists.cards.activities.user',
         ]);

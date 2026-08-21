@@ -11,9 +11,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { stripGradient } from '@/lib/colorGradient';
-import type { Card, ChecklistItem } from '@/types';
+import type { Card, Checklist, ChecklistItem } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { Calendar, MoreHorizontal, SquareCheck } from 'lucide-vue-next';
+import { Calendar, MoreHorizontal, Paperclip, SquareCheck } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const checklistSummary = computed(() => {
-    const items = props.card.checklists?.[0]?.items ?? [];
+    const items = (props.card.checklists ?? []).flatMap((checklist: Checklist) => checklist.items ?? []);
 
     if (items.length === 0) {
         return null;
@@ -78,9 +78,19 @@ function onColorChange(color: string | null) {
 
         <div class="flex items-start justify-between gap-2 p-3">
             <button type="button" class="flex-1 text-left" @click="emit('open', card)">
+                <div v-if="card.labels?.length" class="mb-1.5 flex flex-wrap gap-1">
+                    <span
+                        v-for="label in card.labels"
+                        :key="label.id"
+                        class="rounded px-2 py-0.5 text-xs font-medium text-white drop-shadow-sm"
+                        :style="{ backgroundColor: label.color }"
+                    >
+                        {{ label.name }}
+                    </span>
+                </div>
                 <p class="font-medium text-neutral-900 dark:text-neutral-100">{{ card.name }}</p>
                 <p v-if="card.description" class="mt-1 line-clamp-2 text-xs text-neutral-500 dark:text-neutral-400">{{ card.description }}</p>
-                <div v-if="checklistSummary || dueDateLabel" class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <div v-if="checklistSummary || dueDateLabel || card.attachments?.length" class="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <div
                         v-if="dueDateLabel"
                         class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
@@ -105,6 +115,13 @@ function onColorChange(color: string | null) {
                         <SquareCheck class="size-3.5" />
                         <span>{{ checklistSummary.checked }}/{{ checklistSummary.total }}</span>
                         <span class="opacity-75">({{ checklistSummary.percentage }}%)</span>
+                    </div>
+                    <div
+                        v-if="card.attachments?.length"
+                        class="inline-flex items-center gap-1 rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                    >
+                        <Paperclip class="size-3.5" />
+                        <span>{{ card.attachments.length }}</span>
                     </div>
                 </div>
                 <div v-if="card.members?.length" class="mt-2 flex flex-wrap gap-1">

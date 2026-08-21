@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardLabelController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\BoardMemberController;
 use App\Http\Controllers\CardActivityController;
+use App\Http\Controllers\CardAttachmentController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\CardLabelController;
 use App\Http\Controllers\CardMemberController;
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistItemController;
@@ -19,6 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('boards/{board}/members', [BoardMemberController::class, 'store'])->name('board-members.store');
     Route::delete('boards/{board}/members/{user}', [BoardMemberController::class, 'destroy'])->name('board-members.destroy');
+
+    Route::post('boards/{board}/labels', [BoardLabelController::class, 'store'])->name('board-labels.store');
+    Route::patch('labels/{label}', [BoardLabelController::class, 'update'])->name('board-labels.update');
+    Route::delete('labels/{label}', [BoardLabelController::class, 'destroy'])->name('board-labels.destroy');
 
     Route::post('boards/{board}/lists', [BoardListController::class, 'store'])->name('board-lists.store');
     Route::patch('boards/{board}/lists/reorder', [BoardListController::class, 'reorder'])->name('board-lists.reorder');
@@ -37,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('cards/{card}', [CardController::class, 'destroy'])->name('cards.destroy');
 
     Route::post('cards/{card}/checklists', [ChecklistController::class, 'store'])->name('checklists.store');
+    Route::patch('checklists/{checklist}', [ChecklistController::class, 'update'])->name('checklists.update');
     Route::delete('checklists/{checklist}', [ChecklistController::class, 'destroy'])->name('checklists.destroy');
 
     Route::post('checklists/{checklist}/items', [ChecklistItemController::class, 'store'])->name('checklist-items.store');
@@ -46,5 +54,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('cards/{card}/members', [CardMemberController::class, 'store'])->name('card-members.store');
     Route::delete('cards/{card}/members/{user}', [CardMemberController::class, 'destroy'])->name('card-members.destroy');
 
+    Route::post('cards/{card}/labels', [CardLabelController::class, 'store'])->name('card-labels.store');
+    Route::delete('cards/{card}/labels/{label}', [CardLabelController::class, 'destroy'])->name('card-labels.destroy');
+
     Route::post('cards/{card}/activities', [CardActivityController::class, 'store'])->name('card-activities.store');
+
+    Route::post('cards/{card}/attachments', [CardAttachmentController::class, 'store'])->name('card-attachments.store');
+    Route::get('attachments/{attachment}/view', [CardAttachmentController::class, 'view'])->name('card-attachments.view');
+    Route::get('attachments/{attachment}/download', [CardAttachmentController::class, 'download'])->name('card-attachments.download');
+    Route::delete('attachments/{attachment}', [CardAttachmentController::class, 'destroy'])->name('card-attachments.destroy');
 });

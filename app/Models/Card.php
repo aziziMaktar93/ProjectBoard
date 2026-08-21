@@ -56,4 +56,14 @@ class Card extends Model
     {
         return $this->belongsToMany(User::class, 'card_user')->withTimestamps();
     }
+
+    public function labels(): BelongsToMany
+    {
+        return $this->belongsToMany(Label::class, 'card_label')->withTimestamps();
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class);
+    }
 }
