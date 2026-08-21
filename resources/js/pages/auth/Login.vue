@@ -3,7 +3,7 @@ import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { Input, PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
@@ -57,9 +57,8 @@ const submit = () => {
                         <Label for="password">Password</Label>
                         <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" tabindex="5"> Forgot password? </TextLink>
                     </div>
-                    <Input
+                    <PasswordInput
                         id="password"
-                        type="password"
                         required
                         tabindex="2"
                         autocomplete="current-password"

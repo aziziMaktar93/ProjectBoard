@@ -8,7 +8,7 @@ import { ref } from 'vue';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type BreadcrumbItem } from '@/types';
 
@@ -25,8 +25,8 @@ const breadcrumbItems: BreadcrumbItem[] = [
     },
 ];
 
-const passwordInput = ref<HTMLInputElement>();
-const currentPasswordInput = ref<HTMLInputElement>();
+const passwordInput = ref<InstanceType<typeof PasswordInput>>();
+const currentPasswordInput = ref<InstanceType<typeof PasswordInput>>();
 
 const form = useForm({
     current_password: '',
@@ -41,16 +41,12 @@ const updatePassword = () => {
         onError: (errors: any) => {
             if (errors.password) {
                 form.reset('password', 'password_confirmation');
-                if (passwordInput.value instanceof HTMLInputElement) {
-                    passwordInput.value.focus();
-                }
+                passwordInput.value?.focus();
             }
 
             if (errors.current_password) {
                 form.reset('current_password');
-                if (currentPasswordInput.value instanceof HTMLInputElement) {
-                    currentPasswordInput.value.focus();
-                }
+                currentPasswordInput.value?.focus();
             }
         },
     });
@@ -68,11 +64,10 @@ const updatePassword = () => {
                 <form @submit.prevent="updatePassword" class="space-y-6">
                     <div class="grid gap-2">
                         <Label for="current_password">Current Password</Label>
-                        <Input
+                        <PasswordInput
                             id="current_password"
                             ref="currentPasswordInput"
                             v-model="form.current_password"
-                            type="password"
                             class="mt-1 block w-full"
                             autocomplete="current-password"
                             placeholder="Current password"
@@ -82,11 +77,10 @@ const updatePassword = () => {
 
                     <div class="grid gap-2">
                         <Label for="password">New password</Label>
-                        <Input
+                        <PasswordInput
                             id="password"
                             ref="passwordInput"
                             v-model="form.password"
-                            type="password"
                             class="mt-1 block w-full"
                             autocomplete="new-password"
                             placeholder="New password"
@@ -96,10 +90,9 @@ const updatePassword = () => {
 
                     <div class="grid gap-2">
                         <Label for="password_confirmation">Confirm password</Label>
-                        <Input
+                        <PasswordInput
                             id="password_confirmation"
                             v-model="form.password_confirmation"
-                            type="password"
                             class="mt-1 block w-full"
                             autocomplete="new-password"
                             placeholder="Confirm password"
