@@ -65,12 +65,12 @@ function addChecklist() {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent v-if="card" class="max-h-[85vh] overflow-hidden sm:max-w-4xl">
+        <DialogContent v-if="card" class="max-h-[85vh] overflow-hidden sm:max-w-6xl">
             <DialogHeader>
                 <DialogTitle>Edit card</DialogTitle>
             </DialogHeader>
 
-            <div class="grid max-h-[calc(85vh-5rem)] grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_320px]">
+            <div class="grid max-h-[calc(85vh-5rem)] grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_1fr]">
                 <div class="space-y-6 overflow-y-auto pr-1">
                     <form class="space-y-4" @submit.prevent="submit">
                         <div class="grid gap-2">
