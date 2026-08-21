@@ -35,6 +35,44 @@ class CardController extends Controller
         return back();
     }
 
+    public function duplicate(Request $request, Card $card): RedirectResponse
+    {
+        Gate::authorize('update', $card->boardList->board);
+
+        DB::transaction(function () use ($card) {
+            $boardList = $card->boardList;
+
+            $boardList->cards()
+                ->whereNull('archived_at')
+                ->where('position', '>', $card->position)
+                ->increment('position');
+
+            $newCard = $boardList->cards()->create([
+                'name' => "{$card->name} (copy)",
+                'description' => $card->description,
+                'color' => $card->color,
+                'due_date' => $card->due_date,
+                'position' => $card->position + 1,
+            ]);
+
+            $checklist = $card->checklists()->first();
+
+            if ($checklist) {
+                $newChecklist = $newCard->checklists()->create(['position' => $checklist->position]);
+
+                foreach ($checklist->items()->orderBy('position')->get() as $item) {
+                    $newChecklist->items()->create([
+                        'name' => $item->name,
+                        'is_checked' => $item->is_checked,
+                        'position' => $item->position,
+                    ]);
+                }
+            }
+        });
+
+        return back();
+    }
+
     public function reorder(ReorderCardsRequest $request, Board $board): RedirectResponse
     {
         $data = $request->validated();

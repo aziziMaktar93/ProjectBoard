@@ -29,6 +29,74 @@ test('a user cannot add a card to a list on another user\'s board', function () 
     $response->assertForbidden();
 });
 
+test('a user can duplicate a card', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Fix bug', 'color' => '#eb5a46', 'position' => 0]);
+
+    $response = $this->actingAs($user)->post("/cards/{$card->id}/duplicate");
+
+    $response->assertRedirect();
+    $duplicate = $list->cards()->where('name', 'Fix bug (copy)')->first();
+    expect($duplicate)->not->toBeNull();
+    expect($duplicate->color)->toBe('#eb5a46');
+    expect($duplicate->position)->toBe(1);
+});
+
+test('duplicating a card copies its checklist and items but not its members', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create([
+        'name' => 'Fix bug',
+        'description' => 'Details here',
+        'due_date' => '2026-09-01',
+        'position' => 0,
+    ]);
+    $card->members()->attach($user->id);
+    $checklist = $card->checklists()->create(['position' => 0]);
+    $checklist->items()->create(['name' => 'Step 1', 'is_checked' => true, 'position' => 0]);
+    $checklist->items()->create(['name' => 'Step 2', 'is_checked' => false, 'position' => 1]);
+
+    $this->actingAs($user)->post("/cards/{$card->id}/duplicate");
+
+    $duplicate = $list->cards()->where('name', 'Fix bug (copy)')->first();
+    expect($duplicate->description)->toBe('Details here');
+    expect($duplicate->due_date)->toBe('2026-09-01');
+    expect($duplicate->members)->toHaveCount(0);
+
+    $duplicateChecklist = $duplicate->checklists()->first();
+    expect($duplicateChecklist)->not->toBeNull();
+    expect($duplicateChecklist->items)->toHaveCount(2);
+    expect($duplicateChecklist->items()->where('name', 'Step 1')->first()->is_checked)->toBeTrue();
+});
+
+test('duplicating a card shifts the position of cards after it in the same list', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $first = Card::factory()->for($list)->create(['position' => 0]);
+    $second = Card::factory()->for($list)->create(['position' => 1]);
+
+    $this->actingAs($user)->post("/cards/{$first->id}/duplicate");
+
+    expect($second->fresh()->position)->toBe(2);
+});
+
+test('a user cannot duplicate a card on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->post("/cards/{$card->id}/duplicate");
+
+    $response->assertForbidden();
+    expect($list->cards()->count())->toBe(1);
+});
+
 test('a user can update a card\'s name and description', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('lists/{boardList}/cards', [CardController::class, 'store'])->name('cards.store');
     Route::patch('boards/{board}/cards/reorder', [CardController::class, 'reorder'])->name('cards.reorder');
     Route::patch('cards/{card}', [CardController::class, 'update'])->name('cards.update');
+    Route::post('cards/{card}/duplicate', [CardController::class, 'duplicate'])->name('cards.duplicate');
     Route::patch('cards/{card}/archive', [CardController::class, 'archive'])->name('cards.archive');
     Route::patch('cards/{card}/restore', [CardController::class, 'restore'])->name('cards.restore');
     Route::delete('cards/{card}', [CardController::class, 'destroy'])->name('cards.destroy');
