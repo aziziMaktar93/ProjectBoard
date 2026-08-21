@@ -191,4 +191,6 @@ export interface Board {
     members?: User[];
     labels?: CardLabel[];
     workspace?: Workspace;
+    cards_count?: number;
+    checklist_progress?: number | null;
 }

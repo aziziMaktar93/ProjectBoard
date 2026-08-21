@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\Board;
+use App\Models\BoardList;
+use App\Models\Card;
+use App\Models\Checklist;
+use App\Models\ChecklistItem;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -102,6 +107,30 @@ test('a non-owner member cannot delete the workspace', function () {
 
     $response->assertForbidden();
     expect(Workspace::find($workspace->id))->not->toBeNull();
+});
+
+test('a workspace board tile includes card count, members, and checklist progress', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $member = User::factory()->create();
+    $board->members()->attach($member->id);
+    $list = BoardList::factory()->for($board)->create();
+    $doneCard = Card::factory()->for($list)->create();
+    Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($doneCard)->create();
+    ChecklistItem::factory()->for($checklist)->create(['is_checked' => true]);
+    ChecklistItem::factory()->for($checklist)->create(['is_checked' => false]);
+
+    $response = $this->actingAs($owner)->get("/workspaces/{$workspace->id}");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('workspaces/Show')
+            ->where('boards.0.cards_count', 2)
+            ->where('boards.0.checklist_progress', 50)
+            ->has('boards.0.members', 2)
+    );
 });
 
 test('the workspaces index only lists workspaces the user belongs to', function () {

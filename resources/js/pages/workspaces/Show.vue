@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HoverLabel from '@/components/HoverLabel.vue';
 import InputError from '@/components/InputError.vue';
+import MemberAvatar from '@/components/MemberAvatar.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import WorkspaceMemberPanel from '@/components/boards/WorkspaceMemberPanel.vue';
 import { Button } from '@/components/ui/button';
@@ -184,10 +185,38 @@ function deleteWorkspace() {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 <Link v-for="board in boards" :key="board.id" :href="route('boards.show', board.id)" class="group block">
                     <div
-                        class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
+                        class="flex h-28 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
                         :style="{ backgroundImage: tileGradient(board.background_color) }"
                     >
                         <p class="line-clamp-2 font-semibold text-white drop-shadow-sm">{{ board.name }}</p>
+
+                        <div class="space-y-1.5">
+                            <div
+                                v-if="board.checklist_progress !== null && board.checklist_progress !== undefined"
+                                class="flex items-center gap-2"
+                            >
+                                <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
+                                    <div class="h-full rounded-full bg-white" :style="{ width: `${board.checklist_progress}%` }" />
+                                </div>
+                                <span class="shrink-0 text-[10px] font-medium text-white/90 drop-shadow-sm">{{ board.checklist_progress }}%</span>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2">
+                                <div v-if="board.members?.length" class="flex -space-x-1.5">
+                                    <MemberAvatar v-for="member in board.members.slice(0, 4)" :key="member.id" :user="member" size="xs" />
+                                    <span
+                                        v-if="board.members.length > 4"
+                                        class="flex size-6 items-center justify-center rounded-full bg-white/30 text-[10px] font-semibold text-white ring-2 ring-white/50"
+                                    >
+                                        +{{ board.members.length - 4 }}
+                                    </span>
+                                </div>
+                                <span v-else />
+                                <span v-if="board.cards_count" class="shrink-0 text-xs font-medium text-white/90 drop-shadow-sm">
+                                    {{ board.cards_count }} card{{ board.cards_count === 1 ? '' : 's' }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </Link>
             </div>
