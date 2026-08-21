@@ -80,6 +80,16 @@ export interface CardActivity {
     created_at: string;
     updated_at: string;
     user: User;
+    card?: {
+        id: number;
+        name: string;
+        board_list?: {
+            board?: {
+                id: number;
+                name: string;
+            };
+        };
+    };
 }
 
 export interface Card {
@@ -108,6 +118,24 @@ export interface BoardList {
     created_at: string;
     updated_at: string;
     cards: Card[];
+}
+
+export interface DashboardStats {
+    total: number;
+    completed: number;
+    overdue: number;
+    dueSoon: number;
+    checklistProgress: number | null;
+}
+
+export interface BoardTaskCount {
+    name: string;
+    count: number;
+}
+
+export interface MemberWorkload {
+    user: User;
+    count: number;
 }
 
 export interface Workspace {
