@@ -7,31 +7,47 @@ use App\Models\Checklist;
 use App\Models\ChecklistItem;
 use App\Models\User;
 
-test('a user can add a checklist to a card on their board', function () {
+test('a user can add a named checklist to a card on their board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
     $list = BoardList::factory()->for($board)->create();
     $card = Card::factory()->for($list)->create();
 
-    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists");
+    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists", ['name' => 'Design Requirements']);
 
     $response->assertRedirect();
     $checklist = $card->checklists()->first();
     expect($checklist)->not->toBeNull();
+    expect($checklist->name)->toBe('Design Requirements');
     expect($checklist->position)->toBe(0);
 });
 
-test('a card can only have one checklist', function () {
+test('a checklist name is required', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
     $list = BoardList::factory()->for($board)->create();
     $card = Card::factory()->for($list)->create();
-    Checklist::factory()->for($card)->create();
 
-    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists");
+    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists", ['name' => '']);
 
-    $response->assertStatus(422);
-    expect($card->checklists()->count())->toBe(1);
+    $response->assertSessionHasErrors('name');
+    expect($card->checklists()->count())->toBe(0);
+});
+
+test('a user can add multiple checklists to a card', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    Checklist::factory()->for($card)->create(['name' => 'Design Requirements', 'position' => 0]);
+
+    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists", ['name' => 'Development Tasks']);
+
+    $response->assertRedirect();
+    expect($card->checklists()->count())->toBe(2);
+    $second = $card->checklists()->orderBy('position')->get()->last();
+    expect($second->name)->toBe('Development Tasks');
+    expect($second->position)->toBe(1);
 });
 
 test('a user can add a new checklist after deleting the card\'s existing one', function () {
@@ -43,11 +59,38 @@ test('a user can add a new checklist after deleting the card\'s existing one', f
 
     $this->actingAs($user)->delete("/checklists/{$first->id}")->assertRedirect();
 
-    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists");
+    $response = $this->actingAs($user)->post("/cards/{$card->id}/checklists", ['name' => 'New Checklist']);
 
     $response->assertRedirect();
     expect($card->checklists()->count())->toBe(1);
     expect($card->checklists()->first()->is($first))->toBeFalse();
+});
+
+test('a user can rename a checklist', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'Old name']);
+
+    $response = $this->actingAs($user)->patch("/checklists/{$checklist->id}", ['name' => 'New name']);
+
+    $response->assertRedirect();
+    expect($checklist->fresh()->name)->toBe('New name');
+});
+
+test('a user cannot rename a checklist on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'Old name']);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/checklists/{$checklist->id}", ['name' => 'New name']);
+
+    $response->assertForbidden();
+    expect($checklist->fresh()->name)->toBe('Old name');
 });
 
 test('a user cannot add a checklist to a card on another user\'s board', function () {
@@ -57,7 +100,7 @@ test('a user cannot add a checklist to a card on another user\'s board', functio
     $card = Card::factory()->for($list)->create();
     $other = User::factory()->create();
 
-    $response = $this->actingAs($other)->post("/cards/{$card->id}/checklists");
+    $response = $this->actingAs($other)->post("/cards/{$card->id}/checklists", ['name' => 'New Checklist']);
 
     $response->assertForbidden();
 });

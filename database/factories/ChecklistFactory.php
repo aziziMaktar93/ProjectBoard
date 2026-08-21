@@ -18,6 +18,7 @@ class ChecklistFactory extends Factory
     {
         return [
             'card_id' => Card::factory(),
+            'name' => fake()->words(2, true),
             'position' => 0,
         ];
     }

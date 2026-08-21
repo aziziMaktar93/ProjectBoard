@@ -71,10 +71,11 @@ class BoardListController extends Controller
                     'position' => $card->position,
                 ]);
 
-                $checklist = $card->checklists()->first();
-
-                if ($checklist) {
-                    $newChecklist = $newCard->checklists()->create(['position' => $checklist->position]);
+                foreach ($card->checklists()->orderBy('position')->get() as $checklist) {
+                    $newChecklist = $newCard->checklists()->create([
+                        'name' => $checklist->name,
+                        'position' => $checklist->position,
+                    ]);
 
                     foreach ($checklist->items()->orderBy('position')->get() as $item) {
                         $newChecklist->items()->create([

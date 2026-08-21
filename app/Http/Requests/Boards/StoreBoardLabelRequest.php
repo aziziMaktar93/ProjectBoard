@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Requests\Checklists;
+namespace App\Http\Requests\Boards;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreChecklistRequest extends FormRequest
+class StoreBoardLabelRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('card')->boardList->board);
+        return $this->user()->can('update', $this->route('board'));
     }
 
     /**
@@ -18,6 +18,7 @@ class StoreChecklistRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'color' => ['required', 'string', 'max:32'],
         ];
     }
 }

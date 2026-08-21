@@ -18,6 +18,7 @@ class Checklist extends Model
      */
     protected $fillable = [
         'card_id',
+        'name',
         'position',
     ];
 

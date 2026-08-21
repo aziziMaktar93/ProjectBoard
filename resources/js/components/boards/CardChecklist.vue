@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Checklist, ChecklistItem } from '@/types';
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 const props = defineProps<{
     checklist: Checklist;
@@ -14,6 +14,32 @@ const props = defineProps<{
 const hideChecked = ref(false);
 const showAddItem = ref(false);
 const newItemName = ref('');
+
+const isEditingName = ref(false);
+const nameInput = ref<HTMLInputElement | null>(null);
+
+const nameForm = useForm({
+    name: props.checklist.name,
+});
+
+async function startEditingName() {
+    nameForm.name = props.checklist.name;
+    isEditingName.value = true;
+    await nextTick();
+    nameInput.value?.focus();
+    nameInput.value?.select();
+}
+
+function saveName() {
+    isEditingName.value = false;
+
+    if (!nameForm.name.trim() || nameForm.name === props.checklist.name) {
+        nameForm.name = props.checklist.name;
+        return;
+    }
+
+    nameForm.patch(route('checklists.update', props.checklist.id), { preserveScroll: true });
+}
 
 const visibleItems = computed(() => (hideChecked.value ? props.checklist.items.filter((item) => !item.is_checked) : props.checklist.items));
 
@@ -65,16 +91,35 @@ function deleteChecklist() {
 
 <template>
     <div class="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
-        <div class="flex items-center justify-end gap-3">
-            <button
-                v-if="checklist.items.length"
-                type="button"
-                class="text-xs text-muted-foreground hover:text-foreground"
-                @click="hideChecked = !hideChecked"
+        <div class="flex items-center justify-between gap-3">
+            <input
+                v-if="isEditingName"
+                ref="nameInput"
+                v-model="nameForm.name"
+                class="min-w-0 flex-1 truncate rounded bg-white px-1 text-sm font-semibold outline-none ring-2 ring-ring dark:bg-neutral-800"
+                @blur="saveName"
+                @keydown.enter="saveName"
+                @keydown.escape="isEditingName = false"
+            />
+            <p
+                v-else
+                class="min-w-0 flex-1 cursor-text truncate rounded px-1 text-sm font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                @click="startEditingName"
             >
-                {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
-            </button>
-            <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
+                {{ checklist.name }}
+            </p>
+
+            <div class="flex shrink-0 items-center gap-3">
+                <button
+                    v-if="checklist.items.length"
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-foreground"
+                    @click="hideChecked = !hideChecked"
+                >
+                    {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
+                </button>
+                <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
+            </div>
         </div>
 
         <div v-if="checklist.items.length" class="flex items-center gap-2">

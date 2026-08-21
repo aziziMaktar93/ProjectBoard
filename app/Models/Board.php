@@ -54,4 +54,9 @@ class Board extends Model
     {
         return $this->belongsToMany(User::class, 'board_user')->withTimestamps();
     }
+
+    public function labels(): HasMany
+    {
+        return $this->hasMany(Label::class);
+    }
 }

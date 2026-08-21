@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Checklists\StoreChecklistRequest;
+use App\Http\Requests\Checklists\UpdateChecklistRequest;
 use App\Models\Card;
 use App\Models\Checklist;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,19 @@ class ChecklistController extends Controller
 {
     public function store(StoreChecklistRequest $request, Card $card): RedirectResponse
     {
-        abort_if($card->checklists()->exists(), 422, 'This card already has a checklist.');
+        $position = ($card->checklists()->max('position') ?? -1) + 1;
 
-        $card->checklists()->create(['position' => 0]);
+        $card->checklists()->create([
+            'name' => $request->validated('name'),
+            'position' => $position,
+        ]);
+
+        return back();
+    }
+
+    public function update(UpdateChecklistRequest $request, Checklist $checklist): RedirectResponse
+    {
+        $checklist->update($request->validated());
 
         return back();
     }

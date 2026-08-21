@@ -136,6 +136,21 @@ test('the dashboard shows recent activity scoped to the user\'s boards', functio
     );
 });
 
+test('the dashboard caps recent activity at 10 entries', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    foreach (range(1, 12) as $i) {
+        $card->activities()->create(['user_id' => $user->id, 'type' => 'comment', 'body' => "Comment {$i}"]);
+    }
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertInertia(fn ($page) => $page->has('recentActivity', 10));
+});
+
 test('the dashboard can be filtered by board', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

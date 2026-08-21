@@ -72,6 +72,27 @@ test('duplicating a card copies its checklist and items but not its members', fu
     expect($duplicateChecklist->items()->where('name', 'Step 1')->first()->is_checked)->toBeTrue();
 });
 
+test('duplicating a card copies all of its checklists, not just the first', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $first = $card->checklists()->create(['name' => 'Design Requirements', 'position' => 0]);
+    $first->items()->create(['name' => 'Step 1', 'is_checked' => true, 'position' => 0]);
+    $second = $card->checklists()->create(['name' => 'Development Tasks', 'position' => 1]);
+    $second->items()->create(['name' => 'Step A', 'is_checked' => false, 'position' => 0]);
+
+    $this->actingAs($user)->post("/cards/{$card->id}/duplicate");
+
+    $duplicate = $list->cards()->where('name', $card->name.' (copy)')->first();
+    $duplicateChecklists = $duplicate->checklists()->orderBy('position')->with('items')->get();
+    expect($duplicateChecklists)->toHaveCount(2);
+    expect($duplicateChecklists[0]->name)->toBe('Design Requirements');
+    expect($duplicateChecklists[0]->items->first()->name)->toBe('Step 1');
+    expect($duplicateChecklists[1]->name)->toBe('Development Tasks');
+    expect($duplicateChecklists[1]->items->first()->name)->toBe('Step A');
+});
+
 test('duplicating a card shifts the position of cards after it in the same list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

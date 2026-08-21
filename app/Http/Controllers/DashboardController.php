@@ -95,7 +95,7 @@ class DashboardController extends Controller
             ->whereHas('card.boardList', fn ($query) => $query->whereIn('board_id', $boardIds)->whereNull('archived_at'))
             ->with(['user', 'card.boardList.board'])
             ->latest()
-            ->limit(15)
+            ->limit(10)
             ->get();
 
         $boards = Board::whereIn('id', $allBoardIds)->orderBy('name')->get(['id', 'name', 'workspace_id']);

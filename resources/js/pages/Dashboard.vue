@@ -149,7 +149,7 @@ function clearFilters() {
             <template v-else>
                 <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
                     <div
-                        class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-blue-50 to-indigo-100 p-4 shadow-sm dark:border-blue-900/40 dark:from-blue-950/70 dark:to-indigo-950/70"
+                        class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-blue-50 to-indigo-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-blue-900/40 dark:from-blue-950/70 dark:to-indigo-950/70"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium uppercase tracking-wide text-blue-700/80 dark:text-blue-300/80">Total tasks</span>
@@ -160,7 +160,7 @@ function clearFilters() {
                         <p class="mt-2 text-2xl font-semibold text-blue-950 dark:text-blue-50">{{ stats.total }}</p>
                     </div>
                     <div
-                        class="rounded-xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-100 p-4 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/70 dark:to-teal-950/70"
+                        class="rounded-xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-emerald-900/40 dark:from-emerald-950/70 dark:to-teal-950/70"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium uppercase tracking-wide text-emerald-700/80 dark:text-emerald-300/80">Completed</span>
@@ -171,7 +171,7 @@ function clearFilters() {
                         <p class="mt-2 text-2xl font-semibold text-emerald-950 dark:text-emerald-50">{{ stats.completed }}</p>
                     </div>
                     <div
-                        class="rounded-xl border border-red-200/60 bg-gradient-to-br from-red-50 to-rose-100 p-4 shadow-sm dark:border-red-900/40 dark:from-red-950/70 dark:to-rose-950/70"
+                        class="rounded-xl border border-red-200/60 bg-gradient-to-br from-red-50 to-rose-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-red-900/40 dark:from-red-950/70 dark:to-rose-950/70"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium uppercase tracking-wide text-red-700/80 dark:text-red-300/80">Overdue</span>
@@ -182,7 +182,7 @@ function clearFilters() {
                         <p class="mt-2 text-2xl font-semibold text-red-950 dark:text-red-50">{{ stats.overdue }}</p>
                     </div>
                     <div
-                        class="rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-100 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-950/70 dark:to-orange-950/70"
+                        class="rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-amber-900/40 dark:from-amber-950/70 dark:to-orange-950/70"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium uppercase tracking-wide text-amber-700/80 dark:text-amber-300/80">Due within 7 days</span>
@@ -193,7 +193,7 @@ function clearFilters() {
                         <p class="mt-2 text-2xl font-semibold text-amber-950 dark:text-amber-50">{{ stats.dueSoon }}</p>
                     </div>
                     <div
-                        class="rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-purple-100 p-4 shadow-sm dark:border-violet-900/40 dark:from-violet-950/70 dark:to-purple-950/70"
+                        class="rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-purple-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-violet-900/40 dark:from-violet-950/70 dark:to-purple-950/70"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium uppercase tracking-wide text-violet-700/80 dark:text-violet-300/80">Checklist progress</span>
@@ -216,7 +216,7 @@ function clearFilters() {
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div
                         v-if="tasksByList"
-                        class="rounded-xl border border-teal-200/60 bg-gradient-to-br from-white to-teal-50 p-4 shadow-sm dark:border-teal-900/40 dark:from-neutral-900 dark:to-teal-950/40"
+                        class="rounded-xl border border-teal-200/60 bg-gradient-to-br from-white to-teal-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-teal-900/40 dark:from-neutral-900 dark:to-teal-950/40"
                     >
                         <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Tasks by list</h2>
                         <p v-if="tasksByList.length === 0" class="mt-3 text-sm text-muted-foreground">This board has no active lists.</p>
@@ -238,7 +238,7 @@ function clearFilters() {
 
                     <div
                         v-else
-                        class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm dark:border-blue-900/40 dark:from-neutral-900 dark:to-blue-950/40"
+                        class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-blue-900/40 dark:from-neutral-900 dark:to-blue-950/40"
                     >
                         <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Tasks by board</h2>
                         <p v-if="tasksByBoard.length === 0" class="mt-3 text-sm text-muted-foreground">No active tasks yet.</p>
@@ -259,7 +259,7 @@ function clearFilters() {
                     </div>
 
                     <div
-                        class="rounded-xl border border-violet-200/60 bg-gradient-to-br from-white to-violet-50 p-4 shadow-sm dark:border-violet-900/40 dark:from-neutral-900 dark:to-violet-950/40"
+                        class="rounded-xl border border-violet-200/60 bg-gradient-to-br from-white to-violet-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-violet-900/40 dark:from-neutral-900 dark:to-violet-950/40"
                     >
                         <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Workload per member</h2>
                         <p v-if="workload.length === 0" class="mt-3 text-sm text-muted-foreground">No assigned tasks yet.</p>
@@ -284,7 +284,7 @@ function clearFilters() {
                 </div>
 
                 <div
-                    class="rounded-xl border border-indigo-200/60 bg-gradient-to-br from-white to-indigo-50 p-4 shadow-sm dark:border-indigo-900/40 dark:from-neutral-900 dark:to-indigo-950/40"
+                    class="rounded-xl border border-indigo-200/60 bg-gradient-to-br from-white to-indigo-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-indigo-900/40 dark:from-neutral-900 dark:to-indigo-950/40"
                 >
                     <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Recent activity</h2>
                     <p v-if="recentActivity.length === 0" class="mt-3 text-sm text-muted-foreground">Nothing has happened yet.</p>
