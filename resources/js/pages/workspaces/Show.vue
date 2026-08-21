@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HoverLabel from '@/components/HoverLabel.vue';
 import InputError from '@/components/InputError.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import WorkspaceMemberPanel from '@/components/boards/WorkspaceMemberPanel.vue';
@@ -154,15 +155,17 @@ function deleteWorkspace() {
                         </DialogContent>
                     </Dialog>
                     <DropdownMenu v-if="isOwner">
-                        <DropdownMenuTrigger as-child>
-                            <button
-                                type="button"
-                                class="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                aria-label="Workspace actions"
-                            >
-                                <MoreHorizontal class="size-4" />
-                            </button>
-                        </DropdownMenuTrigger>
+                        <HoverLabel label="Workspace actions">
+                            <DropdownMenuTrigger as-child>
+                                <button
+                                    type="button"
+                                    class="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                    aria-label="Workspace actions"
+                                >
+                                    <MoreHorizontal class="size-4" />
+                                </button>
+                            </DropdownMenuTrigger>
+                        </HoverLabel>
                         <DropdownMenuContent align="end" class="w-56">
                             <DropdownMenuItem @click="startEditingWorkspaceName">Rename workspace</DropdownMenuItem>
                             <DropdownMenuItem @click="deleteWorkspace">Delete workspace</DropdownMenuItem>

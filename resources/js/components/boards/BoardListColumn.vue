@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HoverLabel from '@/components/HoverLabel.vue';
 import BoardCard from '@/components/boards/BoardCard.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
@@ -128,15 +129,17 @@ function onColorChange(color: string | null) {
                 </div>
 
                 <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <button
-                            type="button"
-                            class="shrink-0 rounded p-0.5 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-                            aria-label="List actions"
-                        >
-                            <MoreHorizontal class="size-4" />
-                        </button>
-                    </DropdownMenuTrigger>
+                    <HoverLabel label="List actions" side="bottom">
+                        <DropdownMenuTrigger as-child>
+                            <button
+                                type="button"
+                                class="shrink-0 rounded p-0.5 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                                aria-label="List actions"
+                            >
+                                <MoreHorizontal class="size-4" />
+                            </button>
+                        </DropdownMenuTrigger>
+                    </HoverLabel>
                     <DropdownMenuContent align="end" class="w-56">
                         <DropdownMenuItem @click="startEditingName">Rename list</DropdownMenuItem>
                         <DropdownMenuItem @click="duplicateList">Duplicate list</DropdownMenuItem>

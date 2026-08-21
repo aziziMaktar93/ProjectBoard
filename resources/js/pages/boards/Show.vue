@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HoverLabel from '@/components/HoverLabel.vue';
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
 import BoardMemberPanel from '@/components/boards/BoardMemberPanel.vue';
@@ -14,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
@@ -219,14 +221,19 @@ function onBoardColorChange(color: string | null) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div v-if="reorderError" class="mx-4 mt-4 flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
             <p class="text-sm text-red-600 dark:text-red-500">{{ reorderError }}</p>
-            <button
-                type="button"
-                class="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-300"
-                aria-label="Dismiss error"
-                @click="reorderError = null"
-            >
-                &times;
-            </button>
+            <Tooltip>
+                <TooltipTrigger as-child>
+                    <button
+                        type="button"
+                        class="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-300"
+                        aria-label="Dismiss error"
+                        @click="reorderError = null"
+                    >
+                        &times;
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>Dismiss</TooltipContent>
+            </Tooltip>
         </div>
 
         <div class="flex flex-1 flex-col rounded-xl" :style="{ backgroundImage: washGradient(board.background_color) }">
@@ -256,15 +263,17 @@ function onBoardColorChange(color: string | null) {
                     <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
 
                     <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <button
-                                type="button"
-                                class="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                aria-label="Board actions"
-                            >
-                                <MoreHorizontal class="size-4" />
-                            </button>
-                        </DropdownMenuTrigger>
+                        <HoverLabel label="Board actions">
+                            <DropdownMenuTrigger as-child>
+                                <button
+                                    type="button"
+                                    class="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                    aria-label="Board actions"
+                                >
+                                    <MoreHorizontal class="size-4" />
+                                </button>
+                            </DropdownMenuTrigger>
+                        </HoverLabel>
                         <DropdownMenuContent align="end" class="w-56">
                             <DropdownMenuItem @click="startEditingBoardName">Rename board</DropdownMenuItem>
                             <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HoverLabel from '@/components/HoverLabel.vue';
 import MemberAvatar from '@/components/MemberAvatar.vue';
 import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import {
@@ -60,6 +61,10 @@ function archive() {
     router.patch(route('cards.archive', props.card.id), {}, { preserveScroll: true });
 }
 
+function duplicateCard() {
+    router.post(route('cards.duplicate', props.card.id), {}, { preserveScroll: true });
+}
+
 function onColorChange(color: string | null) {
     router.patch(route('cards.update', props.card.id), { color }, { preserveScroll: true });
 }
@@ -108,17 +113,20 @@ function onColorChange(color: string | null) {
             </button>
 
             <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <button
-                        type="button"
-                        class="rounded p-0.5 text-neutral-400 opacity-0 hover:bg-neutral-100 hover:text-neutral-700 group-hover:opacity-100 focus-visible:opacity-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
-                        aria-label="Card actions"
-                    >
-                        <MoreHorizontal class="size-4" />
-                    </button>
-                </DropdownMenuTrigger>
+                <HoverLabel label="Card actions" side="bottom">
+                    <DropdownMenuTrigger as-child>
+                        <button
+                            type="button"
+                            class="rounded p-0.5 text-neutral-400 opacity-0 hover:bg-neutral-100 hover:text-neutral-700 group-hover:opacity-100 focus-visible:opacity-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                            aria-label="Card actions"
+                        >
+                            <MoreHorizontal class="size-4" />
+                        </button>
+                    </DropdownMenuTrigger>
+                </HoverLabel>
                 <DropdownMenuContent align="end" class="w-56">
                     <DropdownMenuItem @click="emit('open', card)">Edit card</DropdownMenuItem>
+                    <DropdownMenuItem @click="duplicateCard">Duplicate card</DropdownMenuItem>
                     <DropdownMenuItem @click="archive">Archive</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>Card color</DropdownMenuLabel>

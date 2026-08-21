@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HoverLabel from '@/components/HoverLabel.vue';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-vue-next';
 import {
@@ -49,10 +50,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
             >
                 <slot />
 
-                <DialogClose class="absolute right-3 top-3 rounded-md p-0.5 transition-colors hover:bg-secondary">
-                    <X class="h-4 w-4" />
-                    <span class="sr-only">Close</span>
-                </DialogClose>
+                <HoverLabel label="Close" side="bottom" class="absolute right-3 top-3">
+                    <DialogClose class="rounded-md p-0.5 transition-colors hover:bg-secondary">
+                        <X class="h-4 w-4" />
+                        <span class="sr-only">Close</span>
+                    </DialogClose>
+                </HoverLabel>
             </DialogContent>
         </DialogOverlay>
     </DialogPortal>

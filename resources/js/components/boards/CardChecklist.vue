@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Checklist, ChecklistItem } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
@@ -99,14 +100,19 @@ function deleteChecklist() {
                 >
                     {{ item.name }}
                 </label>
-                <button
-                    type="button"
-                    class="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-                    aria-label="Delete item"
-                    @click="deleteItem(item)"
-                >
-                    <Trash2 class="size-3.5" />
-                </button>
+                <Tooltip>
+                    <TooltipTrigger as-child>
+                        <button
+                            type="button"
+                            class="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                            aria-label="Delete item"
+                            @click="deleteItem(item)"
+                        >
+                            <Trash2 class="size-3.5" />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete item</TooltipContent>
+                </Tooltip>
             </li>
         </ul>
 

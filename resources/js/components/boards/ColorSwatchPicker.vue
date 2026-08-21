@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { BOARD_ITEM_COLORS } from '@/lib/boardColors';
 import { Check, X } from 'lucide-vue-next';
 
@@ -12,18 +13,21 @@ function select(color: string) {
 <template>
     <div class="space-y-2">
         <div class="grid grid-cols-5 gap-2">
-            <button
-                v-for="color in BOARD_ITEM_COLORS"
-                :key="color"
-                type="button"
-                class="flex h-8 items-center justify-center rounded-md transition hover:opacity-90"
-                :style="{ backgroundColor: color }"
-                :aria-label="`Use color ${color}`"
-                :aria-pressed="model === color"
-                @click="select(color)"
-            >
-                <Check v-if="model === color" class="size-4 text-white drop-shadow" />
-            </button>
+            <Tooltip v-for="color in BOARD_ITEM_COLORS" :key="color">
+                <TooltipTrigger as-child>
+                    <button
+                        type="button"
+                        class="flex h-8 items-center justify-center rounded-md transition hover:opacity-90"
+                        :style="{ backgroundColor: color }"
+                        :aria-label="`Use color ${color}`"
+                        :aria-pressed="model === color"
+                        @click="select(color)"
+                    >
+                        <Check v-if="model === color" class="size-4 text-white drop-shadow" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>{{ color }}</TooltipContent>
+            </Tooltip>
         </div>
 
         <button
