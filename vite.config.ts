@@ -3,31 +3,47 @@ import autoprefixer from 'autoprefixer';
 import laravel from 'laravel-vite-plugin';
 import path from 'path';
 import tailwindcss from 'tailwindcss';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/js/app.ts'],
-            refresh: true,
-        }),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
+
+    return {
+        plugins: [
+            laravel({
+                input: ['resources/js/app.ts'],
+                refresh: true,
+            }),
+            vue({
+                template: {
+                    transformAssetUrls: {
+                        base: null,
+                        includeAbsolute: false,
+                    },
                 },
+            }),
+        ],
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, './resources/js'),
             },
-        }),
-    ],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './resources/js'),
         },
-    },
-    css: {
-        postcss: {
-            plugins: [tailwindcss, autoprefixer],
+        css: {
+            postcss: {
+                plugins: [tailwindcss, autoprefixer],
+            },
         },
-    },
+        server: {
+            host: '0.0.0.0',
+            port: 5174,
+            strictPort: true,
+
+            cors: true,
+
+            hmr: {
+                host: env.VITE_DEV_HOST || 'localhost',
+                port: 5174,
+            },
+        },
+    };
 });
