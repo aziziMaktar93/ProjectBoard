@@ -3,6 +3,7 @@
 use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
+use App\Models\CardActivity;
 use App\Models\User;
 
 test('a user can add a card to a list on their board', function () {
@@ -158,6 +159,30 @@ test('a user can set and clear a card\'s due date', function () {
 
     $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => null])->assertRedirect();
     expect($card->fresh()->due_date)->toBeNull();
+});
+
+test('setting or clearing a due date records a card activity', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01'])->assertRedirect();
+
+    expect($card->activities()->count())->toBe(1);
+    $activity = $card->activities()->latest('id')->first();
+    expect($activity->type)->toBe('due_date_changed');
+    expect($activity->data)->toBe(['due_date' => '2026-09-01']);
+    expect($activity->user_id)->toBe($user->id);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01'])->assertRedirect();
+    expect($card->activities()->count())->toBe(1);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['due_date' => null])->assertRedirect();
+    expect($card->activities()->count())->toBe(2);
+    expect($card->activities()->latest('id')->first()->type)->toBe('due_date_removed');
+
+    expect(CardActivity::where('card_id', $card->id)->count())->toBe(2);
 });
 
 test('setting a due date requires a valid date', function () {

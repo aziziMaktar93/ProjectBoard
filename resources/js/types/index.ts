@@ -72,6 +72,8 @@ export type CardActivityType =
     | 'label_removed'
     | 'attachment_added'
     | 'attachment_removed'
+    | 'due_date_changed'
+    | 'due_date_removed'
     | 'archived'
     | 'restored';
 
@@ -121,7 +123,7 @@ export interface CardAttachment {
 
 export interface BoardEvent {
     id: number;
-    board_id: number;
+    board_id: number | null;
     user_id: number;
     name: string;
     start_date: string;

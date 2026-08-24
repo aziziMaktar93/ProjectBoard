@@ -1,5 +1,9 @@
 import type { CardActivity } from '@/types';
 
+function formatDate(value: string): string {
+    return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export function sentenceFor(activity: CardActivity): string {
     const data = activity.data ?? {};
 
@@ -22,6 +26,10 @@ export function sentenceFor(activity: CardActivity): string {
             return `added ${data.attachment_name} to this card`;
         case 'attachment_removed':
             return `removed ${data.attachment_name} from this card`;
+        case 'due_date_changed':
+            return `set the due date to ${formatDate(data.due_date)}`;
+        case 'due_date_removed':
+            return 'removed the due date from this card';
         case 'archived':
             return 'archived this card';
         case 'restored':

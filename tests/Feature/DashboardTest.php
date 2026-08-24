@@ -40,6 +40,25 @@ test('the dashboard reports total, completed, overdue, and due soon counts', fun
     );
 });
 
+test('a completed card with a past due date does not count as overdue', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+
+    $completedOverdueCard = Card::factory()->for($list)->overdue()->create(['name' => 'Done late']);
+    $checklist = Checklist::factory()->for($completedOverdueCard)->create();
+    $checklist->items()->create(['name' => 'Step', 'is_checked' => true, 'position' => 0]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->where('stats.total', 1)
+            ->where('stats.completed', 1)
+            ->where('stats.overdue', 0)
+    );
+});
+
 test('the dashboard excludes cards that sit in an archived list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

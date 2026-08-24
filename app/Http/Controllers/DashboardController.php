@@ -7,6 +7,7 @@ use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\CardActivity;
 use Barryvdh\Snappy\Facades\SnappyPdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
@@ -78,6 +79,8 @@ class DashboardController extends Controller
             'label_removed' => "removed the {$data['label_name']} label from {$cardName}",
             'attachment_added' => "added {$data['attachment_name']} to {$cardName}",
             'attachment_removed' => "removed {$data['attachment_name']} from {$cardName}",
+            'due_date_changed' => "set the due date on {$cardName} to ".Carbon::parse($data['due_date'])->format('M j, Y'),
+            'due_date_removed' => "removed the due date from {$cardName}",
             'archived' => "archived {$cardName}",
             'restored' => "restored {$cardName}",
             default => "updated {$cardName}",
@@ -125,7 +128,7 @@ class DashboardController extends Controller
         $stats = [
             'total' => $cards->count(),
             'completed' => $cards->filter($isCompleted)->count(),
-            'overdue' => $cards->filter(fn (Card $card) => $card->due_date && $card->due_date < $today)->count(),
+            'overdue' => $cards->filter(fn (Card $card) => $card->due_date && $card->due_date < $today && ! $isCompleted($card))->count(),
             'dueSoon' => $cards->filter(fn (Card $card) => $card->due_date && $card->due_date >= $today && $card->due_date <= $weekAhead)->count(),
             'checklistProgress' => $allChecklistItems->isEmpty()
                 ? null

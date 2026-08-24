@@ -30,7 +30,18 @@ class CardController extends Controller
 
     public function update(UpdateCardRequest $request, Card $card): RedirectResponse
     {
-        $card->update($request->validated());
+        $validated = $request->validated();
+
+        if (array_key_exists('due_date', $validated) && $validated['due_date'] !== $card->due_date) {
+            CardActivity::create([
+                'card_id' => $card->id,
+                'user_id' => $request->user()->id,
+                'type' => $validated['due_date'] === null ? 'due_date_removed' : 'due_date_changed',
+                'data' => ['due_date' => $validated['due_date']],
+            ]);
+        }
+
+        $card->update($validated);
 
         return back();
     }
