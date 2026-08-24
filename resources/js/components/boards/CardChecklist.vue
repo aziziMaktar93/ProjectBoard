@@ -6,7 +6,7 @@ import { celebrate } from '@/composables/useCelebration';
 import type { Checklist, ChecklistItem } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
 
 const props = defineProps<{
     checklist: Checklist;
@@ -64,6 +64,32 @@ watch(progress, (current: number, previous: number) => {
 
 function toggleItem(item: ChecklistItem) {
     router.patch(route('checklist-items.update', item.id), { is_checked: !item.is_checked }, { preserveScroll: true });
+}
+
+const editingItemId = ref<number | null>(null);
+const editingItemName = ref('');
+const editingItemInput = ref<HTMLInputElement | null>(null);
+
+function setEditingItemInputRef(el: Element | ComponentPublicInstance | null) {
+    editingItemInput.value = el as HTMLInputElement | null;
+}
+
+async function startEditingItem(item: ChecklistItem) {
+    editingItemId.value = item.id;
+    editingItemName.value = item.name;
+    await nextTick();
+    editingItemInput.value?.focus();
+    editingItemInput.value?.select();
+}
+
+function saveItemName(item: ChecklistItem) {
+    editingItemId.value = null;
+
+    if (!editingItemName.value.trim() || editingItemName.value === item.name) {
+        return;
+    }
+
+    router.patch(route('checklist-items.update', item.id), { name: editingItemName.value }, { preserveScroll: true });
 }
 
 function deleteItem(item: ChecklistItem) {
@@ -139,19 +165,30 @@ function deleteChecklist() {
         <ul class="space-y-1">
             <li v-for="item in visibleItems" :key="item.id" class="group flex items-center gap-2">
                 <input
-                    :id="`checklist-item-${item.id}`"
                     type="checkbox"
                     :checked="item.is_checked"
+                    :aria-labelledby="`checklist-item-label-${item.id}`"
                     class="size-4 shrink-0 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500 dark:border-neutral-600"
                     @change="toggleItem(item)"
                 />
-                <label
-                    :for="`checklist-item-${item.id}`"
-                    class="flex-1 cursor-pointer text-sm"
+                <input
+                    v-if="editingItemId === item.id"
+                    :ref="setEditingItemInputRef"
+                    v-model="editingItemName"
+                    class="min-w-0 flex-1 truncate rounded bg-white px-1 text-sm outline-none ring-2 ring-ring dark:bg-neutral-800"
+                    @blur="saveItemName(item)"
+                    @keydown.enter="saveItemName(item)"
+                    @keydown.escape="editingItemId = null"
+                />
+                <span
+                    v-else
+                    :id="`checklist-item-label-${item.id}`"
+                    class="min-w-0 flex-1 cursor-text truncate rounded px-1 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     :class="item.is_checked ? 'text-muted-foreground line-through' : ''"
+                    @click="startEditingItem(item)"
                 >
                     {{ item.name }}
-                </label>
+                </span>
                 <Tooltip>
                     <TooltipTrigger as-child>
                         <button
