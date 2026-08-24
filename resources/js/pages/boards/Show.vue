@@ -20,7 +20,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { CalendarDays, MoreHorizontal } from 'lucide-vue-next';
+import { Archive, CalendarDays, MoreHorizontal, Users } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
@@ -253,7 +253,7 @@ function onBoardColorChange(color: string | null) {
         </div>
 
         <div class="flex flex-1 flex-col rounded-xl" :style="{ backgroundImage: washGradient(board.background_color) }">
-            <div class="flex items-center justify-between border-b border-black/5 p-4 dark:border-white/5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 p-4 dark:border-white/5">
                 <div class="flex min-w-0 items-center gap-2">
                     <span v-if="board.background_color" class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: board.background_color }" />
                     <input
@@ -278,11 +278,18 @@ function onBoardColorChange(color: string | null) {
                     <Button as-child variant="outline" size="sm">
                         <Link :href="route('boards.calendar', board.id)">
                             <CalendarDays class="size-3.5" />
-                            Calendar
+                            <span class="hidden sm:inline">Calendar</span>
                         </Link>
                     </Button>
-                    <Button variant="outline" size="sm" @click="showMembers = true">Members ({{ (board.members ?? []).length }})</Button>
-                    <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
+                    <Button variant="outline" size="sm" @click="showMembers = true">
+                        <Users class="size-3.5" />
+                        <span class="hidden sm:inline">Members ({{ (board.members ?? []).length }})</span>
+                        <span class="sm:hidden">{{ (board.members ?? []).length }}</span>
+                    </Button>
+                    <Button variant="outline" size="sm" @click="showArchive = true">
+                        <Archive class="size-3.5" />
+                        <span class="hidden sm:inline">View archive</span>
+                    </Button>
 
                     <DropdownMenu>
                         <HoverLabel label="Board actions">

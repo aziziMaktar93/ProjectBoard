@@ -99,7 +99,7 @@ function deleteWorkspace() {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-4 rounded-xl p-4" :style="{ backgroundImage: washGradient(workspace.background_color) }">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex min-w-0 items-center gap-2">
                     <input
                         v-if="isEditingWorkspaceName"
