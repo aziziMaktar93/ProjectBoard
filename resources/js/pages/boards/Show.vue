@@ -19,15 +19,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { MoreHorizontal } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { CalendarDays, MoreHorizontal } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{
     board: Board;
     archivedLists: BoardList[];
     archivedCards: Card[];
+    initialCardId: number | null;
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -176,6 +177,21 @@ function openCard(card: Card) {
     showCardModal.value = true;
 }
 
+onMounted(() => {
+    if (!props.initialCardId) {
+        return;
+    }
+
+    for (const list of lists.value) {
+        const match = list.cards.find((card: Card) => card.id === props.initialCardId);
+
+        if (match) {
+            openCard(match);
+            break;
+        }
+    }
+});
+
 function archiveBoard() {
     if (!confirm(`Archive the board "${props.board.name}"?`)) {
         return;
@@ -259,6 +275,12 @@ function onBoardColorChange(color: string | null) {
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="route('boards.calendar', board.id)">
+                            <CalendarDays class="size-3.5" />
+                            Calendar
+                        </Link>
+                    </Button>
                     <Button variant="outline" size="sm" @click="showMembers = true">Members ({{ (board.members ?? []).length }})</Button>
                     <Button variant="outline" size="sm" @click="showArchive = true">View archive</Button>
 

@@ -65,4 +65,9 @@ class Board extends Model
     {
         return $this->hasMany(Label::class);
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(BoardEvent::class);
+    }
 }

@@ -72,6 +72,29 @@ class BoardController extends Controller
             'board' => $board,
             'archivedLists' => $archivedLists,
             'archivedCards' => $archivedCards,
+            'initialCardId' => $request->integer('card') ?: null,
+        ]);
+    }
+
+    public function calendar(Request $request, Board $board): Response
+    {
+        Gate::authorize('view', $board);
+
+        $board->load(['workspace']);
+
+        $cards = Card::query()
+            ->whereHas('boardList', fn ($query) => $query->where('board_id', $board->id)->whereNull('archived_at'))
+            ->whereNull('archived_at')
+            ->whereNotNull('due_date')
+            ->orderBy('due_date')
+            ->get(['id', 'board_list_id', 'name', 'due_date', 'color']);
+
+        $events = $board->events()->with('user')->orderBy('start_date')->get();
+
+        return Inertia::render('boards/Calendar', [
+            'board' => $board,
+            'cards' => $cards,
+            'events' => $events,
         ]);
     }
 

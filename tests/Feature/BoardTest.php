@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Board;
+use App\Models\BoardEvent;
+use App\Models\BoardList;
+use App\Models\Card;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -201,4 +204,46 @@ test('a user cannot delete another user\'s archived board', function () {
 
     $response->assertForbidden();
     expect(Board::find($board->id))->not->toBeNull();
+});
+
+test('a board member can view the calendar with due cards and events', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+    Card::factory()->for($list)->create(['name' => 'No due date']);
+    BoardEvent::factory()->for($board)->for($owner)->create(['name' => 'Sprint Planning', 'start_date' => '2026-09-10']);
+
+    $response = $this->actingAs($owner)->get("/boards/{$board->id}/calendar");
+
+    $response->assertOk();
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('boards/Calendar')
+            ->has('cards', 1)
+            ->where('cards.0.name', 'Ship it')
+            ->has('events', 1)
+            ->where('events.0.name', 'Sprint Planning')
+    );
+});
+
+test('a user who is not a board member cannot view the calendar', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->get("/boards/{$board->id}/calendar");
+
+    $response->assertForbidden();
+});
+
+test('the board show page passes through a card query param to auto-open it', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($owner)->get("/boards/{$board->id}?card={$card->id}");
+
+    $response->assertInertia(fn ($page) => $page->where('initialCardId', $card->id));
 });

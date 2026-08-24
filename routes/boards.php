@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardEventController;
 use App\Http\Controllers\BoardLabelController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\BoardMemberController;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('boards/{board}', [BoardController::class, 'show'])->name('boards.show');
+    Route::get('boards/{board}/calendar', [BoardController::class, 'calendar'])->name('boards.calendar');
     Route::patch('boards/{board}', [BoardController::class, 'update'])->name('boards.update');
     Route::patch('boards/{board}/archive', [BoardController::class, 'archive'])->name('boards.archive');
     Route::patch('boards/{board}/restore', [BoardController::class, 'restore'])->name('boards.restore');
@@ -26,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('boards/{board}/labels', [BoardLabelController::class, 'store'])->name('board-labels.store');
     Route::patch('labels/{label}', [BoardLabelController::class, 'update'])->name('board-labels.update');
     Route::delete('labels/{label}', [BoardLabelController::class, 'destroy'])->name('board-labels.destroy');
+
+    Route::post('boards/{board}/events', [BoardEventController::class, 'store'])->name('board-events.store');
+    Route::patch('events/{event}', [BoardEventController::class, 'update'])->name('board-events.update');
+    Route::delete('events/{event}', [BoardEventController::class, 'destroy'])->name('board-events.destroy');
 
     Route::post('boards/{board}/lists', [BoardListController::class, 'store'])->name('board-lists.store');
     Route::patch('boards/{board}/lists/reorder', [BoardListController::class, 'reorder'])->name('board-lists.reorder');

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Kanban, LayoutGrid } from 'lucide-vue-next';
+import { CalendarDays, Kanban, LayoutGrid, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -23,9 +23,19 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Calendar',
+        href: '/calendar',
+        icon: CalendarDays,
+    },
+    {
         title: 'Workspaces',
         href: '/workspaces',
         icon: Kanban,
+    },
+    {
+        title: 'Members',
+        href: '/members',
+        icon: Users,
     },
 ];
 </script>

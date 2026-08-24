@@ -119,6 +119,19 @@ export interface CardAttachment {
     user?: User;
 }
 
+export interface BoardEvent {
+    id: number;
+    board_id: number;
+    user_id: number;
+    name: string;
+    start_date: string;
+    end_date: string | null;
+    color: string | null;
+    created_at: string;
+    updated_at: string;
+    user?: User;
+}
+
 export interface Card {
     id: number;
     board_list_id: number;

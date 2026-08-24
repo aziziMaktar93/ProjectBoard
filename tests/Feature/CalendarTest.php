@@ -1,0 +1,59 @@
+<?php
+
+use App\Models\Board;
+use App\Models\BoardEvent;
+use App\Models\BoardList;
+use App\Models\Card;
+use App\Models\User;
+
+test('the global calendar includes due cards and events from every board the user belongs to', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+    Card::factory()->for($list)->create(['name' => 'No due date']);
+    BoardEvent::factory()->for($board)->for($user)->create(['name' => 'Sprint Planning', 'start_date' => '2026-09-10']);
+
+    $response = $this->actingAs($user)->get('/calendar');
+
+    $response->assertOk();
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('Calendar')
+            ->has('cards', 1)
+            ->where('cards.0.name', 'Ship it')
+            ->where('cards.0.board_id', $board->id)
+            ->has('events', 1)
+            ->where('events.0.name', 'Sprint Planning')
+            ->where('boards.0.name', 'Engineering')
+            ->where('boards.0.workspace_name', $board->workspace->name)
+            ->has('boards', 1)
+    );
+});
+
+test('the global calendar excludes boards the user is not a member of', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['due_date' => '2026-09-05']);
+
+    $otherBoard = Board::factory()->create();
+    $otherList = BoardList::factory()->for($otherBoard)->create();
+    Card::factory()->for($otherList)->create(['due_date' => '2026-09-06']);
+    BoardEvent::factory()->for($otherBoard)->create();
+
+    $response = $this->actingAs($user)->get('/calendar');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('cards', 1)
+            ->has('events', 0)
+            ->has('boards', 1)
+    );
+});
+
+test('a guest cannot view the calendar', function () {
+    $response = $this->get('/calendar');
+
+    $response->assertRedirect('/login');
+});
