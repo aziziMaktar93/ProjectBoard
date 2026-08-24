@@ -23,14 +23,14 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Calendar',
-        href: '/calendar',
-        icon: CalendarDays,
-    },
-    {
         title: 'Workspaces',
         href: '/workspaces',
         icon: Kanban,
+    },
+    {
+        title: 'Calendar',
+        href: '/calendar',
+        icon: CalendarDays,
     },
     {
         title: 'Members',
