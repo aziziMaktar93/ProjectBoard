@@ -81,7 +81,7 @@ const features = [
             <section class="mx-auto max-w-6xl px-6 py-20 text-center sm:py-28">
                 <div class="mx-auto mb-8 flex flex-col items-center gap-4">
                     <AppLogoIcon class="size-20 rounded-2xl shadow-lg shadow-blue-500/20" />
-                    <img src="/logo-text.png" alt="ProjectBoard" class="h-10 w-auto" />
+                    <img src="/logo-text.png" alt="ProjectBoard" class="h-16 w-auto" />
                 </div>
 
                 <h1 class="mx-auto max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
