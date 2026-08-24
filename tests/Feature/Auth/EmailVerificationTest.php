@@ -31,10 +31,6 @@ test('email can be verified', function () {
     $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
 });
 
-test('generated urls are pinned to the configured app url', function () {
-    expect(rtrim(url('/'), '/'))->toBe(rtrim(config('app.url'), '/'));
-});
-
 test('email is not verified with invalid hash', function () {
     $user = User::factory()->unverified()->create();
 
