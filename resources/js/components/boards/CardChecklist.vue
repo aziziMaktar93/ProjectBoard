@@ -2,10 +2,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { celebrate } from '@/composables/useCelebration';
 import type { Checklist, ChecklistItem } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     checklist: Checklist;
@@ -53,6 +54,12 @@ const progress = computed(() => {
     const checked = props.checklist.items.filter((item) => item.is_checked).length;
 
     return Math.round((checked / total) * 100);
+});
+
+watch(progress, (current: number, previous: number) => {
+    if (current === 100 && previous < 100 && props.checklist.items.length > 0) {
+        celebrate();
+    }
 });
 
 function toggleItem(item: ChecklistItem) {
