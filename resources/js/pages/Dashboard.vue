@@ -6,7 +6,7 @@ import { formatTimestamp, sentenceFor } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardTaskCount, BreadcrumbItem, CardActivity, DashboardStats, MemberWorkload } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AlertTriangle, CheckCircle2, Clock, Columns3, Kanban, ListChecks, ListFilter, Percent, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, Clock, Columns3, Download, Kanban, ListChecks, ListFilter, Percent, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -71,6 +71,13 @@ function onBoardChange(value: string) {
 
 const hasActiveFilters = computed(() => selectedWorkspace.value !== ALL || selectedBoard.value !== ALL);
 
+const reportUrl = computed(() =>
+    route('dashboard.report', {
+        workspace_id: selectedWorkspace.value === ALL ? undefined : selectedWorkspace.value,
+        board_id: selectedBoard.value === ALL ? undefined : selectedBoard.value,
+    }),
+);
+
 function clearFilters() {
     selectedWorkspace.value = ALL;
     selectedBoard.value = ALL;
@@ -89,52 +96,60 @@ function clearFilters() {
                     <p class="text-sm text-muted-foreground">An overview of your active tasks across every board you belong to.</p>
                 </div>
 
-                <div
-                    v-if="hasBoards"
-                    class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
-                >
-                    <div class="flex items-center gap-1.5 pl-2 text-xs font-medium text-muted-foreground">
-                        <ListFilter class="size-3.5" />
-                        Filter
+                <div v-if="hasBoards" class="flex flex-wrap items-center gap-2">
+                    <div
+                        class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
+                    >
+                        <div class="flex items-center gap-1.5 pl-2 text-xs font-medium text-muted-foreground">
+                            <ListFilter class="size-3.5" />
+                            Filter
+                        </div>
+
+                        <Select :model-value="selectedWorkspace" @update:model-value="onWorkspaceChange">
+                            <SelectTrigger
+                                class="h-8 w-48 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm transition hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900"
+                            >
+                                <span class="flex min-w-0 items-center gap-1.5 truncate">
+                                    <Kanban class="size-3.5 shrink-0 text-muted-foreground" />
+                                    <SelectValue placeholder="All workspaces" />
+                                </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="ALL">All workspaces</SelectItem>
+                                <SelectItem v-for="workspace in workspaces" :key="workspace.id" :value="String(workspace.id)">
+                                    {{ workspace.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select :model-value="selectedBoard" @update:model-value="onBoardChange">
+                            <SelectTrigger
+                                class="h-8 w-48 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm transition hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900"
+                            >
+                                <span class="flex min-w-0 items-center gap-1.5 truncate">
+                                    <Columns3 class="size-3.5 shrink-0 text-muted-foreground" />
+                                    <SelectValue placeholder="All boards" />
+                                </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="ALL">All boards</SelectItem>
+                                <SelectItem v-for="board in availableBoards" :key="board.id" :value="String(board.id)">
+                                    {{ board.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Button v-if="hasActiveFilters" variant="ghost" size="sm" class="h-8 gap-1 text-xs" @click="clearFilters">
+                            <X class="size-3.5" />
+                            Clear
+                        </Button>
                     </div>
 
-                    <Select :model-value="selectedWorkspace" @update:model-value="onWorkspaceChange">
-                        <SelectTrigger
-                            class="h-8 w-48 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm transition hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900"
-                        >
-                            <span class="flex min-w-0 items-center gap-1.5 truncate">
-                                <Kanban class="size-3.5 shrink-0 text-muted-foreground" />
-                                <SelectValue placeholder="All workspaces" />
-                            </span>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem :value="ALL">All workspaces</SelectItem>
-                            <SelectItem v-for="workspace in workspaces" :key="workspace.id" :value="String(workspace.id)">
-                                {{ workspace.name }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    <Select :model-value="selectedBoard" @update:model-value="onBoardChange">
-                        <SelectTrigger
-                            class="h-8 w-48 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm transition hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900"
-                        >
-                            <span class="flex min-w-0 items-center gap-1.5 truncate">
-                                <Columns3 class="size-3.5 shrink-0 text-muted-foreground" />
-                                <SelectValue placeholder="All boards" />
-                            </span>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem :value="ALL">All boards</SelectItem>
-                            <SelectItem v-for="board in availableBoards" :key="board.id" :value="String(board.id)">
-                                {{ board.name }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    <Button v-if="hasActiveFilters" variant="ghost" size="sm" class="h-8 gap-1 text-xs" @click="clearFilters">
-                        <X class="size-3.5" />
-                        Clear
+                    <Button as-child variant="outline" size="sm" class="h-8 gap-1.5 text-xs">
+                        <a :href="reportUrl">
+                            <Download class="size-3.5" />
+                            Download report
+                        </a>
                     </Button>
                 </div>
             </div>

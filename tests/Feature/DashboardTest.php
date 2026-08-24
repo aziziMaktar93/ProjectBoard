@@ -5,6 +5,7 @@ use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\Checklist;
 use App\Models\User;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 
 test('the dashboard reports total, completed, overdue, and due soon counts', function () {
     $user = User::factory()->create();
@@ -258,4 +259,43 @@ test('the dashboard reports no boards for a brand new user', function () {
             ->where('stats.total', 0)
             ->where('hasBoards', false)
     );
+});
+
+test('a user can download a PDF dashboard report', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create();
+
+    $response = $this->actingAs($user)->get('/dashboard/report');
+
+    $response->assertOk();
+
+    SnappyPdf::assertViewIs('reports.dashboard');
+    SnappyPdf::assertViewHas('scopeLabel', 'All boards');
+    SnappyPdf::assertViewHas('stats', fn ($stats) => $stats['total'] === 1);
+    SnappyPdf::assertSee('Engineering');
+});
+
+test('the dashboard report respects the board filter', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create();
+
+    $otherBoard = Board::factory()->for($user)->create(['workspace_id' => $board->workspace_id, 'name' => 'Marketing']);
+    $otherList = BoardList::factory()->for($otherBoard)->create();
+    Card::factory()->for($otherList)->create();
+
+    $response = $this->actingAs($user)->get("/dashboard/report?board_id={$board->id}");
+
+    $response->assertOk();
+
+    SnappyPdf::assertViewHas('scopeLabel', 'Engineering');
+    SnappyPdf::assertSee('Engineering');
+    SnappyPdf::assertDontSee('Marketing');
 });

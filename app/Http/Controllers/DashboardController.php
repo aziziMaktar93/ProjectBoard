@@ -6,13 +6,88 @@ use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\CardActivity;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
     public function index(Request $request): Response
+    {
+        $data = $this->buildReportData($request);
+
+        return Inertia::render('Dashboard', [
+            'stats' => $data['stats'],
+            'tasksByBoard' => $data['tasksByBoard'],
+            'tasksByList' => $data['tasksByList'],
+            'workload' => $data['workload'],
+            'recentActivity' => $data['recentActivity'],
+            'hasBoards' => $data['allBoardIds']->isNotEmpty(),
+            'workspaces' => $data['workspaces'],
+            'boards' => $data['boards'],
+            'filters' => [
+                'workspace_id' => $data['selectedWorkspaceId'],
+                'board_id' => $data['selectedBoardId'],
+            ],
+        ]);
+    }
+
+    public function report(Request $request): HttpResponse
+    {
+        $data = $this->buildReportData($request);
+
+        $scopeLabel = 'All boards';
+
+        if ($data['selectedBoardId']) {
+            $scopeLabel = $data['boards']->firstWhere('id', $data['selectedBoardId'])->name ?? $scopeLabel;
+        } elseif ($data['selectedWorkspaceId']) {
+            $scopeLabel = $data['workspaces']->firstWhere('id', $data['selectedWorkspaceId'])->name ?? $scopeLabel;
+        }
+
+        return SnappyPdf::loadView('reports.dashboard', [
+            'stats' => $data['stats'],
+            'tasksByBoard' => $data['tasksByBoard'],
+            'tasksByList' => $data['tasksByList'],
+            'workload' => $data['workload'],
+            'recentActivity' => $data['recentActivity']->map(fn (CardActivity $activity) => [
+                'description' => $this->describeActivity($activity),
+                'user_name' => $activity->user->name,
+                'board_name' => $activity->card->boardList->board->name ?? null,
+                'created_at' => $activity->created_at,
+            ]),
+            'scopeLabel' => $scopeLabel,
+            'generatedAt' => now(),
+        ])->download('dashboard-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    private function describeActivity(CardActivity $activity): string
+    {
+        $cardName = $activity->card->name ?? 'a card';
+        $data = $activity->data ?? [];
+
+        return match ($activity->type) {
+            'comment' => "commented on {$cardName}",
+            'moved' => "moved {$cardName} from {$data['from_list']} to {$data['to_list']}",
+            'checklist_item_completed' => "completed {$data['item_name']} on {$cardName}",
+            'checklist_item_uncompleted' => "marked {$data['item_name']} incomplete on {$cardName}",
+            'member_added' => "added {$data['member_name']} to {$cardName}",
+            'member_removed' => "removed {$data['member_name']} from {$cardName}",
+            'label_added' => "added the {$data['label_name']} label to {$cardName}",
+            'label_removed' => "removed the {$data['label_name']} label from {$cardName}",
+            'attachment_added' => "added {$data['attachment_name']} to {$cardName}",
+            'attachment_removed' => "removed {$data['attachment_name']} from {$cardName}",
+            'archived' => "archived {$cardName}",
+            'restored' => "restored {$cardName}",
+            default => "updated {$cardName}",
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildReportData(Request $request): array
     {
         $user = $request->user();
         $allBoardIds = $user->boardMemberships()->pluck('boards.id');
@@ -100,19 +175,17 @@ class DashboardController extends Controller
 
         $boards = Board::whereIn('id', $allBoardIds)->orderBy('name')->get(['id', 'name', 'workspace_id']);
 
-        return Inertia::render('Dashboard', [
+        return [
             'stats' => $stats,
             'tasksByBoard' => $tasksByBoard,
             'tasksByList' => $tasksByList,
             'workload' => $workload,
             'recentActivity' => $recentActivity,
-            'hasBoards' => $allBoardIds->isNotEmpty(),
+            'allBoardIds' => $allBoardIds,
             'workspaces' => $workspaces,
             'boards' => $boards,
-            'filters' => [
-                'workspace_id' => $selectedWorkspaceId,
-                'board_id' => $selectedBoardId,
-            ],
-        ]);
+            'selectedWorkspaceId' => $selectedWorkspaceId,
+            'selectedBoardId' => $selectedBoardId,
+        ];
     }
 }
