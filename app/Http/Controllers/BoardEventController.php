@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Boards\StoreBoardEventRequest;
+use App\Http\Requests\Boards\StoreGeneralEventRequest;
 use App\Http\Requests\Boards\UpdateBoardEventRequest;
 use App\Models\Board;
 use App\Models\BoardEvent;
@@ -22,6 +23,17 @@ class BoardEventController extends Controller
         return back();
     }
 
+    public function storeGeneral(StoreGeneralEventRequest $request): RedirectResponse
+    {
+        BoardEvent::create([
+            ...$request->validated(),
+            'board_id' => null,
+            'user_id' => $request->user()->id,
+        ]);
+
+        return back();
+    }
+
     public function update(UpdateBoardEventRequest $request, BoardEvent $event): RedirectResponse
     {
         $event->update($request->validated());
@@ -31,7 +43,11 @@ class BoardEventController extends Controller
 
     public function destroy(Request $request, BoardEvent $event): RedirectResponse
     {
-        Gate::authorize('update', $event->board);
+        if ($event->board_id === null) {
+            abort_unless($event->user_id === $request->user()->id, 403);
+        } else {
+            Gate::authorize('update', $event->board);
+        }
 
         $event->delete();
 

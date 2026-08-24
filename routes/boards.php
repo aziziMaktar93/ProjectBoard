@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('labels/{label}', [BoardLabelController::class, 'destroy'])->name('board-labels.destroy');
 
     Route::post('boards/{board}/events', [BoardEventController::class, 'store'])->name('board-events.store');
+    Route::post('events', [BoardEventController::class, 'storeGeneral'])->name('events.store');
     Route::patch('events/{event}', [BoardEventController::class, 'update'])->name('board-events.update');
     Route::delete('events/{event}', [BoardEventController::class, 'destroy'])->name('board-events.destroy');
 

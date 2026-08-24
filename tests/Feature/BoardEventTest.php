@@ -116,3 +116,76 @@ test('a non-board-member cannot delete an event', function () {
     $response->assertForbidden();
     expect(BoardEvent::find($event->id))->not->toBeNull();
 });
+
+test('a user can create a general event not tied to any board', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->post('/events', [
+        'name' => 'Personal Reminder',
+        'start_date' => '2026-09-01',
+        'color' => '#f5cd47',
+    ]);
+
+    $response->assertRedirect();
+    $event = BoardEvent::where('name', 'Personal Reminder')->first();
+    expect($event)->not->toBeNull();
+    expect($event->board_id)->toBeNull();
+    expect($event->user_id)->toBe($user->id);
+});
+
+test('a guest cannot create a general event', function () {
+    $response = $this->post('/events', [
+        'name' => 'Personal Reminder',
+        'start_date' => '2026-09-01',
+    ]);
+
+    $response->assertRedirect('/login');
+});
+
+test('a user can update their own general event', function () {
+    $user = User::factory()->create();
+    $event = BoardEvent::factory()->for($user)->create(['board_id' => null, 'name' => 'Old Name']);
+
+    $response = $this->actingAs($user)->patch("/events/{$event->id}", [
+        'name' => 'New Name',
+        'start_date' => '2026-10-01',
+    ]);
+
+    $response->assertRedirect();
+    expect($event->fresh()->name)->toBe('New Name');
+});
+
+test('a user cannot update another user\'s general event', function () {
+    $user = User::factory()->create();
+    $event = BoardEvent::factory()->for($user)->create(['board_id' => null, 'name' => 'Old Name']);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/events/{$event->id}", [
+        'name' => 'New Name',
+        'start_date' => '2026-10-01',
+    ]);
+
+    $response->assertForbidden();
+    expect($event->fresh()->name)->toBe('Old Name');
+});
+
+test('a user can delete their own general event', function () {
+    $user = User::factory()->create();
+    $event = BoardEvent::factory()->for($user)->create(['board_id' => null]);
+
+    $response = $this->actingAs($user)->delete("/events/{$event->id}");
+
+    $response->assertRedirect();
+    expect(BoardEvent::find($event->id))->toBeNull();
+});
+
+test('a user cannot delete another user\'s general event', function () {
+    $user = User::factory()->create();
+    $event = BoardEvent::factory()->for($user)->create(['board_id' => null]);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->delete("/events/{$event->id}");
+
+    $response->assertForbidden();
+    expect(BoardEvent::find($event->id))->not->toBeNull();
+});

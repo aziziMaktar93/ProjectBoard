@@ -93,6 +93,10 @@ function submitEditEvent(eventId: number) {
 }
 
 function deleteEvent(eventId: number) {
+    if (!confirm('Delete this event? This cannot be undone.')) {
+        return;
+    }
+
     router.delete(route('board-events.destroy', eventId), {
         preserveScroll: true,
         onSuccess: () => {
@@ -129,110 +133,114 @@ function deleteEvent(eventId: number) {
                 </Button>
             </div>
 
-            <div class="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700">
+            <div class="-mx-4 overflow-x-auto px-4 pb-2">
                 <div
-                    v-for="weekday in WEEKDAYS"
-                    :key="weekday"
-                    class="bg-neutral-50 p-2 text-center text-xs font-semibold text-muted-foreground dark:bg-neutral-900"
+                    class="grid min-w-[700px] grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700"
                 >
-                    {{ weekday }}
-                </div>
+                    <div
+                        v-for="weekday in WEEKDAYS"
+                        :key="weekday"
+                        class="bg-neutral-50 p-2 text-center text-xs font-semibold text-muted-foreground dark:bg-neutral-900"
+                    >
+                        {{ weekday }}
+                    </div>
 
-                <div
-                    v-for="day in gridDays"
-                    :key="day.key"
-                    class="group flex min-h-28 flex-col gap-1 bg-white p-1.5 dark:bg-neutral-950"
-                    :class="!day.inMonth ? 'opacity-40' : ''"
-                >
-                    <div class="flex items-center justify-between">
-                        <span
-                            class="flex size-5 items-center justify-center rounded-full text-xs"
-                            :class="day.key === todayKey ? 'bg-primary font-semibold text-primary-foreground' : 'text-muted-foreground'"
+                    <div
+                        v-for="day in gridDays"
+                        :key="day.key"
+                        class="group flex min-h-28 flex-col gap-1 bg-white p-1.5 dark:bg-neutral-950"
+                        :class="!day.inMonth ? 'opacity-40' : ''"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="flex size-5 items-center justify-center rounded-full text-xs"
+                                :class="day.key === todayKey ? 'bg-primary font-semibold text-primary-foreground' : 'text-muted-foreground'"
+                            >
+                                {{ day.date.getDate() }}
+                            </span>
+
+                            <Popover :open="openAddPopover === day.key" @update:open="(v) => (openAddPopover = v ? day.key : null)">
+                                <PopoverTrigger as-child>
+                                    <button
+                                        type="button"
+                                        class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
+                                        aria-label="Add event"
+                                        @click="startAddEvent(day.key)"
+                                    >
+                                        <Plus class="size-3.5" />
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent class="w-64">
+                                    <p class="mb-2 text-xs font-semibold text-muted-foreground">Add event</p>
+                                    <form class="space-y-2" @submit.prevent="submitAddEvent">
+                                        <Input v-model="addEventForm.name" placeholder="Event name" autofocus />
+                                        <div class="flex items-center gap-2">
+                                            <Input v-model="addEventForm.start_date" type="date" class="flex-1" />
+                                            <span class="text-xs text-muted-foreground">to</span>
+                                            <Input v-model="addEventForm.end_date" type="date" class="flex-1" />
+                                        </div>
+                                        <ColorSwatchPicker v-model="addEventForm.color" />
+                                        <Button type="submit" size="sm" class="w-full" :disabled="addEventForm.processing">Add</Button>
+                                    </form>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <Link
+                            v-for="card in cardsForDay(day.key)"
+                            :key="`card-${card.id}`"
+                            :href="route('boards.show', { board: board.id, card: card.id })"
+                            class="truncate rounded px-1.5 py-0.5 text-xs font-medium hover:opacity-80"
+                            :style="
+                                card.color
+                                    ? { backgroundColor: card.color, color: 'white' }
+                                    : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
+                            "
                         >
-                            {{ day.date.getDate() }}
-                        </span>
+                            {{ card.name }}
+                        </Link>
 
-                        <Popover :open="openAddPopover === day.key" @update:open="(v) => (openAddPopover = v ? day.key : null)">
+                        <Popover
+                            v-for="event in eventsForDay(day.key)"
+                            :key="`event-${event.id}`"
+                            :open="openEditPopover === `${day.key}-${event.id}`"
+                            @update:open="(v) => (openEditPopover = v ? `${day.key}-${event.id}` : null)"
+                        >
                             <PopoverTrigger as-child>
                                 <button
                                     type="button"
-                                    class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
-                                    aria-label="Add event"
-                                    @click="startAddEvent(day.key)"
+                                    class="truncate rounded px-1.5 py-0.5 text-left text-xs font-medium text-white hover:opacity-80"
+                                    :style="{ backgroundColor: event.color ?? '#8590a2' }"
+                                    @click="startEditEvent(event)"
                                 >
-                                    <Plus class="size-3.5" />
+                                    {{ event.name }}
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent class="w-64">
-                                <p class="mb-2 text-xs font-semibold text-muted-foreground">Add event</p>
-                                <form class="space-y-2" @submit.prevent="submitAddEvent">
-                                    <Input v-model="addEventForm.name" placeholder="Event name" autofocus />
+                                <div class="mb-2 flex items-center justify-between">
+                                    <p class="text-xs font-semibold text-muted-foreground">Edit event</p>
+                                    <button
+                                        type="button"
+                                        class="text-muted-foreground hover:text-destructive"
+                                        aria-label="Delete event"
+                                        @click="deleteEvent(event.id)"
+                                    >
+                                        <Trash2 class="size-3.5" />
+                                    </button>
+                                </div>
+                                <form class="space-y-2" @submit.prevent="submitEditEvent(event.id)">
+                                    <Input v-model="editEventForm.name" placeholder="Event name" autofocus />
                                     <div class="flex items-center gap-2">
-                                        <Input v-model="addEventForm.start_date" type="date" class="flex-1" />
+                                        <Input v-model="editEventForm.start_date" type="date" class="flex-1" />
                                         <span class="text-xs text-muted-foreground">to</span>
-                                        <Input v-model="addEventForm.end_date" type="date" class="flex-1" />
+                                        <Input v-model="editEventForm.end_date" type="date" class="flex-1" />
                                     </div>
-                                    <ColorSwatchPicker v-model="addEventForm.color" />
-                                    <Button type="submit" size="sm" class="w-full" :disabled="addEventForm.processing">Add</Button>
+                                    <ColorSwatchPicker v-model="editEventForm.color" />
+                                    <Button type="submit" size="sm" class="w-full" :disabled="editEventForm.processing">Save</Button>
                                 </form>
                             </PopoverContent>
                         </Popover>
                     </div>
-
-                    <Link
-                        v-for="card in cardsForDay(day.key)"
-                        :key="`card-${card.id}`"
-                        :href="route('boards.show', { board: board.id, card: card.id })"
-                        class="truncate rounded px-1.5 py-0.5 text-xs font-medium hover:opacity-80"
-                        :style="
-                            card.color
-                                ? { backgroundColor: card.color, color: 'white' }
-                                : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
-                        "
-                    >
-                        {{ card.name }}
-                    </Link>
-
-                    <Popover
-                        v-for="event in eventsForDay(day.key)"
-                        :key="`event-${event.id}`"
-                        :open="openEditPopover === `${day.key}-${event.id}`"
-                        @update:open="(v) => (openEditPopover = v ? `${day.key}-${event.id}` : null)"
-                    >
-                        <PopoverTrigger as-child>
-                            <button
-                                type="button"
-                                class="truncate rounded px-1.5 py-0.5 text-left text-xs font-medium text-white hover:opacity-80"
-                                :style="{ backgroundColor: event.color ?? '#8590a2' }"
-                                @click="startEditEvent(event)"
-                            >
-                                {{ event.name }}
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-64">
-                            <div class="mb-2 flex items-center justify-between">
-                                <p class="text-xs font-semibold text-muted-foreground">Edit event</p>
-                                <button
-                                    type="button"
-                                    class="text-muted-foreground hover:text-destructive"
-                                    aria-label="Delete event"
-                                    @click="deleteEvent(event.id)"
-                                >
-                                    <Trash2 class="size-3.5" />
-                                </button>
-                            </div>
-                            <form class="space-y-2" @submit.prevent="submitEditEvent(event.id)">
-                                <Input v-model="editEventForm.name" placeholder="Event name" autofocus />
-                                <div class="flex items-center gap-2">
-                                    <Input v-model="editEventForm.start_date" type="date" class="flex-1" />
-                                    <span class="text-xs text-muted-foreground">to</span>
-                                    <Input v-model="editEventForm.end_date" type="date" class="flex-1" />
-                                </div>
-                                <ColorSwatchPicker v-model="editEventForm.color" />
-                                <Button type="submit" size="sm" class="w-full" :disabled="editEventForm.processing">Save</Button>
-                            </form>
-                        </PopoverContent>
-                    </Popover>
                 </div>
             </div>
         </div>

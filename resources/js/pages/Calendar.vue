@@ -6,8 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { BoardEvent, BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
@@ -21,16 +21,46 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Calendar', href: '/calendar' }]
 
 const { WEEKDAYS, monthLabel, todayKey, gridDays, goToMonth, goToToday } = useMonthCalendar();
 
+const currentUserId = usePage<SharedData>().props.auth.user.id;
+
 const boardsById = computed(() => new Map(props.boards.map((board) => [board.id, board])));
 
-function boardLabel(boardId: number): string {
+function boardLabel(boardId: number | null): string {
+    if (boardId === null) {
+        return 'General';
+    }
+
     return boardsById.value.get(boardId)?.name ?? '';
 }
 
-function boardTitle(boardId: number): string {
+function boardTitle(boardId: number | null): string {
+    if (boardId === null) {
+        return 'General (not tied to a board)';
+    }
+
     const board = boardsById.value.get(boardId);
 
     return board ? `${board.workspace_name} / ${board.name}` : '';
+}
+
+function eventLabel(event: { board_id: number | null; user?: User }): string {
+    if (event.board_id === null) {
+        return event.user?.id === currentUserId ? 'General' : `General · ${event.user?.name ?? 'Unknown'}`;
+    }
+
+    return boardLabel(event.board_id);
+}
+
+function eventTitle(event: { board_id: number | null; user?: User }): string {
+    if (event.board_id === null) {
+        return event.user?.id === currentUserId ? 'General (not tied to a board)' : `General event by ${event.user?.name ?? 'Unknown'}`;
+    }
+
+    return boardTitle(event.board_id);
+}
+
+function canEditEvent(event: BoardEvent): boolean {
+    return event.board_id !== null || event.user_id === currentUserId;
 }
 
 function cardsForDay(dateKey: string) {
@@ -43,8 +73,10 @@ function eventsForDay(dateKey: string) {
 
 const openAddPopover = ref<string | null>(null);
 
+const GENERAL = 'general';
+
 const addEventForm = useForm({
-    board_id: '' as number | string,
+    board_id: GENERAL as number | string,
     name: '',
     start_date: '',
     end_date: '',
@@ -53,7 +85,7 @@ const addEventForm = useForm({
 
 function startAddEvent(dateKey: string) {
     addEventForm.reset();
-    addEventForm.board_id = props.boards[0]?.id ?? '';
+    addEventForm.board_id = GENERAL;
     addEventForm.start_date = dateKey;
     addEventForm.color = null;
 }
@@ -63,7 +95,9 @@ function submitAddEvent() {
         return;
     }
 
-    addEventForm.post(route('board-events.store', addEventForm.board_id), {
+    const url = addEventForm.board_id === GENERAL ? route('events.store') : route('board-events.store', addEventForm.board_id);
+
+    addEventForm.post(url, {
         preserveScroll: true,
         onSuccess: () => {
             addEventForm.reset();
@@ -103,6 +137,10 @@ function submitEditEvent(eventId: number) {
 }
 
 function deleteEvent(eventId: number) {
+    if (!confirm('Delete this event? This cannot be undone.')) {
+        return;
+    }
+
     router.delete(route('board-events.destroy', eventId), {
         preserveScroll: true,
         onSuccess: () => {
@@ -134,137 +172,156 @@ function deleteEvent(eventId: number) {
                 </div>
             </div>
 
-            <div v-if="boards.length === 0" class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-300 p-12 text-center dark:border-neutral-700">
+            <div
+                v-if="boards.length === 0"
+                class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-300 p-12 text-center dark:border-neutral-700"
+            >
                 <p class="text-sm text-muted-foreground">No boards yet — create a workspace and board to see your calendar here.</p>
                 <Button as-child size="sm">
                     <Link :href="route('workspaces.index')">Go to Workspaces</Link>
                 </Button>
             </div>
 
-            <div
-                v-else
-                class="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700"
-            >
+            <div v-else class="-mx-4 overflow-x-auto px-4 pb-2">
                 <div
-                    v-for="weekday in WEEKDAYS"
-                    :key="weekday"
-                    class="bg-neutral-50 p-2 text-center text-xs font-semibold text-muted-foreground dark:bg-neutral-900"
+                    class="grid min-w-[700px] grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700"
                 >
-                    {{ weekday }}
-                </div>
-
-                <div
-                    v-for="day in gridDays"
-                    :key="day.key"
-                    class="group flex min-h-32 flex-col gap-1 bg-white p-1.5 dark:bg-neutral-950"
-                    :class="!day.inMonth ? 'opacity-40' : ''"
-                >
-                    <div class="flex items-center justify-between">
-                        <span
-                            class="flex size-5 items-center justify-center rounded-full text-xs"
-                            :class="day.key === todayKey ? 'bg-primary font-semibold text-primary-foreground' : 'text-muted-foreground'"
-                        >
-                            {{ day.date.getDate() }}
-                        </span>
-
-                        <Popover :open="openAddPopover === day.key" @update:open="(v) => (openAddPopover = v ? day.key : null)">
-                            <PopoverTrigger as-child>
-                                <button
-                                    type="button"
-                                    class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
-                                    aria-label="Add event"
-                                    @click="startAddEvent(day.key)"
-                                >
-                                    <Plus class="size-3.5" />
-                                </button>
-                            </PopoverTrigger>
-                            <PopoverContent class="w-64">
-                                <p class="mb-2 text-xs font-semibold text-muted-foreground">Add event</p>
-                                <form class="space-y-2" @submit.prevent="submitAddEvent">
-                                    <Select :model-value="String(addEventForm.board_id)" @update:model-value="(v) => (addEventForm.board_id = Number(v))">
-                                        <SelectTrigger class="h-9 text-sm">
-                                            <SelectValue placeholder="Board" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem v-for="board in boards" :key="board.id" :value="String(board.id)">
-                                                {{ board.name }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Input v-model="addEventForm.name" placeholder="Event name" />
-                                    <div class="flex items-center gap-2">
-                                        <Input v-model="addEventForm.start_date" type="date" class="flex-1" />
-                                        <span class="text-xs text-muted-foreground">to</span>
-                                        <Input v-model="addEventForm.end_date" type="date" class="flex-1" />
-                                    </div>
-                                    <ColorSwatchPicker v-model="addEventForm.color" />
-                                    <Button type="submit" size="sm" class="w-full" :disabled="addEventForm.processing">Add</Button>
-                                </form>
-                            </PopoverContent>
-                        </Popover>
+                    <div
+                        v-for="weekday in WEEKDAYS"
+                        :key="weekday"
+                        class="bg-neutral-50 p-2 text-center text-xs font-semibold text-muted-foreground dark:bg-neutral-900"
+                    >
+                        {{ weekday }}
                     </div>
 
-                    <Link
-                        v-for="card in cardsForDay(day.key)"
-                        :key="`card-${card.id}`"
-                        :href="route('boards.show', { board: card.board_id, card: card.id })"
-                        class="block rounded px-1.5 py-0.5 leading-tight hover:opacity-80"
-                        :title="boardTitle(card.board_id)"
-                        :style="
-                            card.color
-                                ? { backgroundColor: card.color, color: 'white' }
-                                : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
-                        "
+                    <div
+                        v-for="day in gridDays"
+                        :key="day.key"
+                        class="group flex min-h-32 flex-col gap-1 bg-white p-1.5 dark:bg-neutral-950"
+                        :class="!day.inMonth ? 'opacity-40' : ''"
                     >
-                        <span class="block truncate text-xs font-medium">{{ card.name }}</span>
-                        <span class="block truncate text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
-                    </Link>
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="flex size-5 items-center justify-center rounded-full text-xs"
+                                :class="day.key === todayKey ? 'bg-primary font-semibold text-primary-foreground' : 'text-muted-foreground'"
+                            >
+                                {{ day.date.getDate() }}
+                            </span>
 
-                    <Popover
-                        v-for="event in eventsForDay(day.key)"
-                        :key="`event-${event.id}`"
-                        :open="openEditPopover === `${day.key}-${event.id}`"
-                        @update:open="(v) => (openEditPopover = v ? `${day.key}-${event.id}` : null)"
-                    >
-                        <PopoverTrigger as-child>
-                            <button
-                                type="button"
-                                class="block w-full rounded px-1.5 py-0.5 text-left leading-tight text-white hover:opacity-80"
+                            <Popover :open="openAddPopover === day.key" @update:open="(v) => (openAddPopover = v ? day.key : null)">
+                                <PopoverTrigger as-child>
+                                    <button
+                                        type="button"
+                                        class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
+                                        aria-label="Add event"
+                                        @click="startAddEvent(day.key)"
+                                    >
+                                        <Plus class="size-3.5" />
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent class="w-64">
+                                    <p class="mb-2 text-xs font-semibold text-muted-foreground">Add event</p>
+                                    <form class="space-y-2" @submit.prevent="submitAddEvent">
+                                        <Select
+                                            :model-value="String(addEventForm.board_id)"
+                                            @update:model-value="(v) => (addEventForm.board_id = v === GENERAL ? GENERAL : Number(v))"
+                                        >
+                                            <SelectTrigger class="h-9 text-sm">
+                                                <SelectValue placeholder="Board" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem :value="GENERAL">General (no board)</SelectItem>
+                                                <SelectItem v-for="board in boards" :key="board.id" :value="String(board.id)">
+                                                    {{ board.workspace_name }} - {{ board.name }}
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input v-model="addEventForm.name" placeholder="Event name" />
+                                        <div class="flex items-center gap-2">
+                                            <Input v-model="addEventForm.start_date" type="date" class="flex-1" />
+                                            <span class="text-xs text-muted-foreground">to</span>
+                                            <Input v-model="addEventForm.end_date" type="date" class="flex-1" />
+                                        </div>
+                                        <ColorSwatchPicker v-model="addEventForm.color" />
+                                        <Button type="submit" size="sm" class="w-full" :disabled="addEventForm.processing">Add</Button>
+                                    </form>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <Link
+                            v-for="card in cardsForDay(day.key)"
+                            :key="`card-${card.id}`"
+                            :href="route('boards.show', { board: card.board_id, card: card.id })"
+                            class="block rounded px-1.5 py-0.5 leading-tight hover:opacity-80"
+                            :title="boardTitle(card.board_id)"
+                            :style="
+                                card.color
+                                    ? { backgroundColor: card.color, color: 'white' }
+                                    : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
+                            "
+                        >
+                            <span class="block truncate text-xs font-medium">{{ card.name }}</span>
+                            <span class="block truncate text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
+                        </Link>
+
+                        <template v-for="event in eventsForDay(day.key)" :key="`event-${event.id}`">
+                            <Popover
+                                v-if="canEditEvent(event)"
+                                :open="openEditPopover === `${day.key}-${event.id}`"
+                                @update:open="(v) => (openEditPopover = v ? `${day.key}-${event.id}` : null)"
+                            >
+                                <PopoverTrigger as-child>
+                                    <button
+                                        type="button"
+                                        class="block w-full rounded px-1.5 py-0.5 text-left leading-tight text-white hover:opacity-80"
+                                        :style="{ backgroundColor: event.color ?? '#8590a2' }"
+                                        :title="eventTitle(event)"
+                                        @click="startEditEvent(event)"
+                                    >
+                                        <span class="block truncate text-xs font-medium">{{ event.name }}</span>
+                                        <span class="block truncate text-[10px] opacity-80">{{ eventLabel(event) }}</span>
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent class="w-64">
+                                    <div class="mb-2 flex items-center justify-between">
+                                        <p class="text-xs font-semibold text-muted-foreground">
+                                            Edit event
+                                            <span class="font-normal text-muted-foreground">· {{ eventLabel(event) }}</span>
+                                        </p>
+                                        <button
+                                            type="button"
+                                            class="text-muted-foreground hover:text-destructive"
+                                            aria-label="Delete event"
+                                            @click="deleteEvent(event.id)"
+                                        >
+                                            <Trash2 class="size-3.5" />
+                                        </button>
+                                    </div>
+                                    <form class="space-y-2" @submit.prevent="submitEditEvent(event.id)">
+                                        <Input v-model="editEventForm.name" placeholder="Event name" autofocus />
+                                        <div class="flex items-center gap-2">
+                                            <Input v-model="editEventForm.start_date" type="date" class="flex-1" />
+                                            <span class="text-xs text-muted-foreground">to</span>
+                                            <Input v-model="editEventForm.end_date" type="date" class="flex-1" />
+                                        </div>
+                                        <ColorSwatchPicker v-model="editEventForm.color" />
+                                        <Button type="submit" size="sm" class="w-full" :disabled="editEventForm.processing">Save</Button>
+                                    </form>
+                                </PopoverContent>
+                            </Popover>
+
+                            <span
+                                v-else
+                                class="block w-full cursor-default truncate rounded px-1.5 py-0.5 text-left leading-tight text-white"
                                 :style="{ backgroundColor: event.color ?? '#8590a2' }"
-                                :title="boardTitle(event.board_id)"
-                                @click="startEditEvent(event)"
+                                :title="eventTitle(event)"
                             >
                                 <span class="block truncate text-xs font-medium">{{ event.name }}</span>
-                                <span class="block truncate text-[10px] opacity-80">{{ boardLabel(event.board_id) }}</span>
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-64">
-                            <div class="mb-2 flex items-center justify-between">
-                                <p class="text-xs font-semibold text-muted-foreground">
-                                    Edit event
-                                    <span class="font-normal text-muted-foreground">· {{ boardLabel(event.board_id) }}</span>
-                                </p>
-                                <button
-                                    type="button"
-                                    class="text-muted-foreground hover:text-destructive"
-                                    aria-label="Delete event"
-                                    @click="deleteEvent(event.id)"
-                                >
-                                    <Trash2 class="size-3.5" />
-                                </button>
-                            </div>
-                            <form class="space-y-2" @submit.prevent="submitEditEvent(event.id)">
-                                <Input v-model="editEventForm.name" placeholder="Event name" autofocus />
-                                <div class="flex items-center gap-2">
-                                    <Input v-model="editEventForm.start_date" type="date" class="flex-1" />
-                                    <span class="text-xs text-muted-foreground">to</span>
-                                    <Input v-model="editEventForm.end_date" type="date" class="flex-1" />
-                                </div>
-                                <ColorSwatchPicker v-model="editEventForm.color" />
-                                <Button type="submit" size="sm" class="w-full" :disabled="editEventForm.processing">Save</Button>
-                            </form>
-                        </PopoverContent>
-                    </Popover>
+                                <span class="block truncate text-[10px] opacity-80">{{ eventLabel(event) }}</span>
+                            </span>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>

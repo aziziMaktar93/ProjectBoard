@@ -4,17 +4,11 @@ namespace App\Http\Requests\Boards;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateBoardEventRequest extends FormRequest
+class StoreGeneralEventRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $event = $this->route('event');
-
-        if ($event->board_id === null) {
-            return $event->user_id === $this->user()->id;
-        }
-
-        return $this->user()->can('update', $event->board);
+        return true;
     }
 
     /**
