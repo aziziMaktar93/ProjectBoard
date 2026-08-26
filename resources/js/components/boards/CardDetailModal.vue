@@ -124,6 +124,8 @@ const dueDateLabel = computed(() => {
 });
 
 const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date < new Date().toISOString().slice(0, 10));
+
+const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h-[calc(85vh-15rem)]' : 'max-h-[calc(85vh-5rem)]'));
 </script>
 
 <template>
@@ -145,7 +147,7 @@ const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date <
                 <DialogTitle>Edit card</DialogTitle>
             </DialogHeader>
 
-            <div class="grid max-h-[calc(85vh-5rem)] grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_1fr]">
+            <div class="grid grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_1fr]" :class="gridMaxHeightClass">
                 <div class="space-y-5 overflow-y-auto pr-1">
                     <form class="space-y-4" @submit.prevent="submit">
                         <div class="grid gap-2">

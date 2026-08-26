@@ -341,12 +341,12 @@ function onBoardColorChange(color: string | null) {
                 />
             </VueDraggable>
 
-            <div class="p-4 pt-0">
+            <div class="sticky bottom-0 z-10 p-4 pt-0">
                 <Button
                     v-if="!showAddList"
                     variant="ghost"
                     size="sm"
-                    class="border border-dashed border-neutral-300 bg-white/80 text-neutral-600 shadow-sm hover:bg-white hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
+                    class="border border-dashed border-neutral-300 bg-white text-neutral-600 shadow-md hover:bg-white hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
                     @click="showAddList = true"
                 >
                     + Add another list
