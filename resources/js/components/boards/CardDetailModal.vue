@@ -314,7 +314,7 @@ const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date <
                     class="space-y-3 overflow-y-auto border-t border-neutral-200 pt-4 md:border-t-0 md:border-l md:pl-4 md:pt-0 dark:border-neutral-700"
                 >
                     <Label>Comments and activity</Label>
-                    <CardActivityFeed :card="card" />
+                    <CardActivityFeed :card="card" :board-members="boardMembers" />
                 </div>
             </div>
         </DialogContent>
