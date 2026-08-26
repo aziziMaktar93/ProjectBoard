@@ -25,6 +25,7 @@ class Card extends Model
         'color',
         'due_date',
         'archived_at',
+        'cover_attachment_id',
     ];
 
     /**
@@ -65,5 +66,10 @@ class Card extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class);
+    }
+
+    public function coverAttachment(): BelongsTo
+    {
+        return $this->belongsTo(Attachment::class, 'cover_attachment_id');
     }
 }

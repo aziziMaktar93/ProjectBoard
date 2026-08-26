@@ -58,6 +58,7 @@ class BoardController extends Controller
             'lists.cards.members',
             'lists.cards.labels',
             'lists.cards.attachments' => fn ($query) => $query->latest(),
+            'lists.cards.coverAttachment',
             'lists.cards.activities' => fn ($query) => $query->latest(),
             'lists.cards.activities.user',
         ]);

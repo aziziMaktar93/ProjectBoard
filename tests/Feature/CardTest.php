@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Attachment;
 use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
@@ -146,6 +147,47 @@ test('a user can change and clear a card\'s color', function () {
 
     $this->actingAs($user)->patch("/cards/{$card->id}", ['color' => null])->assertRedirect();
     expect($card->fresh()->color)->toBeNull();
+});
+
+test('a user can set an image attachment as a card\'s cover and remove it', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $image = Attachment::factory()->for($card)->for($user)->create(['mime_type' => 'image/png']);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['cover_attachment_id' => $image->id])->assertRedirect();
+    expect($card->fresh()->cover_attachment_id)->toBe($image->id);
+
+    $this->actingAs($user)->patch("/cards/{$card->id}", ['cover_attachment_id' => null])->assertRedirect();
+    expect($card->fresh()->cover_attachment_id)->toBeNull();
+});
+
+test('a card cannot use a non-image attachment as its cover', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $pdf = Attachment::factory()->for($card)->for($user)->create(['mime_type' => 'application/pdf']);
+
+    $response = $this->actingAs($user)->patch("/cards/{$card->id}", ['cover_attachment_id' => $pdf->id]);
+
+    $response->assertSessionHasErrors('cover_attachment_id');
+    expect($card->fresh()->cover_attachment_id)->toBeNull();
+});
+
+test('a card cannot use another card\'s attachment as its cover', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $otherCard = Card::factory()->for($list)->create();
+    $image = Attachment::factory()->for($otherCard)->for($user)->create(['mime_type' => 'image/png']);
+
+    $response = $this->actingAs($user)->patch("/cards/{$card->id}", ['cover_attachment_id' => $image->id]);
+
+    $response->assertSessionHasErrors('cover_attachment_id');
+    expect($card->fresh()->cover_attachment_id)->toBeNull();
 });
 
 test('a user can set and clear a card\'s due date', function () {

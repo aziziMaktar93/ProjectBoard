@@ -2,7 +2,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Card, CardAttachment } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
-import { Download, Eye, Paperclip, Trash2 } from 'lucide-vue-next';
+import { Download, Eye, Image, ImageOff, Paperclip, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -13,6 +13,14 @@ const PREVIEWABLE_MIME_TYPES = ['application/pdf'];
 
 function isPreviewable(attachment: CardAttachment): boolean {
     return PREVIEWABLE_MIME_TYPES.includes(attachment.mime_type) || attachment.mime_type.startsWith('image/');
+}
+
+function isImage(attachment: CardAttachment): boolean {
+    return attachment.mime_type.startsWith('image/');
+}
+
+function setCover(attachmentId: number | null) {
+    router.patch(route('cards.update', props.card.id), { cover_attachment_id: attachmentId }, { preserveScroll: true });
 }
 
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -105,6 +113,25 @@ function formatSize(bytes: number): string {
                         </a>
                     </TooltipTrigger>
                     <TooltipContent>Download</TooltipContent>
+                </Tooltip>
+                <Tooltip v-if="isImage(attachment)">
+                    <TooltipTrigger as-child>
+                        <button
+                            type="button"
+                            class="opacity-0 group-hover:opacity-100"
+                            :class="
+                                card.cover_attachment_id === attachment.id
+                                    ? 'text-primary opacity-100'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            "
+                            :aria-label="card.cover_attachment_id === attachment.id ? 'Remove cover' : 'Set as cover'"
+                            @click="setCover(card.cover_attachment_id === attachment.id ? null : attachment.id)"
+                        >
+                            <ImageOff v-if="card.cover_attachment_id === attachment.id" class="size-3.5" />
+                            <Image v-else class="size-3.5" />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{{ card.cover_attachment_id === attachment.id ? 'Remove cover' : 'Set as cover' }}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger as-child>

@@ -145,10 +145,12 @@ export interface Card {
     archived_at: string | null;
     created_at: string;
     updated_at: string;
+    cover_attachment_id: number | null;
     checklists?: Checklist[];
     members?: User[];
     labels?: CardLabel[];
     attachments?: CardAttachment[];
+    cover_attachment?: CardAttachment | null;
     activities?: CardActivity[];
 }
 

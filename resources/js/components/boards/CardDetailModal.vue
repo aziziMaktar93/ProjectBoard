@@ -14,9 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { showToast } from '@/composables/useToast';
 import { stripGradient } from '@/lib/colorGradient';
-import type { Card, CardLabel, User } from '@/types';
+import type { Card, CardAttachment, CardLabel, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
-import { CalendarDays, Paintbrush, Paperclip, SquareCheck, Tag, Users } from 'lucide-vue-next';
+import { CalendarDays, Image, Paintbrush, Paperclip, SquareCheck, Tag, Users } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -77,6 +77,20 @@ const colorModel = computed<string | null>({
     },
 });
 
+function isImage(attachment: CardAttachment): boolean {
+    return attachment.mime_type.startsWith('image/');
+}
+
+const imageAttachments = computed(() => (props.card?.attachments ?? []).filter(isImage));
+
+function setCover(attachmentId: number | null) {
+    if (!props.card) {
+        return;
+    }
+
+    router.patch(route('cards.update', props.card.id), { cover_attachment_id: attachmentId }, { preserveScroll: true });
+}
+
 const checklists = computed(() => [...(props.card?.checklists ?? [])].sort((a, b) => a.position - b.position));
 
 const showAddChecklist = ref(false);
@@ -115,7 +129,17 @@ const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date <
 <template>
     <Dialog v-model:open="open">
         <DialogContent v-if="card" class="max-h-[85vh] overflow-hidden sm:max-w-6xl">
-            <div v-if="card.color" class="-mx-6 -mt-6 h-3 sm:rounded-t-lg" :style="{ backgroundImage: stripGradient(card.color) }" />
+            <img
+                v-if="card.cover_attachment"
+                :src="route('card-attachments.view', card.cover_attachment.id)"
+                :alt="card.cover_attachment.name"
+                class="-mx-6 -mt-6 h-40 w-[calc(100%+3rem)] object-cover sm:rounded-t-lg"
+            />
+            <div
+                v-else-if="card.color"
+                class="-mx-6 -mt-6 h-3 sm:rounded-t-lg"
+                :style="{ backgroundImage: stripGradient(card.color) }"
+            />
 
             <DialogHeader>
                 <DialogTitle>Edit card</DialogTitle>
@@ -209,6 +233,40 @@ const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date <
                             <PopoverContent class="w-56">
                                 <p class="mb-2 text-xs font-semibold text-muted-foreground">Color</p>
                                 <ColorSwatchPicker v-model="colorModel" />
+                            </PopoverContent>
+                        </Popover>
+
+                        <Popover>
+                            <PopoverTrigger as-child>
+                                <Button variant="outline" size="sm"><Image class="size-3.5" /> Cover</Button>
+                            </PopoverTrigger>
+                            <PopoverContent class="w-64">
+                                <p class="mb-2 text-xs font-semibold text-muted-foreground">Cover image</p>
+                                <p v-if="!imageAttachments.length" class="text-xs text-muted-foreground">
+                                    Add an image attachment first to use it as a cover.
+                                </p>
+                                <div v-else class="grid grid-cols-3 gap-2">
+                                    <button
+                                        v-for="attachment in imageAttachments"
+                                        :key="attachment.id"
+                                        type="button"
+                                        class="aspect-video overflow-hidden rounded-md ring-2 ring-offset-1"
+                                        :class="card.cover_attachment_id === attachment.id ? 'ring-primary' : 'ring-transparent hover:ring-neutral-300'"
+                                        :aria-label="`Use ${attachment.name} as cover`"
+                                        @click="setCover(attachment.id)"
+                                    >
+                                        <img :src="route('card-attachments.view', attachment.id)" :alt="attachment.name" class="size-full object-cover" />
+                                    </button>
+                                </div>
+                                <Button
+                                    v-if="card.cover_attachment_id"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="mt-2 w-full"
+                                    @click="setCover(null)"
+                                >
+                                    Remove cover
+                                </Button>
                             </PopoverContent>
                         </Popover>
                     </div>

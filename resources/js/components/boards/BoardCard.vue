@@ -74,7 +74,14 @@ function onColorChange(color: string | null) {
     <div
         class="group overflow-hidden rounded-lg border border-neutral-200/80 bg-white text-sm shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-none dark:hover:border-neutral-600"
     >
-        <div v-if="card.color" class="h-1.5" :style="{ backgroundImage: stripGradient(card.color) }" />
+        <img
+            v-if="card.cover_attachment"
+            :src="route('card-attachments.view', card.cover_attachment.id)"
+            :alt="card.cover_attachment.name"
+            class="h-28 w-full cursor-pointer object-cover"
+            @click="emit('open', card)"
+        />
+        <div v-else-if="card.color" class="h-1.5" :style="{ backgroundImage: stripGradient(card.color) }" />
 
         <div class="flex items-start justify-between gap-2 p-3">
             <button type="button" class="flex-1 text-left" @click="emit('open', card)">
