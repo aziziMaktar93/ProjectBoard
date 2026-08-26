@@ -12,10 +12,26 @@ class NotificationController extends Controller
 {
     public function index(Request $request): Response
     {
-        $notifications = $request->user()->appNotifications()->latest()->limit(50)->get();
+        $status = in_array($request->query('status'), ['unread', 'read'], true) ? $request->query('status') : 'all';
+        $search = trim((string) $request->string('search'));
+
+        $notifications = $request->user()->appNotifications()
+            ->when($status === 'unread', fn ($query) => $query->whereNull('read_at'))
+            ->when($status === 'read', fn ($query) => $query->whereNotNull('read_at'))
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('data->actor_name', 'like', "%{$search}%")
+                    ->orWhere('data->card_name', 'like', "%{$search}%");
+            }))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('Notifications', [
             'notifications' => $notifications,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+            ],
         ]);
     }
 

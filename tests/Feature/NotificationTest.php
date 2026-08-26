@@ -133,13 +133,59 @@ test('a user can view their notifications page', function () {
     $response = $this->actingAs($user)->get('/notifications');
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('Notifications')->has('notifications', 3));
+    $response->assertInertia(fn ($page) => $page->component('Notifications')->has('notifications.data', 3));
 });
 
 test('a guest cannot view the notifications page', function () {
     $response = $this->get('/notifications');
 
     $response->assertRedirect('/login');
+});
+
+test('the notifications page paginates results', function () {
+    $user = User::factory()->create();
+    Notification::factory()->for($user)->count(20)->create();
+
+    $response = $this->actingAs($user)->get('/notifications');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('Notifications')
+            ->has('notifications.data', 15)
+            ->where('notifications.total', 20)
+            ->where('notifications.last_page', 2)
+    );
+});
+
+test('the notifications page can be filtered by read status', function () {
+    $user = User::factory()->create();
+    Notification::factory()->for($user)->count(2)->create();
+    Notification::factory()->for($user)->read()->count(3)->create();
+
+    $unread = $this->actingAs($user)->get('/notifications?status=unread');
+    $unread->assertInertia(fn ($page) => $page->has('notifications.data', 2));
+
+    $read = $this->actingAs($user)->get('/notifications?status=read');
+    $read->assertInertia(fn ($page) => $page->has('notifications.data', 3));
+});
+
+test('the notifications page can be searched by actor or card name', function () {
+    $user = User::factory()->create();
+    Notification::factory()->for($user)->create([
+        'data' => ['card_id' => 1, 'card_name' => 'Ship the release', 'board_id' => 1, 'actor_name' => 'Bob Tan'],
+    ]);
+    Notification::factory()->for($user)->create([
+        'data' => ['card_id' => 2, 'card_name' => 'Write docs', 'board_id' => 1, 'actor_name' => 'Alice Wong'],
+    ]);
+
+    $byCard = $this->actingAs($user)->get('/notifications?search=release');
+    $byCard->assertInertia(fn ($page) => $page->has('notifications.data', 1));
+
+    $byActor = $this->actingAs($user)->get('/notifications?search=Alice');
+    $byActor->assertInertia(fn ($page) => $page->has('notifications.data', 1));
+
+    $noMatch = $this->actingAs($user)->get('/notifications?search=nothingmatches');
+    $noMatch->assertInertia(fn ($page) => $page->has('notifications.data', 0));
 });
 
 test('a user can mark all of their notifications as read', function () {
