@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HoverLabel from '@/components/HoverLabel.vue';
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
+import BoardFilterBar from '@/components/boards/BoardFilterBar.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
 import BoardMemberPanel from '@/components/boards/BoardMemberPanel.vue';
 import CardDetailModal from '@/components/boards/CardDetailModal.vue';
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useBoardFilters } from '@/composables/useBoardFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
@@ -40,6 +42,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 const lists = ref<BoardList[]>(props.board.lists ?? []);
 const cardGroup = `cards-board-${props.board.id}`;
 const reorderError = ref<string | null>(null);
+const { filters, cardMatchesFilters } = useBoardFilters();
 
 watch(
     () => props.board.lists,
@@ -275,6 +278,7 @@ function onBoardColorChange(color: string | null) {
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <BoardFilterBar v-model:filters="filters" :labels="board.labels ?? []" :members="board.members ?? []" />
                     <Button as-child variant="outline" size="sm">
                         <Link :href="route('boards.calendar', board.id)">
                             <CalendarDays class="size-3.5" />
@@ -330,6 +334,7 @@ function onBoardColorChange(color: string | null) {
                     :key="list.id"
                     :list="list"
                     :group="cardGroup"
+                    :matches-filters="cardMatchesFilters"
                     @open-card="openCard"
                     @card-drag-start="onCardDragStart"
                     @card-drag-end="onCardDragEnd"

@@ -22,6 +22,7 @@ import { nextTick, ref } from 'vue';
 const props = defineProps<{
     list: BoardList;
     group: string;
+    matchesFilters?: (card: Card) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -166,7 +167,13 @@ function onColorChange(color: string | null) {
                 @start="onCardDragStart"
                 @end="onCardDragEnd"
             >
-                <BoardCard v-for="card in list.cards" :key="card.id" :card="card" @open="emit('open-card', $event)" />
+                <BoardCard
+                    v-for="card in list.cards"
+                    :key="card.id"
+                    v-show="!matchesFilters || matchesFilters(card)"
+                    :card="card"
+                    @open="emit('open-card', $event)"
+                />
             </VueDraggable>
             <!-- eslint-enable vue/no-mutating-props -->
 
