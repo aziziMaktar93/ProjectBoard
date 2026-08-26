@@ -7,7 +7,7 @@ import { Input, PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { ArrowRight, LoaderCircle, Lock, Mail } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
@@ -39,16 +39,20 @@ const submit = () => {
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required
-                        autofocus
-                        tabindex="1"
-                        autocomplete="email"
-                        v-model="form.email"
-                        placeholder="email@example.com"
-                    />
+                    <div class="relative">
+                        <Mail class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="email"
+                            type="email"
+                            required
+                            autofocus
+                            tabindex="1"
+                            autocomplete="email"
+                            v-model="form.email"
+                            placeholder="email@example.com"
+                            class="pl-10"
+                        />
+                    </div>
                     <InputError :message="form.errors.email" />
                 </div>
 
@@ -57,14 +61,18 @@ const submit = () => {
                         <Label for="password">Password</Label>
                         <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" tabindex="5"> Forgot password? </TextLink>
                     </div>
-                    <PasswordInput
-                        id="password"
-                        required
-                        tabindex="2"
-                        autocomplete="current-password"
-                        v-model="form.password"
-                        placeholder="Password"
-                    />
+                    <div class="relative">
+                        <Lock class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <PasswordInput
+                            id="password"
+                            required
+                            tabindex="2"
+                            autocomplete="current-password"
+                            v-model="form.password"
+                            placeholder="Password"
+                            class="pl-10"
+                        />
+                    </div>
                     <InputError :message="form.errors.password" />
                 </div>
 
@@ -75,9 +83,15 @@ const submit = () => {
                     </Label>
                 </div>
 
-                <Button type="submit" class="mt-4 w-full" tabindex="4" :disabled="form.processing">
+                <Button
+                    type="submit"
+                    class="mt-4 w-full gap-2 border-0 bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-md shadow-blue-900/20 hover:opacity-90"
+                    tabindex="4"
+                    :disabled="form.processing"
+                >
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     Log in
+                    <ArrowRight v-if="!form.processing" class="size-4" />
                 </Button>
             </div>
 
