@@ -10,6 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { isCardChecklistComplete } from '@/lib/cardCompletion';
 import { stripGradient } from '@/lib/colorGradient';
 import type { Card, Checklist, ChecklistItem } from '@/types';
 import { router } from '@inertiajs/vue3';
@@ -55,9 +56,8 @@ const isOverdue = computed(() => {
     }
 
     const isPastDue = props.card.due_date < new Date().toISOString().slice(0, 10);
-    const isCompleted = !!checklistSummary.value && checklistSummary.value.checked === checklistSummary.value.total;
 
-    return isPastDue && !isCompleted;
+    return isPastDue && !isCardChecklistComplete(props.card);
 });
 
 function archive() {

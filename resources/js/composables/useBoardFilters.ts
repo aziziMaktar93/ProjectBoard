@@ -1,3 +1,4 @@
+import { isCardChecklistComplete } from '@/lib/cardCompletion';
 import type { Card } from '@/types';
 import { ref } from 'vue';
 
@@ -25,7 +26,7 @@ export function useBoardFilters() {
             const today = new Date().toISOString().slice(0, 10);
             const weekAhead = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-            if (dueDate === 'overdue' && !(card.due_date && card.due_date < today)) {
+            if (dueDate === 'overdue' && !(card.due_date && card.due_date < today && !isCardChecklistComplete(card))) {
                 return false;
             }
 
