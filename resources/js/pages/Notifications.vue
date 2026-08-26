@@ -9,7 +9,7 @@ import { AtSign, Check, Search, UserPlus } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
-    notifications: Paginated<AppNotification>;
+    notificationList: Paginated<AppNotification>;
     filters: {
         status: 'all' | 'unread' | 'read';
         search: string;
@@ -112,10 +112,10 @@ function goToPage(url: string | null) {
                 </div>
             </div>
 
-            <p v-if="!notifications.data.length" class="text-sm text-muted-foreground">No notifications match.</p>
+            <p v-if="!notificationList.data.length" class="text-sm text-muted-foreground">No notifications match.</p>
 
             <ul v-else class="max-w-2xl space-y-2">
-                <li v-for="notification in notifications.data" :key="notification.id" class="flex items-start gap-2">
+                <li v-for="notification in notificationList.data" :key="notification.id" class="flex items-start gap-2">
                     <Link
                         :href="route('notifications.open', notification.id)"
                         class="flex flex-1 items-start gap-3 rounded-lg border border-neutral-200 p-3 hover:bg-accent dark:border-neutral-700"
@@ -151,9 +151,9 @@ function goToPage(url: string | null) {
                 </li>
             </ul>
 
-            <div v-if="notifications.last_page > 1" class="flex flex-wrap items-center gap-1">
+            <div v-if="notificationList.last_page > 1" class="flex flex-wrap items-center gap-1">
                 <button
-                    v-for="link in notifications.links"
+                    v-for="link in notificationList.links"
                     :key="link.label"
                     type="button"
                     v-html="link.label"

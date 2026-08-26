@@ -27,7 +27,7 @@ class NotificationController extends Controller
             ->withQueryString();
 
         return Inertia::render('Notifications', [
-            'notifications' => $notifications,
+            'notificationList' => $notifications,
             'filters' => [
                 'status' => $status,
                 'search' => $search,
