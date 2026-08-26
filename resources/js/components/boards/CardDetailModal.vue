@@ -154,7 +154,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
             </DialogHeader>
 
             <div class="grid grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_1fr]" :class="gridMaxHeightClass">
-                <div class="space-y-5 overflow-y-auto pr-1">
+                <div class="space-y-5 overflow-y-auto pb-4 pr-3">
                     <form class="space-y-4" @submit.prevent="submit">
                         <div class="grid gap-2">
                             <Input id="card-name" v-model="form.name" required class="text-base font-medium" />
@@ -319,7 +319,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                 </div>
 
                 <div
-                    class="space-y-3 overflow-y-auto border-t border-neutral-200 pt-4 md:border-t-0 md:border-l md:pl-4 md:pt-0 dark:border-neutral-700"
+                    class="space-y-3 overflow-y-auto border-t border-neutral-200 pb-4 pt-4 md:border-t-0 md:border-l md:pl-4 md:pt-0 dark:border-neutral-700"
                 >
                     <Label>Comments and activity</Label>
                     <CardActivityFeed :card="card" :board-members="boardMembers" />
