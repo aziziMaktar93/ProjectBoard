@@ -86,8 +86,17 @@ class BoardController extends Controller
             ->whereHas('boardList', fn ($query) => $query->where('board_id', $board->id)->whereNull('archived_at'))
             ->whereNull('archived_at')
             ->whereNotNull('due_date')
+            ->with('checklists.items')
             ->orderBy('due_date')
-            ->get(['id', 'board_list_id', 'name', 'due_date', 'color']);
+            ->get(['id', 'board_list_id', 'name', 'due_date', 'color'])
+            ->map(fn (Card $card) => [
+                'id' => $card->id,
+                'board_list_id' => $card->board_list_id,
+                'name' => $card->name,
+                'due_date' => $card->due_date,
+                'color' => $card->color,
+                'is_completed' => $this->isCardCompleted($card),
+            ]);
 
         $events = $board->events()->with('user')->orderBy('start_date')->get();
 
@@ -96,6 +105,13 @@ class BoardController extends Controller
             'cards' => $cards,
             'events' => $events,
         ]);
+    }
+
+    private function isCardCompleted(Card $card): bool
+    {
+        $items = $card->checklists->flatMap(fn ($checklist) => $checklist->items);
+
+        return $items->isNotEmpty() && $items->every(fn ($item) => $item->is_checked);
     }
 
     public function update(UpdateBoardRequest $request, Board $board): RedirectResponse

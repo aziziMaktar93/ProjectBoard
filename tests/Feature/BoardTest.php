@@ -4,6 +4,7 @@ use App\Models\Board;
 use App\Models\BoardEvent;
 use App\Models\BoardList;
 use App\Models\Card;
+use App\Models\Checklist;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -222,9 +223,23 @@ test('a board member can view the calendar with due cards and events', function 
             ->component('boards/Calendar')
             ->has('cards', 1)
             ->where('cards.0.name', 'Ship it')
+            ->where('cards.0.is_completed', false)
             ->has('events', 1)
             ->where('events.0.name', 'Sprint Planning')
     );
+});
+
+test('a board calendar flags a due card as completed once its checklist is 100% done', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+    $checklist = Checklist::factory()->for($card)->create();
+    $checklist->items()->create(['name' => 'Step', 'is_checked' => true, 'position' => 0]);
+
+    $response = $this->actingAs($owner)->get("/boards/{$board->id}/calendar");
+
+    $response->assertInertia(fn ($page) => $page->where('cards.0.is_completed', true));
 });
 
 test('a user who is not a board member cannot view the calendar', function () {

@@ -8,11 +8,11 @@ import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, ChevronLeft, ChevronRight, Kanban, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
-    cards: { id: number; name: string; due_date: string; color: string | null; board_id: number }[];
+    cards: { id: number; name: string; due_date: string; color: string | null; board_id: number; is_completed: boolean }[];
     events: BoardEvent[];
     boards: { id: number; name: string; workspace_name: string }[];
 }>();
@@ -159,9 +159,17 @@ function deleteEvent(eventId: number) {
                 <div>
                     <h1 class="text-lg font-semibold">{{ monthLabel }}</h1>
                     <p class="text-sm text-muted-foreground">Due dates and events across every board you belong to.</p>
-                    <div class="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
-                        <span class="flex items-center gap-1.5"><Kanban class="size-3.5" /> Card due date</span>
-                        <span class="flex items-center gap-1.5"><CalendarDays class="size-3.5" /> Event</span>
+                    <div class="mt-2 flex items-center gap-2">
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <Clock class="size-3.5" /> Card due date
+                        </span>
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <CalendarDays class="size-3.5" /> Event
+                        </span>
                     </div>
                 </div>
 
@@ -258,7 +266,8 @@ function deleteEvent(eventId: number) {
                             :key="`card-${card.id}`"
                             :href="route('boards.show', { board: card.board_id, card: card.id })"
                             class="block rounded px-1.5 py-0.5 leading-tight hover:opacity-80"
-                            :title="boardTitle(card.board_id)"
+                            :class="card.is_completed ? 'opacity-60' : ''"
+                            :title="`${boardTitle(card.board_id)}${card.is_completed ? ' · Completed' : ''}`"
                             :style="
                                 card.color
                                     ? { backgroundColor: card.color, color: 'white' }
@@ -266,8 +275,9 @@ function deleteEvent(eventId: number) {
                             "
                         >
                             <span class="flex items-center gap-1 truncate text-xs font-medium">
-                                <Kanban class="size-3 shrink-0" />
-                                <span class="truncate">{{ card.name }}</span>
+                                <CheckCircle2 v-if="card.is_completed" class="size-3 shrink-0" />
+                                <Clock v-else class="size-3 shrink-0" />
+                                <span class="truncate" :class="card.is_completed ? 'line-through' : ''">{{ card.name }}</span>
                             </span>
                             <span class="block truncate pl-4 text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
                         </Link>

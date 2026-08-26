@@ -7,12 +7,12 @@ import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BoardEvent, BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { CalendarDays, ChevronLeft, ChevronRight, Kanban, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Kanban, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
     board: Board;
-    cards: { id: number; board_list_id: number; name: string; due_date: string; color: string | null }[];
+    cards: { id: number; board_list_id: number; name: string; due_date: string; color: string | null; is_completed: boolean }[];
     events: BoardEvent[];
 }>();
 
@@ -125,9 +125,17 @@ function deleteEvent(eventId: number) {
                             </Button>
                         </div>
                     </div>
-                    <div class="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
-                        <span class="flex items-center gap-1.5"><Kanban class="size-3.5" /> Card due date</span>
-                        <span class="flex items-center gap-1.5"><CalendarDays class="size-3.5" /> Event</span>
+                    <div class="mt-2 flex items-center gap-2">
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <Clock class="size-3.5" /> Card due date
+                        </span>
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <CalendarDays class="size-3.5" /> Event
+                        </span>
                     </div>
                 </div>
 
@@ -197,14 +205,17 @@ function deleteEvent(eventId: number) {
                             :key="`card-${card.id}`"
                             :href="route('boards.show', { board: board.id, card: card.id })"
                             class="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-xs font-medium hover:opacity-80"
+                            :class="card.is_completed ? 'opacity-60' : ''"
+                            :title="card.is_completed ? 'Completed' : undefined"
                             :style="
                                 card.color
                                     ? { backgroundColor: card.color, color: 'white' }
                                     : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
                             "
                         >
-                            <Kanban class="size-3 shrink-0" />
-                            <span class="truncate">{{ card.name }}</span>
+                            <CheckCircle2 v-if="card.is_completed" class="size-3 shrink-0" />
+                            <Clock v-else class="size-3 shrink-0" />
+                            <span class="truncate" :class="card.is_completed ? 'line-through' : ''">{{ card.name }}</span>
                         </Link>
 
                         <Popover

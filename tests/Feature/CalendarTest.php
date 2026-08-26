@@ -4,6 +4,7 @@ use App\Models\Board;
 use App\Models\BoardEvent;
 use App\Models\BoardList;
 use App\Models\Card;
+use App\Models\Checklist;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -24,12 +25,26 @@ test('the global calendar includes due cards and events from every board the use
             ->has('cards', 1)
             ->where('cards.0.name', 'Ship it')
             ->where('cards.0.board_id', $board->id)
+            ->where('cards.0.is_completed', false)
             ->has('events', 1)
             ->where('events.0.name', 'Sprint Planning')
             ->where('boards.0.name', 'Engineering')
             ->where('boards.0.workspace_name', $board->workspace->name)
             ->has('boards', 1)
     );
+});
+
+test('the global calendar flags a due card as completed once its checklist is 100% done', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+    $checklist = Checklist::factory()->for($card)->create();
+    $checklist->items()->create(['name' => 'Step', 'is_checked' => true, 'position' => 0]);
+
+    $response = $this->actingAs($user)->get('/calendar');
+
+    $response->assertInertia(fn ($page) => $page->where('cards.0.is_completed', true));
 });
 
 test('the global calendar excludes boards the user is not a member of', function () {
