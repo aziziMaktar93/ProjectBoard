@@ -32,6 +32,10 @@ Route::get('search', [SearchController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('search');
 
+Route::get('notifications', [NotificationController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('notifications.index');
+
 Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])
     ->middleware(['auth', 'verified'])
     ->name('notifications.read-all');

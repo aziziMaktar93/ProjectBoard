@@ -124,6 +124,24 @@ test('a user cannot mark another user\'s notification as read', function () {
     expect($notification->fresh()->read_at)->toBeNull();
 });
 
+test('a user can view their notifications page', function () {
+    $user = User::factory()->create();
+    Notification::factory()->for($user)->count(3)->create();
+    $other = User::factory()->create();
+    Notification::factory()->for($other)->create();
+
+    $response = $this->actingAs($user)->get('/notifications');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page->component('Notifications')->has('notifications', 3));
+});
+
+test('a guest cannot view the notifications page', function () {
+    $response = $this->get('/notifications');
+
+    $response->assertRedirect('/login');
+});
+
 test('a user can mark all of their notifications as read', function () {
     $user = User::factory()->create();
     Notification::factory()->for($user)->count(3)->create();

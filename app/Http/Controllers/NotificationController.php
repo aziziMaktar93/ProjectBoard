@@ -5,9 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class NotificationController extends Controller
 {
+    public function index(Request $request): Response
+    {
+        $notifications = $request->user()->appNotifications()->latest()->limit(50)->get();
+
+        return Inertia::render('Notifications', [
+            'notifications' => $notifications,
+        ]);
+    }
+
     public function open(Request $request, Notification $notification): RedirectResponse
     {
         abort_unless($notification->user_id === $request->user()->id, 403);

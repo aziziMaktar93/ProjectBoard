@@ -67,6 +67,13 @@ function markAllAsRead() {
                     </Link>
                 </li>
             </ul>
+
+            <Link
+                :href="route('notifications.index')"
+                class="mt-2 block rounded-md p-2 text-center text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+                View all notifications
+            </Link>
         </PopoverContent>
     </Popover>
 </template>
