@@ -36,6 +36,10 @@ Route::patch('notifications/read-all', [NotificationController::class, 'markAllA
     ->middleware(['auth', 'verified'])
     ->name('notifications.read-all');
 
+Route::get('notifications/{notification}/open', [NotificationController::class, 'open'])
+    ->middleware(['auth', 'verified'])
+    ->name('notifications.open');
+
 Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
     ->middleware(['auth', 'verified'])
     ->name('notifications.read');

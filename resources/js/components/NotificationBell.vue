@@ -17,14 +17,6 @@ function sentenceFor(notification: AppNotification): string {
     return `${notification.data.actor_name} assigned you to "${notification.data.card_name}"`;
 }
 
-function markAsRead(notification: AppNotification) {
-    if (notification.read_at) {
-        return;
-    }
-
-    router.patch(route('notifications.read', notification.id), {}, { preserveScroll: true });
-}
-
 function markAllAsRead() {
     router.patch(route('notifications.read-all'), {}, { preserveScroll: true });
 }
@@ -66,10 +58,9 @@ function markAllAsRead() {
             <ul v-else class="max-h-80 space-y-1 overflow-y-auto">
                 <li v-for="notification in notifications.recent" :key="notification.id">
                     <Link
-                        :href="route('boards.show', { board: notification.data.board_id, card: notification.data.card_id })"
+                        :href="route('notifications.open', notification.id)"
                         class="block rounded-md p-2 text-sm hover:bg-accent"
                         :class="!notification.read_at ? 'bg-accent/60' : ''"
-                        @click="markAsRead(notification)"
                     >
                         <span>{{ sentenceFor(notification) }}</span>
                         <span class="mt-0.5 block text-xs text-muted-foreground">{{ formatTimestamp(notification.created_at) }}</span>

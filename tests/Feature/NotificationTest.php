@@ -77,6 +77,32 @@ test('mentioning yourself does not create a notification', function () {
     expect(Notification::count())->toBe(0);
 });
 
+test('opening a notification marks it read and redirects to the card in one request', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $notification = Notification::factory()->for($user)->create([
+        'data' => ['card_id' => $card->id, 'card_name' => $card->name, 'board_id' => $board->id, 'actor_name' => 'Someone'],
+    ]);
+
+    $response = $this->actingAs($user)->get("/notifications/{$notification->id}/open");
+
+    $response->assertRedirect(route('boards.show', ['board' => $board->id, 'card' => $card->id]));
+    expect($notification->fresh()->read_at)->not->toBeNull();
+});
+
+test('a user cannot open another user\'s notification', function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
+    $notification = Notification::factory()->for($other)->create();
+
+    $response = $this->actingAs($user)->get("/notifications/{$notification->id}/open");
+
+    $response->assertForbidden();
+    expect($notification->fresh()->read_at)->toBeNull();
+});
+
 test('a user can mark a notification as read', function () {
     $user = User::factory()->create();
     $notification = Notification::factory()->for($user)->create();
