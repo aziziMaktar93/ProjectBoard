@@ -120,6 +120,10 @@ function deleteChecklist() {
 
     router.delete(route('checklists.destroy', props.checklist.id), { preserveScroll: true });
 }
+
+function duplicateChecklist() {
+    router.post(route('checklists.duplicate', props.checklist.id), {}, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -151,6 +155,7 @@ function deleteChecklist() {
                 >
                     {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
                 </button>
+                <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">Duplicate</button>
                 <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
             </div>
         </div>

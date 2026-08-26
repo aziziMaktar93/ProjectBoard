@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('cards/{card}/checklists', [ChecklistController::class, 'store'])->name('checklists.store');
     Route::patch('checklists/{checklist}', [ChecklistController::class, 'update'])->name('checklists.update');
+    Route::post('checklists/{checklist}/duplicate', [ChecklistController::class, 'duplicate'])->name('checklists.duplicate');
     Route::delete('checklists/{checklist}', [ChecklistController::class, 'destroy'])->name('checklists.destroy');
 
     Route::post('checklists/{checklist}/items', [ChecklistItemController::class, 'store'])->name('checklist-items.store');
