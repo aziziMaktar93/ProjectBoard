@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlobalSearch from '@/components/GlobalSearch.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -55,6 +56,10 @@ const mainNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarSeparator class="mx-3" />
+
+        <div class="px-3 pt-2">
+            <GlobalSearch />
+        </div>
 
         <SidebarContent class="pt-2">
             <NavMain :items="mainNavItems" />

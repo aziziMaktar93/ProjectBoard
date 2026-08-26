@@ -3,6 +3,7 @@
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -25,6 +26,10 @@ Route::get('calendar', [CalendarController::class, 'index'])
 Route::get('members', [MemberController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('members');
+
+Route::get('search', [SearchController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('search');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
