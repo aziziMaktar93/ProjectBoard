@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { showToast } from '@/composables/useToast';
 import { stripGradient } from '@/lib/colorGradient';
-import type { Card, CardAttachment, CardLabel, User } from '@/types';
+import type { Card, CardAttachment, CardLabel, Checklist, ChecklistItem, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { CalendarDays, Image, Paintbrush, Paperclip, SquareCheck, Tag, Users } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -123,7 +123,15 @@ const dueDateLabel = computed(() => {
     return new Date(`${props.card.due_date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 });
 
-const isOverdue = computed(() => !!props.card?.due_date && props.card.due_date < new Date().toISOString().slice(0, 10));
+const isChecklistComplete = computed(() => {
+    const items = checklists.value.flatMap((checklist: Checklist) => checklist.items ?? []);
+
+    return items.length > 0 && items.every((item: ChecklistItem) => item.is_checked);
+});
+
+const isOverdue = computed(
+    () => !!props.card?.due_date && props.card.due_date < new Date().toISOString().slice(0, 10) && !isChecklistComplete.value,
+);
 
 const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h-[calc(85vh-15rem)]' : 'max-h-[calc(85vh-5rem)]'));
 </script>

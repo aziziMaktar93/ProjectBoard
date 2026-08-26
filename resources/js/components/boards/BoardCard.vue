@@ -54,7 +54,10 @@ const isOverdue = computed(() => {
         return false;
     }
 
-    return props.card.due_date < new Date().toISOString().slice(0, 10);
+    const isPastDue = props.card.due_date < new Date().toISOString().slice(0, 10);
+    const isCompleted = !!checklistSummary.value && checklistSummary.value.checked === checklistSummary.value.total;
+
+    return isPastDue && !isCompleted;
 });
 
 function archive() {
