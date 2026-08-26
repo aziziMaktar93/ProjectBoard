@@ -14,6 +14,24 @@ const year = new Date().getFullYear();
 
 <template>
     <div class="relative flex min-h-svh flex-col bg-neutral-950 lg:flex-row">
+        <svg
+            class="pointer-events-none absolute inset-y-0 z-20 hidden w-32 lg:block"
+            style="left: calc(55% - 4rem)"
+            viewBox="0 0 128 1000"
+            preserveAspectRatio="none"
+            fill="none"
+        >
+            <path
+                d="M96,0 C32,140 32,300 84,440 C136,580 136,720 48,1000"
+                stroke="#38bdf8"
+                stroke-opacity="0.55"
+                stroke-width="18"
+                stroke-linecap="round"
+                style="filter: blur(10px)"
+            />
+            <path d="M96,0 C32,140 32,300 84,440 C136,580 136,720 48,1000" stroke="#bfdbfe" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+
         <div
             class="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 px-10 py-10 lg:flex lg:w-[55%] lg:flex-col lg:justify-between xl:px-16"
         >
