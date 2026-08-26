@@ -170,6 +170,11 @@ function deleteEvent(eventId: number) {
                         >
                             <CalendarDays class="size-3.5" /> Event
                         </span>
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <CheckCircle2 class="size-3.5" /> <span class="line-through">Completed</span>
+                        </span>
                     </div>
                 </div>
 
