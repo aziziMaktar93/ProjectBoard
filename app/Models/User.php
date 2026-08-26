@@ -72,6 +72,16 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * In-app activity notifications (mentions, assignments). Named distinctly
+     * from Notifiable's own notifications() relation, which points at
+     * Laravel's polymorphic notifications table and isn't used by this app.
+     */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
      * Send the email verification notification via the queue, so
      * registration doesn't block on the SMTP round-trip.
      */

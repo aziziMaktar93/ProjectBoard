@@ -2,6 +2,7 @@
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import NotificationBell from '@/components/NotificationBell.vue';
 import {
     Sidebar,
     SidebarContent,
@@ -57,8 +58,11 @@ const mainNavItems: NavItem[] = [
 
         <SidebarSeparator class="mx-3" />
 
-        <div class="px-3 pt-2">
-            <GlobalSearch />
+        <div class="flex items-center gap-2 px-3 pt-2">
+            <div class="min-w-0 flex-1">
+                <GlobalSearch />
+            </div>
+            <NotificationBell />
         </div>
 
         <SidebarContent class="pt-2">

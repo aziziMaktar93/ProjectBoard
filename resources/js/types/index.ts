@@ -16,10 +16,26 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface AppNotification {
+    id: number;
+    user_id: number;
+    type: 'card_assigned' | 'mention';
+    data: {
+        card_id: number;
+        card_name: string;
+        board_id: number;
+        actor_name: string;
+    };
+    read_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    notifications: { unreadCount: number; recent: AppNotification[] } | null;
     ziggy: {
         location: string;
         url: string;
