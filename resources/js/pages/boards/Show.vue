@@ -320,42 +320,46 @@ function onBoardColorChange(color: string | null) {
                 </div>
             </div>
 
-            <VueDraggable
-                v-model="lists"
-                item-key="id"
-                :animation="150"
-                handle=".list-drag-handle"
-                class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0"
-                @start="onListDragStart"
-                @end="onListDragEnd"
-            >
-                <BoardListColumn
-                    v-for="list in lists"
-                    :key="list.id"
-                    :list="list"
-                    :group="cardGroup"
-                    :matches-filters="cardMatchesFilters"
-                    @open-card="openCard"
-                    @card-drag-start="onCardDragStart"
-                    @card-drag-end="onCardDragEnd"
-                />
-            </VueDraggable>
-
-            <div class="sticky bottom-0 z-10 p-4 pt-0">
-                <Button
-                    v-if="!showAddList"
-                    variant="ghost"
-                    size="sm"
-                    class="border border-dashed border-neutral-300 bg-white text-neutral-600 shadow-md hover:bg-white hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
-                    @click="showAddList = true"
+            <div class="flex flex-1 items-start gap-4 overflow-x-auto p-4 pt-0">
+                <VueDraggable
+                    v-model="lists"
+                    item-key="id"
+                    :animation="150"
+                    handle=".list-drag-handle"
+                    class="flex items-start gap-4"
+                    @start="onListDragStart"
+                    @end="onListDragEnd"
                 >
-                    + Add another list
-                </Button>
-                <form v-else class="flex max-w-xs gap-2" @submit.prevent="submitAddList">
-                    <Input v-model="addListForm.name" placeholder="List name" autofocus />
-                    <Button type="submit" size="sm" :disabled="addListForm.processing">Add</Button>
-                    <Button type="button" variant="ghost" size="sm" @click="showAddList = false">Cancel</Button>
-                </form>
+                    <BoardListColumn
+                        v-for="list in lists"
+                        :key="list.id"
+                        :list="list"
+                        :group="cardGroup"
+                        :matches-filters="cardMatchesFilters"
+                        @open-card="openCard"
+                        @card-drag-start="onCardDragStart"
+                        @card-drag-end="onCardDragEnd"
+                    />
+                </VueDraggable>
+
+                <div class="w-72 shrink-0">
+                    <Button
+                        v-if="!showAddList"
+                        variant="ghost"
+                        size="sm"
+                        class="w-full justify-start border border-dashed border-neutral-300 bg-white/80 text-neutral-600 shadow-sm hover:bg-white hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
+                        @click="showAddList = true"
+                    >
+                        + Add another list
+                    </Button>
+                    <form v-else class="flex flex-col gap-2" @submit.prevent="submitAddList">
+                        <Input v-model="addListForm.name" placeholder="List name" autofocus />
+                        <div class="flex gap-2">
+                            <Button type="submit" size="sm" :disabled="addListForm.processing">Add</Button>
+                            <Button type="button" variant="ghost" size="sm" @click="showAddList = false">Cancel</Button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
