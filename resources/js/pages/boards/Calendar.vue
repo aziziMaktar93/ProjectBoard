@@ -7,7 +7,7 @@ import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BoardEvent, BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Kanban, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, ChevronLeft, ChevronRight, Kanban, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -112,16 +112,22 @@ function deleteEvent(eventId: number) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <h1 class="text-lg font-semibold">{{ monthLabel }}</h1>
-                    <div class="flex items-center gap-1">
-                        <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Previous month" @click="goToMonth(-1)">
-                            <ChevronLeft class="size-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" @click="goToToday">Today</Button>
-                        <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Next month" @click="goToMonth(1)">
-                            <ChevronRight class="size-4" />
-                        </Button>
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-lg font-semibold">{{ monthLabel }}</h1>
+                        <div class="flex items-center gap-1">
+                            <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Previous month" @click="goToMonth(-1)">
+                                <ChevronLeft class="size-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" @click="goToToday">Today</Button>
+                            <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Next month" @click="goToMonth(1)">
+                                <ChevronRight class="size-4" />
+                            </Button>
+                        </div>
+                    </div>
+                    <div class="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><Kanban class="size-3.5" /> Card due date</span>
+                        <span class="flex items-center gap-1.5"><CalendarDays class="size-3.5" /> Event</span>
                     </div>
                 </div>
 
@@ -190,14 +196,15 @@ function deleteEvent(eventId: number) {
                             v-for="card in cardsForDay(day.key)"
                             :key="`card-${card.id}`"
                             :href="route('boards.show', { board: board.id, card: card.id })"
-                            class="truncate rounded px-1.5 py-0.5 text-xs font-medium hover:opacity-80"
+                            class="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-xs font-medium hover:opacity-80"
                             :style="
                                 card.color
                                     ? { backgroundColor: card.color, color: 'white' }
                                     : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
                             "
                         >
-                            {{ card.name }}
+                            <Kanban class="size-3 shrink-0" />
+                            <span class="truncate">{{ card.name }}</span>
                         </Link>
 
                         <Popover
@@ -209,11 +216,12 @@ function deleteEvent(eventId: number) {
                             <PopoverTrigger as-child>
                                 <button
                                     type="button"
-                                    class="truncate rounded px-1.5 py-0.5 text-left text-xs font-medium text-white hover:opacity-80"
+                                    class="flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs font-medium text-white hover:opacity-80"
                                     :style="{ backgroundColor: event.color ?? '#8590a2' }"
                                     @click="startEditEvent(event)"
                                 >
-                                    {{ event.name }}
+                                    <CalendarDays class="size-3 shrink-0" />
+                                    <span class="truncate">{{ event.name }}</span>
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent class="w-64">

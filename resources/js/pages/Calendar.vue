@@ -8,7 +8,7 @@ import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, ChevronLeft, ChevronRight, Kanban, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -159,6 +159,10 @@ function deleteEvent(eventId: number) {
                 <div>
                     <h1 class="text-lg font-semibold">{{ monthLabel }}</h1>
                     <p class="text-sm text-muted-foreground">Due dates and events across every board you belong to.</p>
+                    <div class="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><Kanban class="size-3.5" /> Card due date</span>
+                        <span class="flex items-center gap-1.5"><CalendarDays class="size-3.5" /> Event</span>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-1">
@@ -261,8 +265,11 @@ function deleteEvent(eventId: number) {
                                     : { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }
                             "
                         >
-                            <span class="block truncate text-xs font-medium">{{ card.name }}</span>
-                            <span class="block truncate text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
+                            <span class="flex items-center gap-1 truncate text-xs font-medium">
+                                <Kanban class="size-3 shrink-0" />
+                                <span class="truncate">{{ card.name }}</span>
+                            </span>
+                            <span class="block truncate pl-4 text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
                         </Link>
 
                         <template v-for="event in eventsForDay(day.key)" :key="`event-${event.id}`">
@@ -279,8 +286,11 @@ function deleteEvent(eventId: number) {
                                         :title="eventTitle(event)"
                                         @click="startEditEvent(event)"
                                     >
-                                        <span class="block truncate text-xs font-medium">{{ event.name }}</span>
-                                        <span class="block truncate text-[10px] opacity-80">{{ eventLabel(event) }}</span>
+                                        <span class="flex items-center gap-1 truncate text-xs font-medium">
+                                            <CalendarDays class="size-3 shrink-0" />
+                                            <span class="truncate">{{ event.name }}</span>
+                                        </span>
+                                        <span class="block truncate pl-4 text-[10px] opacity-80">{{ eventLabel(event) }}</span>
                                     </button>
                                 </PopoverTrigger>
                                 <PopoverContent class="w-64">
@@ -317,8 +327,11 @@ function deleteEvent(eventId: number) {
                                 :style="{ backgroundColor: event.color ?? '#8590a2' }"
                                 :title="eventTitle(event)"
                             >
-                                <span class="block truncate text-xs font-medium">{{ event.name }}</span>
-                                <span class="block truncate text-[10px] opacity-80">{{ eventLabel(event) }}</span>
+                                <span class="flex items-center gap-1 truncate text-xs font-medium">
+                                    <CalendarDays class="size-3 shrink-0" />
+                                    <span class="truncate">{{ event.name }}</span>
+                                </span>
+                                <span class="block truncate pl-4 text-[10px] opacity-80">{{ eventLabel(event) }}</span>
                             </span>
                         </template>
                     </div>
