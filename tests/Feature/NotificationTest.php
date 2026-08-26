@@ -188,6 +188,22 @@ test('the notifications page can be searched by actor or card name', function ()
     $noMatch->assertInertia(fn ($page) => $page->has('notificationList.data', 0));
 });
 
+test('searching notifications is case-insensitive', function () {
+    $user = User::factory()->create();
+    Notification::factory()->for($user)->create([
+        'data' => ['card_id' => 1, 'card_name' => 'Ship the release', 'board_id' => 1, 'actor_name' => 'Bob Tan'],
+    ]);
+
+    $lower = $this->actingAs($user)->get('/notifications?search=release');
+    $lower->assertInertia(fn ($page) => $page->has('notificationList.data', 1));
+
+    $upper = $this->actingAs($user)->get('/notifications?search=RELEASE');
+    $upper->assertInertia(fn ($page) => $page->has('notificationList.data', 1));
+
+    $mixedActor = $this->actingAs($user)->get('/notifications?search=bOB');
+    $mixedActor->assertInertia(fn ($page) => $page->has('notificationList.data', 1));
+});
+
 test('a user can mark all of their notifications as read', function () {
     $user = User::factory()->create();
     Notification::factory()->for($user)->count(3)->create();

@@ -5,8 +5,8 @@ import { formatTimestamp } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { AppNotification, BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AtSign, Check, Search, UserPlus } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { AtSign, Check, Search, UserPlus, X } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
     notificationList: Paginated<AppNotification>;
@@ -26,9 +26,17 @@ const STATUS_OPTIONS: { value: 'all' | 'unread' | 'read'; label: string }[] = [
 
 const search = ref(props.filters.search);
 
+const hasActiveFilters = computed(() => props.filters.status !== 'all' || props.filters.search !== '');
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let skipNextSearchWatch = false;
 
 watch(search, (value) => {
+    if (skipNextSearchWatch) {
+        skipNextSearchWatch = false;
+        return;
+    }
+
     if (debounceTimer) {
         clearTimeout(debounceTimer);
     }
@@ -48,6 +56,16 @@ function reload(query: { search: string; status: string }) {
 
 function setStatus(status: 'all' | 'unread' | 'read') {
     reload({ search: search.value, status });
+}
+
+function clearFilters() {
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    skipNextSearchWatch = true;
+    search.value = '';
+    reload({ search: '', status: 'all' });
 }
 
 function sentenceFor(notification: AppNotification): string {
@@ -106,9 +124,16 @@ function goToPage(url: string | null) {
                     </button>
                 </div>
 
-                <div class="relative w-full max-w-xs">
-                    <Search class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" placeholder="Search notifications..." class="pl-8" />
+                <div class="flex items-center gap-2">
+                    <div class="relative w-full max-w-xs">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input v-model="search" placeholder="Search notifications..." class="pl-8" />
+                    </div>
+
+                    <Button v-if="hasActiveFilters" variant="ghost" size="sm" @click="clearFilters">
+                        <X class="size-3.5" />
+                        Clear filters
+                    </Button>
                 </div>
             </div>
 

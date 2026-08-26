@@ -18,10 +18,20 @@ class NotificationController extends Controller
         $notifications = $request->user()->appNotifications()
             ->when($status === 'unread', fn ($query) => $query->whereNull('read_at'))
             ->when($status === 'read', fn ($query) => $query->whereNotNull('read_at'))
-            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
-                $query->where('data->actor_name', 'like', "%{$search}%")
-                    ->orWhere('data->card_name', 'like', "%{$search}%");
-            }))
+            ->when($search !== '', function ($query) use ($search) {
+                $term = '%'.mb_strtolower($search).'%';
+                $isSqlite = $query->getConnection()->getDriverName() === 'sqlite';
+
+                $query->where(function ($query) use ($term, $isSqlite) {
+                    foreach (['actor_name', 'card_name'] as $field) {
+                        $expression = $isSqlite
+                            ? "json_extract(data, '\$.{$field}')"
+                            : "JSON_UNQUOTE(JSON_EXTRACT(data, '\$.{$field}'))";
+
+                        $query->orWhereRaw("LOWER({$expression}) LIKE ?", [$term]);
+                    }
+                });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
