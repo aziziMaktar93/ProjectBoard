@@ -143,14 +143,14 @@ function clearFilters() {
                             <X class="size-3.5" />
                             Clear
                         </Button>
-                    </div>
 
-                    <Button as-child variant="outline" size="sm" class="h-8 gap-1.5 text-xs">
-                        <a :href="reportUrl">
-                            <Download class="size-3.5" />
-                            Download report
-                        </a>
-                    </Button>
+                        <Button as-child variant="outline" size="sm" class="h-8 gap-1.5 text-xs">
+                            <a :href="reportUrl">
+                                <Download class="size-3.5" />
+                                Download report
+                            </a>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
