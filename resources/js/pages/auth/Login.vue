@@ -40,7 +40,7 @@ const submit = () => {
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
                     <div class="relative">
-                        <Mail class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Mail class="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             id="email"
                             type="email"
@@ -62,7 +62,7 @@ const submit = () => {
                         <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" tabindex="5"> Forgot password? </TextLink>
                     </div>
                     <div class="relative">
-                        <Lock class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Lock class="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
                         <PasswordInput
                             id="password"
                             required
