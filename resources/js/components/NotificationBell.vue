@@ -14,6 +14,10 @@ function sentenceFor(notification: AppNotification): string {
         return `${notification.data.actor_name} mentioned you on "${notification.data.card_name}"`;
     }
 
+    if (notification.type === 'checklist_item_assigned') {
+        return `${notification.data.actor_name} assigned you to "${notification.data.item_name}" on "${notification.data.card_name}"`;
+    }
+
     return `${notification.data.actor_name} assigned you to "${notification.data.card_name}"`;
 }
 

@@ -16,13 +16,15 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBoardFilters } from '@/composables/useBoardFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Archive, CalendarDays, MoreHorizontal, Users } from 'lucide-vue-next';
+import { Archive, CalendarDays, CheckSquare, MoreHorizontal, Tag, Users, X } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
@@ -31,6 +33,7 @@ const props = defineProps<{
     archivedLists: BoardList[];
     archivedCards: Card[];
     initialCardId: number | null;
+    canEdit: boolean;
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -232,6 +235,81 @@ function saveBoardName() {
 function onBoardColorChange(color: string | null) {
     router.patch(route('boards.update', props.board.id), { background_color: color }, { preserveScroll: true });
 }
+
+const selectMode = ref(false);
+const selectedCardIds = ref<Set<number>>(new Set());
+const bulkProcessing = ref(false);
+
+function toggleSelectMode() {
+    selectMode.value = !selectMode.value;
+    selectedCardIds.value = new Set();
+}
+
+function toggleCardSelection(cardId: number) {
+    const next = new Set(selectedCardIds.value);
+
+    if (next.has(cardId)) {
+        next.delete(cardId);
+    } else {
+        next.add(cardId);
+    }
+
+    selectedCardIds.value = next;
+}
+
+function clearSelection() {
+    selectMode.value = false;
+    selectedCardIds.value = new Set();
+}
+
+function bulkArchive() {
+    if (!confirm(`Archive ${selectedCardIds.value.size} selected card(s)?`)) {
+        return;
+    }
+
+    bulkProcessing.value = true;
+    router.post(
+        route('cards.bulk-archive', props.board.id),
+        { card_ids: Array.from(selectedCardIds.value) },
+        {
+            preserveScroll: true,
+            onSuccess: () => clearSelection(),
+            onFinish: () => {
+                bulkProcessing.value = false;
+            },
+        },
+    );
+}
+
+function bulkMove(boardListId: string) {
+    bulkProcessing.value = true;
+    router.post(
+        route('cards.bulk-move', props.board.id),
+        { card_ids: Array.from(selectedCardIds.value), board_list_id: Number(boardListId) },
+        {
+            preserveScroll: true,
+            onSuccess: () => clearSelection(),
+            onFinish: () => {
+                bulkProcessing.value = false;
+            },
+        },
+    );
+}
+
+function bulkAddLabel(labelId: number) {
+    bulkProcessing.value = true;
+    router.post(
+        route('cards.bulk-label', props.board.id),
+        { card_ids: Array.from(selectedCardIds.value), label_id: labelId },
+        {
+            preserveScroll: true,
+            onSuccess: () => clearSelection(),
+            onFinish: () => {
+                bulkProcessing.value = false;
+            },
+        },
+    );
+}
 </script>
 
 <template>
@@ -270,15 +348,31 @@ function onBoardColorChange(color: string | null) {
                     />
                     <h1
                         v-else
-                        class="min-w-0 cursor-text truncate rounded px-1 text-xl font-semibold tracking-tight hover:bg-accent"
-                        @click="startEditingBoardName"
+                        class="min-w-0 truncate rounded px-1 text-xl font-semibold tracking-tight"
+                        :class="canEdit ? 'cursor-text hover:bg-accent' : ''"
+                        @click="canEdit && startEditingBoardName()"
                     >
                         {{ board.name }}
                     </h1>
+                    <span
+                        v-if="!canEdit"
+                        class="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                    >
+                        View only
+                    </span>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <BoardFilterBar v-model:filters="filters" :labels="board.labels ?? []" :members="board.members ?? []" />
+                    <Button
+                        v-if="canEdit"
+                        :variant="selectMode ? 'default' : 'outline'"
+                        size="sm"
+                        @click="toggleSelectMode"
+                    >
+                        <CheckSquare class="size-3.5" />
+                        <span class="hidden sm:inline">{{ selectMode ? 'Cancel select' : 'Select' }}</span>
+                    </Button>
                     <Button as-child variant="outline" size="sm">
                         <Link :href="route('boards.calendar', board.id)">
                             <CalendarDays class="size-3.5" />
@@ -295,7 +389,7 @@ function onBoardColorChange(color: string | null) {
                         <span class="hidden sm:inline">View archive</span>
                     </Button>
 
-                    <DropdownMenu>
+                    <DropdownMenu v-if="canEdit">
                         <HoverLabel label="Board actions">
                             <DropdownMenuTrigger as-child>
                                 <button
@@ -325,6 +419,7 @@ function onBoardColorChange(color: string | null) {
                     v-model="lists"
                     item-key="id"
                     :animation="150"
+                    :disabled="!canEdit || selectMode"
                     handle=".list-drag-handle"
                     class="flex items-start gap-4"
                     @start="onListDragStart"
@@ -335,14 +430,18 @@ function onBoardColorChange(color: string | null) {
                         :key="list.id"
                         :list="list"
                         :group="cardGroup"
+                        :can-edit="canEdit"
+                        :select-mode="selectMode"
+                        :selected-card-ids="selectedCardIds"
                         :matches-filters="cardMatchesFilters"
                         @open-card="openCard"
+                        @toggle-select="toggleCardSelection"
                         @card-drag-start="onCardDragStart"
                         @card-drag-end="onCardDragEnd"
                     />
                 </VueDraggable>
 
-                <div class="w-72 shrink-0">
+                <div v-if="canEdit" class="w-72 shrink-0">
                     <Button
                         v-if="!showAddList"
                         variant="ghost"
@@ -363,14 +462,61 @@ function onBoardColorChange(color: string | null) {
             </div>
         </div>
 
+        <div
+            v-if="selectedCardIds.size > 0"
+            class="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+        >
+            <span class="text-sm font-medium">{{ selectedCardIds.size }} selected</span>
+
+            <Select @update:model-value="(value) => bulkMove(String(value))">
+                <SelectTrigger class="h-8 w-40 text-xs" :disabled="bulkProcessing">
+                    <SelectValue placeholder="Move to..." />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem v-for="list in lists" :key="list.id" :value="String(list.id)">{{ list.name }}</SelectItem>
+                </SelectContent>
+            </Select>
+
+            <Popover v-if="(board.labels ?? []).length">
+                <PopoverTrigger as-child>
+                    <Button variant="outline" size="sm" :disabled="bulkProcessing">
+                        <Tag class="size-3.5" /> Add label
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-56">
+                    <p class="mb-2 text-xs font-semibold text-muted-foreground">Add label to selected cards</p>
+                    <ul class="space-y-1">
+                        <li
+                            v-for="label in board.labels"
+                            :key="label.id"
+                            class="flex cursor-pointer items-center gap-2 rounded-md p-1.5 text-sm text-white hover:opacity-90"
+                            :style="{ backgroundColor: label.color }"
+                            @click="bulkAddLabel(label.id)"
+                        >
+                            <span class="font-medium drop-shadow-sm">{{ label.name }}</span>
+                        </li>
+                    </ul>
+                </PopoverContent>
+            </Popover>
+
+            <Button variant="outline" size="sm" :disabled="bulkProcessing" @click="bulkArchive">
+                <Archive class="size-3.5" /> Archive
+            </Button>
+
+            <Button variant="ghost" size="sm" @click="clearSelection">
+                <X class="size-3.5" /> Cancel
+            </Button>
+        </div>
+
         <CardDetailModal
             v-model:open="showCardModal"
             :card="activeCard"
             :board-id="board.id"
             :board-members="board.members ?? []"
             :board-labels="board.labels ?? []"
+            :can-edit="canEdit"
         />
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
-        <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" />
+        <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" :can-edit="canEdit" />
     </AppLayout>
 </template>

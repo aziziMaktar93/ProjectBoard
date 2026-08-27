@@ -58,7 +58,7 @@ class Board extends Model
 
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'board_user')->withTimestamps();
+        return $this->belongsToMany(User::class, 'board_user')->withPivot('role')->withTimestamps();
     }
 
     public function labels(): HasMany

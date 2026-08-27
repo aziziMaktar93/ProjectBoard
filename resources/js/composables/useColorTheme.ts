@@ -13,15 +13,15 @@ export function applyColorTheme(theme: ColorTheme) {
 }
 
 export function initializeColorTheme() {
-    const saved = (localStorage.getItem(STORAGE_KEY) as ColorTheme | null) ?? 'neutral';
+    const saved = (localStorage.getItem(STORAGE_KEY) as ColorTheme | null) ?? 'blue';
     applyColorTheme(saved);
 }
 
 export function useColorTheme() {
-    const colorTheme = ref<ColorTheme>('neutral');
+    const colorTheme = ref<ColorTheme>('blue');
 
     onMounted(() => {
-        const saved = (localStorage.getItem(STORAGE_KEY) as ColorTheme | null) ?? 'neutral';
+        const saved = (localStorage.getItem(STORAGE_KEY) as ColorTheme | null) ?? 'blue';
         colorTheme.value = saved;
         applyColorTheme(saved);
     });

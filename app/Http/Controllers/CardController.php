@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Cards\BulkArchiveCardsRequest;
+use App\Http\Requests\Cards\BulkLabelCardsRequest;
+use App\Http\Requests\Cards\BulkMoveCardsRequest;
 use App\Http\Requests\Cards\ReorderCardsRequest;
 use App\Http\Requests\Cards\StoreCardRequest;
 use App\Http\Requests\Cards\UpdateCardRequest;
@@ -9,6 +12,7 @@ use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\CardActivity;
+use App\Models\Label;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -132,6 +136,87 @@ class CardController extends Controller
                 ]);
             }
         });
+
+        return back();
+    }
+
+    public function bulkArchive(BulkArchiveCardsRequest $request, Board $board): RedirectResponse
+    {
+        $cards = Card::whereIn('id', $request->validated('card_ids'))
+            ->whereNull('archived_at')
+            ->whereHas('boardList', fn ($query) => $query->where('board_id', $board->id))
+            ->get();
+
+        foreach ($cards as $card) {
+            $card->update(['archived_at' => now()]);
+
+            CardActivity::create([
+                'card_id' => $card->id,
+                'user_id' => $request->user()->id,
+                'type' => 'archived',
+            ]);
+        }
+
+        return back();
+    }
+
+    public function bulkMove(BulkMoveCardsRequest $request, Board $board): RedirectResponse
+    {
+        $targetList = BoardList::findOrFail($request->validated('board_list_id'));
+
+        $cards = Card::whereIn('id', $request->validated('card_ids'))
+            ->whereNull('archived_at')
+            ->whereHas('boardList', fn ($query) => $query->where('board_id', $board->id))
+            ->with('boardList')
+            ->get();
+
+        DB::transaction(function () use ($cards, $targetList, $request) {
+            $position = ($targetList->cards()->max('position') ?? -1) + 1;
+
+            foreach ($cards as $card) {
+                $fromListId = $card->board_list_id;
+                $fromListName = $card->boardList->name;
+
+                $card->update([
+                    'board_list_id' => $targetList->id,
+                    'position' => $position++,
+                ]);
+
+                if ($fromListId !== $targetList->id) {
+                    CardActivity::create([
+                        'card_id' => $card->id,
+                        'user_id' => $request->user()->id,
+                        'type' => 'moved',
+                        'data' => ['from_list' => $fromListName, 'to_list' => $targetList->name],
+                    ]);
+                }
+            }
+        });
+
+        return back();
+    }
+
+    public function bulkAddLabel(BulkLabelCardsRequest $request, Board $board): RedirectResponse
+    {
+        $labelId = $request->validated('label_id');
+        $label = Label::findOrFail($labelId);
+
+        $cards = Card::whereIn('id', $request->validated('card_ids'))
+            ->whereHas('boardList', fn ($query) => $query->where('board_id', $board->id))
+            ->get();
+
+        foreach ($cards as $card) {
+            if (! $card->labels()->where('labels.id', $labelId)->exists()) {
+                $card->labels()->attach($labelId);
+
+                CardActivity::create([
+                    'card_id' => $card->id,
+                    'user_id' => $request->user()->id,
+                    'type' => 'label_added',
+                    'data' => ['label_name' => $label->name],
+                ]);
+            }
+        }
 
         return back();
     }

@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { Board, User } from '@/types';
-import { router } from '@inertiajs/vue3';
+import type { Board, SharedData, User } from '@/types';
+import { router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps<{
     board: Board;
     workspaceMembers: User[];
+    canEdit: boolean;
 }>();
+
+const currentUserId = usePage<SharedData>().props.auth.user.id;
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -25,6 +29,10 @@ function addMember(user: User) {
 
 function removeMember(user: User) {
     router.delete(route('board-members.destroy', [props.board.id, user.id]), { preserveScroll: true });
+}
+
+function updateMemberRole(user: User, role: string) {
+    router.patch(route('board-members.update-role', [props.board.id, user.id]), { role }, { preserveScroll: true });
 }
 </script>
 
@@ -51,12 +59,35 @@ function removeMember(user: User) {
                                     <span v-if="member.id === board.user_id" class="text-xs text-muted-foreground">(creator)</span>
                                 </p>
                             </div>
-                            <Button v-if="member.id !== board.user_id" variant="ghost" size="sm" @click="removeMember(member)">Remove</Button>
+                            <div v-if="member.id !== board.user_id" class="flex items-center gap-1">
+                                <Select
+                                    v-if="canEdit"
+                                    :model-value="member.pivot?.role ?? 'editor'"
+                                    @update:model-value="(value) => updateMemberRole(member, String(value))"
+                                >
+                                    <SelectTrigger class="h-8 w-24 text-xs">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="editor">Editor</SelectItem>
+                                        <SelectItem value="viewer">Viewer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <span v-else class="text-xs capitalize text-muted-foreground">{{ member.pivot?.role ?? 'editor' }}</span>
+                                <Button
+                                    v-if="canEdit || member.id === currentUserId"
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="removeMember(member)"
+                                >
+                                    {{ member.id === currentUserId ? 'Leave' : 'Remove' }}
+                                </Button>
+                            </div>
                         </li>
                     </ul>
                 </div>
 
-                <div v-if="availableMembers.length" class="space-y-2">
+                <div v-if="canEdit && availableMembers.length" class="space-y-2">
                     <h3 class="text-sm font-medium text-muted-foreground">Add from workspace</h3>
                     <ul class="space-y-1">
                         <li

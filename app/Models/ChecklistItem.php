@@ -6,6 +6,7 @@ use Database\Factories\ChecklistItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ChecklistItem extends Model
 {
@@ -19,6 +20,7 @@ class ChecklistItem extends Model
         'checklist_id',
         'name',
         'is_checked',
+        'due_date',
         'position',
     ];
 
@@ -35,5 +37,10 @@ class ChecklistItem extends Model
     public function checklist(): BelongsTo
     {
         return $this->belongsTo(Checklist::class);
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'checklist_item_user')->withTimestamps();
     }
 }

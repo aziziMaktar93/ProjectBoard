@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Boards\StoreBoardMemberRequest;
+use App\Http\Requests\Boards\UpdateBoardMemberRequest;
 use App\Models\Board;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -14,14 +15,27 @@ class BoardMemberController extends Controller
 {
     public function store(StoreBoardMemberRequest $request, Board $board): RedirectResponse
     {
-        $board->members()->syncWithoutDetaching([$request->validated('user_id')]);
+        $board->members()->syncWithoutDetaching([
+            $request->validated('user_id') => ['role' => $request->validated('role', 'editor')],
+        ]);
+
+        return back();
+    }
+
+    public function updateRole(UpdateBoardMemberRequest $request, Board $board, User $user): RedirectResponse
+    {
+        abort_if($user->id === $board->user_id, 422, 'The board creator\'s role cannot be changed.');
+
+        $board->members()->updateExistingPivot($user->id, ['role' => $request->validated('role')]);
 
         return back();
     }
 
     public function destroy(Request $request, Board $board, User $user): RedirectResponse
     {
-        Gate::authorize('update', $board);
+        if ($request->user()->id !== $user->id) {
+            Gate::authorize('update', $board);
+        }
 
         abort_if($user->id === $board->user_id, 422, 'The board creator cannot be removed.');
 

@@ -5,7 +5,9 @@ use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\Checklist;
 use App\Models\ChecklistItem;
+use App\Models\Notification;
 use App\Models\User;
+use App\Models\Workspace;
 
 test('a user can add a named checklist to a card on their board', function () {
     $user = User::factory()->create();
@@ -277,6 +279,154 @@ test('a user cannot update a checklist item on another user\'s board', function 
 
     $response->assertForbidden();
     expect($item->fresh()->is_checked)->toBeFalse();
+});
+
+test('a user can set and clear a checklist item\'s due date', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['due_date' => null]);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['due_date' => '2026-09-01'])->assertRedirect();
+    expect($item->fresh()->due_date)->toBe('2026-09-01');
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['due_date' => null])->assertRedirect();
+    expect($item->fresh()->due_date)->toBeNull();
+});
+
+test('setting a checklist item due date requires a valid date', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+
+    $response = $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['due_date' => 'not-a-date']);
+
+    $response->assertSessionHasErrors('due_date');
+});
+
+test('a user cannot set a checklist item due date on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['due_date' => null]);
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->patch("/checklist-items/{$item->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertForbidden();
+    expect($item->fresh()->due_date)->toBeNull();
+});
+
+test('a user can assign a board member to a checklist item', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->post("/checklist-items/{$item->id}/members", ['user_id' => $member->id]);
+
+    $response->assertRedirect();
+    expect($item->members()->where('users.id', $member->id)->exists())->toBeTrue();
+});
+
+test('assigning another member to a checklist item creates a notification for them', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Ship it']);
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['name' => 'Write tests']);
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $this->actingAs($owner)->post("/checklist-items/{$item->id}/members", ['user_id' => $member->id]);
+
+    expect(Notification::where('user_id', $member->id)->where('type', 'checklist_item_assigned')->count())->toBe(1);
+    $notification = Notification::where('user_id', $member->id)->first();
+    expect($notification->data)->toMatchArray([
+        'card_id' => $card->id,
+        'card_name' => 'Ship it',
+        'board_id' => $board->id,
+        'actor_name' => $owner->name,
+        'item_name' => 'Write tests',
+    ]);
+});
+
+test('assigning yourself to a checklist item does not create a notification', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+
+    $this->actingAs($owner)->post("/checklist-items/{$item->id}/members", ['user_id' => $owner->id]);
+
+    expect(Notification::where('user_id', $owner->id)->count())->toBe(0);
+});
+
+test('a user can unassign a member from a checklist item', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+    $item->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->delete("/checklist-items/{$item->id}/members/{$member->id}");
+
+    $response->assertRedirect();
+    expect($item->members()->where('users.id', $member->id)->exists())->toBeFalse();
+});
+
+test('a user cannot assign a non-board-member to a checklist item', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+    $outsider = User::factory()->create();
+
+    $response = $this->actingAs($owner)->post("/checklist-items/{$item->id}/members", ['user_id' => $outsider->id]);
+
+    $response->assertSessionHasErrors('user_id');
+    expect($item->members()->where('users.id', $outsider->id)->exists())->toBeFalse();
+});
+
+test('a user cannot assign a member to a checklist item on another user\'s board', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+    $other = User::factory()->create();
+
+    $response = $this->actingAs($other)->post("/checklist-items/{$item->id}/members", ['user_id' => $owner->id]);
+
+    $response->assertForbidden();
+    expect($item->members()->count())->toBe(0);
 });
 
 test('a user can delete a checklist item', function () {

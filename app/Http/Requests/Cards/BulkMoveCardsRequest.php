@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Boards;
+namespace App\Http\Requests\Cards;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreBoardMemberRequest extends FormRequest
+class BulkMoveCardsRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,15 +17,16 @@ class StoreBoardMemberRequest extends FormRequest
      */
     public function rules(): array
     {
-        $board = $this->route('board');
-
         return [
-            'user_id' => [
+            'card_ids' => ['required', 'array', 'min:1'],
+            'card_ids.*' => ['integer'],
+            'board_list_id' => [
                 'required',
                 'integer',
-                Rule::exists('workspace_user', 'user_id')->where('workspace_id', $board->workspace_id),
+                Rule::exists('board_lists', 'id')
+                    ->where('board_id', $this->route('board')->id)
+                    ->whereNull('archived_at'),
             ],
-            'role' => ['sometimes', 'in:editor,viewer'],
         ];
     }
 }

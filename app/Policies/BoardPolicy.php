@@ -14,7 +14,11 @@ class BoardPolicy
 
     public function update(User $user, Board $board): bool
     {
-        return $board->members()->where('users.id', $user->id)->exists();
+        if ($user->id === $board->user_id) {
+            return true;
+        }
+
+        return $board->members()->where('users.id', $user->id)->wherePivot('role', '!=', 'viewer')->exists();
     }
 
     public function delete(User $user, Board $board): bool

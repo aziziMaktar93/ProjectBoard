@@ -7,6 +7,7 @@ import { ref } from 'vue';
 
 const props = defineProps<{
     card: Card;
+    canEdit: boolean;
 }>();
 
 const PREVIEWABLE_MIME_TYPES = ['application/pdf'];
@@ -114,7 +115,7 @@ function formatSize(bytes: number): string {
                     </TooltipTrigger>
                     <TooltipContent>Download</TooltipContent>
                 </Tooltip>
-                <Tooltip v-if="isImage(attachment)">
+                <Tooltip v-if="canEdit && isImage(attachment)">
                     <TooltipTrigger as-child>
                         <button
                             type="button"
@@ -133,7 +134,7 @@ function formatSize(bytes: number): string {
                     </TooltipTrigger>
                     <TooltipContent>{{ card.cover_attachment_id === attachment.id ? 'Remove cover' : 'Set as cover' }}</TooltipContent>
                 </Tooltip>
-                <Tooltip>
+                <Tooltip v-if="canEdit">
                     <TooltipTrigger as-child>
                         <button
                             type="button"

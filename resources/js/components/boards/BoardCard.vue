@@ -19,11 +19,24 @@ import { computed } from 'vue';
 
 const props = defineProps<{
     card: Card;
+    canEdit: boolean;
+    selectMode?: boolean;
+    selected?: boolean;
 }>();
 
 const emit = defineEmits<{
     open: [card: Card];
+    'toggle-select': [cardId: number];
 }>();
+
+function handleOpen() {
+    if (props.selectMode) {
+        emit('toggle-select', props.card.id);
+        return;
+    }
+
+    emit('open', props.card);
+}
 
 const checklistSummary = computed(() => {
     const items = (props.card.checklists ?? []).flatMap((checklist: Checklist) => checklist.items ?? []);
@@ -75,19 +88,32 @@ function onColorChange(color: string | null) {
 
 <template>
     <div
-        class="group overflow-hidden rounded-lg border border-neutral-200/80 bg-white text-sm shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-none dark:hover:border-neutral-600"
+        class="group overflow-hidden rounded-lg border bg-white text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-neutral-800 dark:shadow-none"
+        :class="
+            selected
+                ? 'border-primary ring-2 ring-primary'
+                : 'border-neutral-200/80 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600'
+        "
     >
         <img
             v-if="card.cover_attachment"
             :src="route('card-attachments.view', card.cover_attachment.id)"
             :alt="card.cover_attachment.name"
             class="h-28 w-full cursor-pointer object-cover"
-            @click="emit('open', card)"
+            @click="handleOpen"
         />
         <div v-else-if="card.color" class="h-1.5" :style="{ backgroundImage: stripGradient(card.color) }" />
 
         <div class="flex items-start justify-between gap-2 p-3">
-            <button type="button" class="flex-1 text-left" @click="emit('open', card)">
+            <input
+                v-if="selectMode"
+                type="checkbox"
+                :checked="selected"
+                aria-label="Select card"
+                class="mt-1 size-4 shrink-0 rounded border-neutral-300 text-primary focus:ring-primary dark:border-neutral-600"
+                @change="handleOpen"
+            />
+            <button type="button" class="flex-1 text-left" @click="handleOpen">
                 <div v-if="card.labels?.length" class="mb-1.5 flex flex-wrap gap-1">
                     <span
                         v-for="label in card.labels"
@@ -139,7 +165,7 @@ function onColorChange(color: string | null) {
                 </div>
             </button>
 
-            <DropdownMenu>
+            <DropdownMenu v-if="canEdit && !selectMode">
                 <HoverLabel label="Card actions" side="bottom">
                     <DropdownMenuTrigger as-child>
                         <button

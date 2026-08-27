@@ -12,6 +12,7 @@ use App\Http\Controllers\CardLabelController;
 use App\Http\Controllers\CardMemberController;
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\ChecklistItemMemberController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -23,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('boards/{board}', [BoardController::class, 'destroy'])->name('boards.destroy');
 
     Route::post('boards/{board}/members', [BoardMemberController::class, 'store'])->name('board-members.store');
+    Route::patch('boards/{board}/members/{user}/role', [BoardMemberController::class, 'updateRole'])->name('board-members.update-role');
     Route::delete('boards/{board}/members/{user}', [BoardMemberController::class, 'destroy'])->name('board-members.destroy');
 
     Route::post('boards/{board}/labels', [BoardLabelController::class, 'store'])->name('board-labels.store');
@@ -44,6 +46,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('lists/{boardList}/cards', [CardController::class, 'store'])->name('cards.store');
     Route::patch('boards/{board}/cards/reorder', [CardController::class, 'reorder'])->name('cards.reorder');
+    Route::post('boards/{board}/cards/bulk-archive', [CardController::class, 'bulkArchive'])->name('cards.bulk-archive');
+    Route::post('boards/{board}/cards/bulk-move', [CardController::class, 'bulkMove'])->name('cards.bulk-move');
+    Route::post('boards/{board}/cards/bulk-label', [CardController::class, 'bulkAddLabel'])->name('cards.bulk-label');
     Route::patch('cards/{card}', [CardController::class, 'update'])->name('cards.update');
     Route::post('cards/{card}/duplicate', [CardController::class, 'duplicate'])->name('cards.duplicate');
     Route::patch('cards/{card}/archive', [CardController::class, 'archive'])->name('cards.archive');
@@ -58,6 +63,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('checklists/{checklist}/items', [ChecklistItemController::class, 'store'])->name('checklist-items.store');
     Route::patch('checklist-items/{checklistItem}', [ChecklistItemController::class, 'update'])->name('checklist-items.update');
     Route::delete('checklist-items/{checklistItem}', [ChecklistItemController::class, 'destroy'])->name('checklist-items.destroy');
+
+    Route::post('checklist-items/{checklistItem}/members', [ChecklistItemMemberController::class, 'store'])->name('checklist-item-members.store');
+    Route::delete('checklist-items/{checklistItem}/members/{user}', [ChecklistItemMemberController::class, 'destroy'])->name('checklist-item-members.destroy');
 
     Route::post('cards/{card}/members', [CardMemberController::class, 'store'])->name('card-members.store');
     Route::delete('cards/{card}/members/{user}', [CardMemberController::class, 'destroy'])->name('card-members.destroy');

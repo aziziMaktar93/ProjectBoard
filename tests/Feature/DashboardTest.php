@@ -101,6 +101,27 @@ test('checklist progress counts individual items, not whole cards', function () 
     $response->assertInertia(fn ($page) => $page->where('stats.checklistProgress', 67));
 });
 
+test('the dashboard reports overdue and due-soon checklist items', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+
+    $checklist->items()->create(['name' => 'Overdue', 'is_checked' => false, 'position' => 0, 'due_date' => now()->subDay()->toDateString()]);
+    $checklist->items()->create(['name' => 'Due soon', 'is_checked' => false, 'position' => 1, 'due_date' => now()->addDays(2)->toDateString()]);
+    $checklist->items()->create(['name' => 'No due date', 'is_checked' => false, 'position' => 2]);
+    $checklist->items()->create(['name' => 'Completed overdue', 'is_checked' => true, 'position' => 3, 'due_date' => now()->subDay()->toDateString()]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->where('stats.checklistItemsOverdue', 1)
+            ->where('stats.checklistItemsDueSoon', 1)
+    );
+});
+
 test('the dashboard only counts cards from boards the user is a member of', function () {
     $user = User::factory()->create();
     $myBoard = Board::factory()->for($user)->create();
@@ -124,6 +145,28 @@ test('the dashboard reports workload per member', function () {
     $card2 = Card::factory()->for($list)->create();
     $card1->members()->attach($user->id);
     $card2->members()->attach($user->id);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('workload', 1)
+            ->where('workload.0.count', 2)
+            ->where('workload.0.user.id', $user->id)
+    );
+});
+
+test('the dashboard workload also counts checklist item member assignments', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card1 = Card::factory()->for($list)->create();
+    $card2 = Card::factory()->for($list)->create();
+    $card1->members()->attach($user->id);
+
+    $checklist = Checklist::factory()->for($card2)->create();
+    $item = $checklist->items()->create(['name' => 'Step', 'is_checked' => false, 'position' => 0]);
+    $item->members()->attach($user->id);
 
     $response = $this->actingAs($user)->get('/dashboard');
 

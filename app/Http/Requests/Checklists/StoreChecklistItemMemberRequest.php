@@ -3,8 +3,9 @@
 namespace App\Http\Requests\Checklists;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class UpdateChecklistItemRequest extends FormRequest
+class StoreChecklistItemMemberRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,10 +17,14 @@ class UpdateChecklistItemRequest extends FormRequest
      */
     public function rules(): array
     {
+        $board = $this->route('checklistItem')->checklist->card->boardList->board;
+
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'is_checked' => ['sometimes', 'boolean'],
-            'due_date' => ['sometimes', 'nullable', 'date'],
+            'user_id' => [
+                'required',
+                'integer',
+                Rule::exists('board_user', 'user_id')->where('board_id', $board->id),
+            ],
         ];
     }
 }

@@ -242,6 +242,29 @@ test('a board calendar flags a due card as completed once its checklist is 100% 
     $response->assertInertia(fn ($page) => $page->where('cards.0.is_completed', true));
 });
 
+test('a board calendar includes checklist item due dates as their own entries', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Ship it']);
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'Launch Checklist']);
+    $checklist->items()->create(['name' => 'Write tests', 'is_checked' => false, 'due_date' => '2026-09-12', 'position' => 0]);
+    $checklist->items()->create(['name' => 'No due date', 'is_checked' => false, 'position' => 1]);
+
+    $response = $this->actingAs($owner)->get("/boards/{$board->id}/calendar");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('boards/Calendar')
+            ->has('checklistItems', 1)
+            ->where('checklistItems.0.name', 'Write tests')
+            ->where('checklistItems.0.card_id', $card->id)
+            ->where('checklistItems.0.card_name', 'Ship it')
+            ->where('checklistItems.0.checklist_name', 'Launch Checklist')
+            ->where('checklistItems.0.is_checked', false)
+    );
+});
+
 test('a user who is not a board member cannot view the calendar', function () {
     $owner = User::factory()->create();
     $board = Board::factory()->for($owner)->create();

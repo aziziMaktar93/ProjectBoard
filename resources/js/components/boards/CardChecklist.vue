@@ -1,15 +1,20 @@
 <script setup lang="ts">
+import MemberAvatar from '@/components/MemberAvatar.vue';
+import ChecklistItemMemberPicker from '@/components/boards/ChecklistItemMemberPicker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { celebrate } from '@/composables/useCelebration';
-import type { Checklist, ChecklistItem } from '@/types';
+import type { Checklist, ChecklistItem, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
-import { Trash2 } from 'lucide-vue-next';
+import { CalendarDays, Trash2, Users } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
 
 const props = defineProps<{
     checklist: Checklist;
+    canEdit: boolean;
+    boardMembers: User[];
 }>();
 
 const hideChecked = ref(false);
@@ -96,6 +101,26 @@ function deleteItem(item: ChecklistItem) {
     router.delete(route('checklist-items.destroy', item.id), { preserveScroll: true });
 }
 
+function setItemDueDate(item: ChecklistItem, value: string) {
+    router.patch(route('checklist-items.update', item.id), { due_date: value || null }, { preserveScroll: true });
+}
+
+function itemDueDateLabel(item: ChecklistItem): string | null {
+    if (!item.due_date) {
+        return null;
+    }
+
+    return new Date(`${item.due_date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function isItemOverdue(item: ChecklistItem): boolean {
+    if (!item.due_date || item.is_checked) {
+        return false;
+    }
+
+    return item.due_date < new Date().toISOString().slice(0, 10);
+}
+
 function submitAddItem() {
     if (!newItemName.value.trim()) {
         return;
@@ -140,8 +165,9 @@ function duplicateChecklist() {
             />
             <p
                 v-else
-                class="min-w-0 flex-1 cursor-text truncate rounded px-1 text-sm font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                @click="startEditingName"
+                class="min-w-0 flex-1 truncate rounded px-1 text-sm font-semibold"
+                :class="canEdit ? 'cursor-text hover:bg-neutral-100 dark:hover:bg-neutral-800' : ''"
+                @click="canEdit && startEditingName()"
             >
                 {{ checklist.name }}
             </p>
@@ -155,8 +181,12 @@ function duplicateChecklist() {
                 >
                     {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
                 </button>
-                <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">Duplicate</button>
-                <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
+                <template v-if="canEdit">
+                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">
+                        Duplicate
+                    </button>
+                    <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
+                </template>
             </div>
         </div>
 
@@ -172,6 +202,7 @@ function duplicateChecklist() {
                 <input
                     type="checkbox"
                     :checked="item.is_checked"
+                    :disabled="!canEdit"
                     :aria-labelledby="`checklist-item-label-${item.id}`"
                     class="size-4 shrink-0 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500 dark:border-neutral-600"
                     @change="toggleItem(item)"
@@ -188,17 +219,77 @@ function duplicateChecklist() {
                 <span
                     v-else
                     :id="`checklist-item-label-${item.id}`"
-                    class="min-w-0 flex-1 cursor-text truncate rounded px-1 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    :class="item.is_checked ? 'text-muted-foreground line-through' : ''"
-                    @click="startEditingItem(item)"
+                    class="min-w-0 flex-1 truncate rounded px-1 text-sm"
+                    :class="[
+                        item.is_checked ? 'text-muted-foreground line-through' : '',
+                        canEdit ? 'cursor-text hover:bg-neutral-100 dark:hover:bg-neutral-800' : '',
+                    ]"
+                    @click="canEdit && startEditingItem(item)"
                 >
                     {{ item.name }}
                 </span>
-                <Tooltip>
+                <span
+                    v-if="itemDueDateLabel(item)"
+                    class="shrink-0 rounded px-1.5 py-0.5 text-[11px]"
+                    :class="
+                        isItemOverdue(item)
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                            : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300'
+                    "
+                >
+                    {{ itemDueDateLabel(item) }}
+                </span>
+                <div v-if="item.members?.length" class="flex shrink-0 -space-x-1.5">
+                    <MemberAvatar v-for="member in item.members" :key="member.id" :user="member" size="xs" />
+                </div>
+                <Popover v-if="canEdit">
+                    <PopoverTrigger as-child>
+                        <button
+                            type="button"
+                            title="Assign member"
+                            class="shrink-0 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100"
+                            :class="{ '!opacity-100': item.members?.length }"
+                            aria-label="Assign member"
+                        >
+                            <Users class="size-3.5" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-64">
+                        <p class="mb-2 text-xs font-semibold text-muted-foreground">Assign member</p>
+                        <ChecklistItemMemberPicker :item="item" :board-members="boardMembers" />
+                    </PopoverContent>
+                </Popover>
+                <Popover v-if="canEdit">
+                    <PopoverTrigger as-child>
+                        <button
+                            type="button"
+                            title="Due date"
+                            class="shrink-0 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100"
+                            :class="{ '!opacity-100': item.due_date }"
+                            aria-label="Set due date"
+                        >
+                            <CalendarDays class="size-3.5" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-64">
+                        <p class="mb-2 text-xs font-semibold text-muted-foreground">Due date</p>
+                        <div class="flex items-center gap-2">
+                            <Input
+                                type="date"
+                                :model-value="item.due_date ?? ''"
+                                @change="setItemDueDate(item, ($event.target as HTMLInputElement).value)"
+                            />
+                            <Button v-if="item.due_date" type="button" variant="ghost" size="sm" @click="setItemDueDate(item, '')">
+                                Clear
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                <Tooltip v-if="canEdit">
                     <TooltipTrigger as-child>
                         <button
                             type="button"
-                            class="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                            class="shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                             aria-label="Delete item"
                             @click="deleteItem(item)"
                         >
@@ -210,13 +301,15 @@ function duplicateChecklist() {
             </li>
         </ul>
 
-        <Button v-if="!showAddItem" variant="ghost" size="sm" class="justify-start text-muted-foreground" @click="showAddItem = true">
-            + Add an item
-        </Button>
-        <form v-else class="flex gap-2" @submit.prevent="submitAddItem">
-            <Input v-model="newItemName" placeholder="Add an item" autofocus />
-            <Button type="submit" size="sm">Add</Button>
-            <Button type="button" variant="ghost" size="sm" @click="showAddItem = false">Cancel</Button>
-        </form>
+        <template v-if="canEdit">
+            <Button v-if="!showAddItem" variant="ghost" size="sm" class="justify-start text-muted-foreground" @click="showAddItem = true">
+                + Add an item
+            </Button>
+            <form v-else class="flex gap-2" @submit.prevent="submitAddItem">
+                <Input v-model="newItemName" placeholder="Add an item" autofocus />
+                <Button type="submit" size="sm">Add</Button>
+                <Button type="button" variant="ghost" size="sm" @click="showAddItem = false">Cancel</Button>
+            </form>
+        </template>
     </div>
 </template>

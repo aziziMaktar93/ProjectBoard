@@ -5,7 +5,7 @@ import { formatTimestamp } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { AppNotification, BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AtSign, Check, Search, UserPlus, X } from 'lucide-vue-next';
+import { AtSign, Check, ListChecks, Search, UserPlus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -71,6 +71,10 @@ function clearFilters() {
 function sentenceFor(notification: AppNotification): string {
     if (notification.type === 'mention') {
         return `${notification.data.actor_name} mentioned you on "${notification.data.card_name}"`;
+    }
+
+    if (notification.type === 'checklist_item_assigned') {
+        return `${notification.data.actor_name} assigned you to "${notification.data.item_name}" on "${notification.data.card_name}"`;
     }
 
     return `${notification.data.actor_name} assigned you to "${notification.data.card_name}"`;
@@ -148,13 +152,16 @@ function goToPage(url: string | null) {
                     >
                         <span
                             class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full"
-                            :class="
-                                notification.type === 'mention'
-                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-                                    : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400'
-                            "
+                            :class="{
+                                'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400': notification.type === 'mention',
+                                'bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400':
+                                    notification.type === 'checklist_item_assigned',
+                                'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400':
+                                    notification.type === 'card_assigned',
+                            }"
                         >
                             <AtSign v-if="notification.type === 'mention'" class="size-4" />
+                            <ListChecks v-else-if="notification.type === 'checklist_item_assigned'" class="size-4" />
                             <UserPlus v-else class="size-4" />
                         </span>
                         <div class="min-w-0 flex-1">

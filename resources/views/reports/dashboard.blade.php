@@ -122,6 +122,20 @@
                 </div>
             </td>
         </tr>
+        <tr>
+            <td width="20%">
+                <div class="stat-box">
+                    <span class="stat-value">{{ $stats['checklistItemsOverdue'] }}</span>
+                    <span class="stat-label">Checklist items overdue</span>
+                </div>
+            </td>
+            <td width="20%">
+                <div class="stat-box">
+                    <span class="stat-value">{{ $stats['checklistItemsDueSoon'] }}</span>
+                    <span class="stat-label">Checklist items due soon</span>
+                </div>
+            </td>
+        </tr>
     </table>
 
     <h2>Tasks by board</h2>

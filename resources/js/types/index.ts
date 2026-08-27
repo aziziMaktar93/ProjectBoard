@@ -19,12 +19,13 @@ export interface NavItem {
 export interface AppNotification {
     id: number;
     user_id: number;
-    type: 'card_assigned' | 'mention';
+    type: 'card_assigned' | 'mention' | 'checklist_item_assigned';
     data: {
         card_id: number;
         card_name: string;
         board_id: number;
         actor_name: string;
+        item_name?: string;
     };
     read_at: string | null;
     created_at: string;
@@ -70,6 +71,7 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    pivot?: { role: 'editor' | 'viewer' };
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
@@ -79,9 +81,11 @@ export interface ChecklistItem {
     checklist_id: number;
     name: string;
     is_checked: boolean;
+    due_date: string | null;
     position: number;
     created_at: string;
     updated_at: string;
+    members?: User[];
 }
 
 export interface Checklist {
@@ -205,6 +209,8 @@ export interface DashboardStats {
     overdue: number;
     dueSoon: number;
     checklistProgress: number | null;
+    checklistItemsOverdue: number;
+    checklistItemsDueSoon: number;
 }
 
 export interface BoardTaskCount {

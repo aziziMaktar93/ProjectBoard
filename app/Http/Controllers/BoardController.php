@@ -6,6 +6,7 @@ use App\Http\Requests\Boards\StoreBoardRequest;
 use App\Http\Requests\Boards\UpdateBoardRequest;
 use App\Models\Board;
 use App\Models\Card;
+use App\Models\ChecklistItem;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,7 @@ class BoardController extends Controller
             'lists.cards' => fn ($query) => $query->whereNull('archived_at')->orderBy('position'),
             'lists.cards.checklists' => fn ($query) => $query->orderBy('position'),
             'lists.cards.checklists.items' => fn ($query) => $query->orderBy('position'),
+            'lists.cards.checklists.items.members',
             'lists.cards.members',
             'lists.cards.labels',
             'lists.cards.attachments' => fn ($query) => $query->latest(),
@@ -74,6 +76,7 @@ class BoardController extends Controller
             'archivedLists' => $archivedLists,
             'archivedCards' => $archivedCards,
             'initialCardId' => $request->integer('card') ?: null,
+            'canEdit' => $request->user()->can('update', $board),
         ]);
     }
 
@@ -101,10 +104,30 @@ class BoardController extends Controller
 
         $events = $board->events()->with('user')->orderBy('start_date')->get();
 
+        $checklistItems = ChecklistItem::query()
+            ->whereHas('checklist', fn ($query) => $query->whereHas('card', fn ($cardQuery) => $cardQuery
+                ->whereNull('archived_at')
+                ->whereHas('boardList', fn ($listQuery) => $listQuery->where('board_id', $board->id)->whereNull('archived_at'))
+            ))
+            ->whereNotNull('due_date')
+            ->with(['checklist:id,card_id,name', 'checklist.card:id,name'])
+            ->orderBy('due_date')
+            ->get()
+            ->map(fn (ChecklistItem $item) => [
+                'id' => $item->id,
+                'card_id' => $item->checklist->card_id,
+                'card_name' => $item->checklist->card->name,
+                'checklist_name' => $item->checklist->name,
+                'name' => $item->name,
+                'due_date' => $item->due_date,
+                'is_checked' => $item->is_checked,
+            ]);
+
         return Inertia::render('boards/Calendar', [
             'board' => $board,
             'cards' => $cards,
             'events' => $events,
+            'checklistItems' => $checklistItems,
         ]);
     }
 

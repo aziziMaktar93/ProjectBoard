@@ -25,6 +25,7 @@ const props = defineProps<{
     boardId: number;
     boardMembers: User[];
     boardLabels: CardLabel[];
+    canEdit: boolean;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
@@ -155,7 +156,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
 
             <div class="grid grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_1fr]" :class="gridMaxHeightClass">
                 <div class="space-y-5 overflow-y-auto pb-4 pr-3">
-                    <form class="space-y-4" @submit.prevent="submit">
+                    <form v-if="canEdit" class="space-y-4" @submit.prevent="submit">
                         <div class="grid gap-2">
                             <Input id="card-name" v-model="form.name" required class="text-base font-medium" />
                             <InputError :message="form.errors.name" />
@@ -176,8 +177,15 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                             <Button type="submit" size="sm" :disabled="form.processing">Save</Button>
                         </div>
                     </form>
+                    <div v-else class="space-y-2">
+                        <p class="text-base font-medium">{{ card.name }}</p>
+                        <p v-if="card.description" class="whitespace-pre-line text-sm text-muted-foreground">{{ card.description }}</p>
+                    </div>
 
-                    <div class="flex flex-wrap items-center gap-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                    <div
+                        v-if="canEdit"
+                        class="flex flex-wrap items-center gap-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-700"
+                    >
                         <Popover>
                             <PopoverTrigger as-child>
                                 <Button variant="outline" size="sm"><Users class="size-3.5" /> Members</Button>
@@ -308,21 +316,27 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                     </div>
 
                     <div v-if="checklists.length" class="space-y-3">
-                        <CardChecklist v-for="item in checklists" :key="item.id" :checklist="item" />
+                        <CardChecklist
+                            v-for="item in checklists"
+                            :key="item.id"
+                            :checklist="item"
+                            :can-edit="canEdit"
+                            :board-members="boardMembers"
+                        />
                     </div>
 
                     <div v-if="card.attachments?.length" class="space-y-2">
                         <Label class="text-xs font-semibold text-muted-foreground">Attachments</Label>
-                        <CardAttachmentList ref="attachmentListRef" :card="card" />
+                        <CardAttachmentList ref="attachmentListRef" :card="card" :can-edit="canEdit" />
                     </div>
-                    <CardAttachmentList v-else ref="attachmentListRef" :card="card" />
+                    <CardAttachmentList v-else ref="attachmentListRef" :card="card" :can-edit="canEdit" />
                 </div>
 
                 <div
                     class="space-y-3 overflow-y-auto border-t border-neutral-200 pb-4 pt-4 md:border-t-0 md:border-l md:pl-4 md:pt-0 dark:border-neutral-700"
                 >
                     <Label>Comments and activity</Label>
-                    <CardActivityFeed :card="card" :board-members="boardMembers" />
+                    <CardActivityFeed :card="card" :board-members="boardMembers" :can-edit="canEdit" />
                 </div>
             </div>
         </DialogContent>

@@ -8,13 +8,23 @@ import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, ListChecks, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
     cards: { id: number; name: string; due_date: string; color: string | null; board_id: number; is_completed: boolean }[];
     events: BoardEvent[];
     boards: { id: number; name: string; workspace_name: string }[];
+    checklistItems: {
+        id: number;
+        card_id: number;
+        card_name: string;
+        checklist_name: string;
+        board_id: number;
+        name: string;
+        due_date: string;
+        is_checked: boolean;
+    }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Calendar', href: '/calendar' }];
@@ -69,6 +79,10 @@ function cardsForDay(dateKey: string) {
 
 function eventsForDay(dateKey: string) {
     return props.events.filter((event) => dateKey >= event.start_date && dateKey <= (event.end_date ?? event.start_date));
+}
+
+function checklistItemsForDay(dateKey: string) {
+    return props.checklistItems.filter((item) => item.due_date === dateKey);
 }
 
 const openAddPopover = ref<string | null>(null);
@@ -169,6 +183,11 @@ function deleteEvent(eventId: number) {
                             class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
                         >
                             <CalendarDays class="size-3.5" /> Event
+                        </span>
+                        <span
+                            class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                            <ListChecks class="size-3.5" /> Checklist due date
                         </span>
                         <span
                             class="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
@@ -285,6 +304,22 @@ function deleteEvent(eventId: number) {
                                 <span class="truncate" :class="card.is_completed ? 'line-through' : ''">{{ card.name }}</span>
                             </span>
                             <span class="block truncate pl-4 text-[10px] opacity-80">{{ boardLabel(card.board_id) }}</span>
+                        </Link>
+
+                        <Link
+                            v-for="item in checklistItemsForDay(day.key)"
+                            :key="`checklist-item-${item.id}`"
+                            :href="route('boards.show', { board: item.board_id, card: item.card_id })"
+                            class="flex flex-col truncate rounded bg-violet-100 px-1.5 py-0.5 text-xs font-medium text-violet-700 hover:opacity-80 dark:bg-violet-900/40 dark:text-violet-300"
+                            :class="item.is_checked ? 'opacity-60' : ''"
+                            :title="`${boardTitle(item.board_id)} · ${item.card_name} • ${item.checklist_name}${item.is_checked ? ' (Completed)' : ''}`"
+                        >
+                            <span class="flex items-center gap-1 truncate">
+                                <CheckCircle2 v-if="item.is_checked" class="size-3 shrink-0" />
+                                <ListChecks v-else class="size-3 shrink-0" />
+                                <span class="truncate" :class="item.is_checked ? 'line-through' : ''">{{ item.name }}</span>
+                            </span>
+                            <span class="truncate pl-4 text-[10px] opacity-70">{{ item.card_name }}</span>
                         </Link>
 
                         <template v-for="event in eventsForDay(day.key)" :key="`event-${event.id}`">

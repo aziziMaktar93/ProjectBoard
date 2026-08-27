@@ -9,6 +9,7 @@ import { computed, nextTick, ref } from 'vue';
 const props = defineProps<{
     card: Card;
     boardMembers: User[];
+    canEdit: boolean;
 }>();
 
 const currentUser = usePage<SharedData>().props.auth.user;
@@ -132,7 +133,7 @@ const activities = computed(() => props.card.activities ?? []);
 
 <template>
     <div class="space-y-4">
-        <div class="flex items-start gap-2">
+        <div v-if="canEdit" class="flex items-start gap-2">
             <MemberAvatar :user="currentUser" size="sm" />
             <div class="relative flex-1 space-y-2">
                 <textarea

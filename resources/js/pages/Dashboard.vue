@@ -6,7 +6,7 @@ import { formatTimestamp, sentenceFor } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardTaskCount, BreadcrumbItem, CardActivity, DashboardStats, MemberWorkload } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AlertTriangle, CheckCircle2, Clock, Columns3, Download, Kanban, ListChecks, ListFilter, Percent, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, Clock, Columns3, Download, Kanban, ListChecks, ListFilter, ListTodo, Percent, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -162,7 +162,7 @@ function clearFilters() {
             </div>
 
             <template v-else>
-                <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
                     <div
                         class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-blue-50 to-indigo-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-blue-900/40 dark:from-blue-950/70 dark:to-indigo-950/70"
                     >
@@ -225,6 +225,20 @@ function clearFilters() {
                                 :style="{ width: `${stats.checklistProgress}%` }"
                             />
                         </div>
+                    </div>
+                    <div
+                        class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-pink-50 to-rose-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-pink-900/40 dark:from-pink-950/70 dark:to-rose-950/70"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium uppercase tracking-wide text-pink-700/80 dark:text-pink-300/80">Checklist due dates</span>
+                            <div class="rounded-full bg-white/70 p-1.5 dark:bg-white/10">
+                                <ListTodo class="size-4 text-pink-600 dark:text-pink-400" />
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-pink-950 dark:text-pink-50">
+                            <span class="text-2xl font-semibold">{{ stats.checklistItemsOverdue }}</span> overdue
+                        </p>
+                        <p class="text-xs text-pink-700/80 dark:text-pink-300/80">{{ stats.checklistItemsDueSoon }} due within 7 days</p>
                     </div>
                 </div>
 

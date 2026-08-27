@@ -111,7 +111,7 @@ class DashboardController extends Controller
         $cards = Card::query()
             ->whereHas('boardList', fn ($query) => $query->whereIn('board_id', $boardIds)->whereNull('archived_at'))
             ->whereNull('archived_at')
-            ->with(['boardList.board', 'checklists.items', 'members'])
+            ->with(['boardList.board', 'checklists.items.members', 'members'])
             ->get();
 
         $today = now()->toDateString();
@@ -133,6 +133,8 @@ class DashboardController extends Controller
             'checklistProgress' => $allChecklistItems->isEmpty()
                 ? null
                 : (int) round($allChecklistItems->filter(fn ($item) => $item->is_checked)->count() / $allChecklistItems->count() * 100),
+            'checklistItemsOverdue' => $allChecklistItems->filter(fn ($item) => $item->due_date && $item->due_date < $today && ! $item->is_checked)->count(),
+            'checklistItemsDueSoon' => $allChecklistItems->filter(fn ($item) => $item->due_date && ! $item->is_checked && $item->due_date >= $today && $item->due_date <= $weekAhead)->count(),
         ];
 
         $tasksByBoard = $cards
@@ -163,6 +165,7 @@ class DashboardController extends Controller
 
         $workload = $cards
             ->flatMap(fn (Card $card) => $card->members)
+            ->merge($allChecklistItems->flatMap(fn ($item) => $item->members))
             ->groupBy('id')
             ->map(fn ($group) => ['user' => $group->first(), 'count' => $group->count()])
             ->sortByDesc('count')

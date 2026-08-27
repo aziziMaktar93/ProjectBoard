@@ -22,11 +22,15 @@ import { nextTick, ref } from 'vue';
 const props = defineProps<{
     list: BoardList;
     group: string;
+    canEdit: boolean;
+    selectMode?: boolean;
+    selectedCardIds?: Set<number>;
     matchesFilters?: (card: Card) => boolean;
 }>();
 
 const emit = defineEmits<{
     'open-card': [card: Card];
+    'toggle-select': [cardId: number];
     'card-drag-start': [];
     'card-drag-end': [event: { from: HTMLElement; to: HTMLElement }];
 }>();
@@ -115,9 +119,10 @@ function onColorChange(color: string | null) {
                     />
                     <p
                         v-else
-                        class="min-w-0 flex-1 cursor-text truncate rounded px-1 text-sm font-semibold text-neutral-700 hover:bg-neutral-200 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        class="min-w-0 flex-1 truncate rounded px-1 text-sm font-semibold text-neutral-700 dark:text-neutral-200"
+                        :class="canEdit ? 'cursor-text hover:bg-neutral-200 dark:hover:bg-neutral-800' : ''"
                         @mousedown.stop
-                        @click="startEditingName"
+                        @click="canEdit && startEditingName()"
                     >
                         {{ list.name }}
                     </p>
@@ -129,7 +134,7 @@ function onColorChange(color: string | null) {
                     </span>
                 </div>
 
-                <DropdownMenu>
+                <DropdownMenu v-if="canEdit">
                     <HoverLabel label="List actions" side="bottom">
                         <DropdownMenuTrigger as-child>
                             <button
@@ -162,6 +167,7 @@ function onColorChange(color: string | null) {
                 :group="group"
                 item-key="id"
                 :animation="150"
+                :disabled="!canEdit || selectMode"
                 :data-list-id="list.id"
                 class="flex max-h-[65vh] flex-col gap-2 overflow-y-auto px-0.5 py-0.5"
                 @start="onCardDragStart"
@@ -172,28 +178,34 @@ function onColorChange(color: string | null) {
                     :key="card.id"
                     v-show="!matchesFilters || matchesFilters(card)"
                     :card="card"
+                    :can-edit="canEdit"
+                    :select-mode="selectMode"
+                    :selected="selectedCardIds?.has(card.id) ?? false"
                     @open="emit('open-card', $event)"
+                    @toggle-select="emit('toggle-select', $event)"
                 />
             </VueDraggable>
             <!-- eslint-enable vue/no-mutating-props -->
 
-            <Button
-                v-if="!showAddCard"
-                variant="ghost"
-                size="sm"
-                class="mt-2 justify-start text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-                @click="showAddCard = true"
-            >
-                <Plus class="size-4" /> Add card
-            </Button>
+            <template v-if="canEdit">
+                <Button
+                    v-if="!showAddCard"
+                    variant="ghost"
+                    size="sm"
+                    class="mt-2 justify-start text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                    @click="showAddCard = true"
+                >
+                    <Plus class="size-4" /> Add card
+                </Button>
 
-            <form v-else class="mt-2 space-y-2" @submit.prevent="submitAddCard">
-                <Input v-model="addCardForm.name" placeholder="Card name" autofocus />
-                <div class="flex gap-2">
-                    <Button type="submit" size="sm" :disabled="addCardForm.processing">Add</Button>
-                    <Button type="button" variant="ghost" size="sm" @click="showAddCard = false">Cancel</Button>
-                </div>
-            </form>
+                <form v-else class="mt-2 space-y-2" @submit.prevent="submitAddCard">
+                    <Input v-model="addCardForm.name" placeholder="Card name" autofocus />
+                    <div class="flex gap-2">
+                        <Button type="submit" size="sm" :disabled="addCardForm.processing">Add</Button>
+                        <Button type="button" variant="ghost" size="sm" @click="showAddCard = false">Cancel</Button>
+                    </div>
+                </form>
+            </template>
         </div>
     </div>
 </template>

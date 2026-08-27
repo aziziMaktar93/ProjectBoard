@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Board;
 use App\Models\BoardEvent;
 use App\Models\Card;
+use App\Models\ChecklistItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,6 +43,26 @@ class CalendarController extends Controller
             ->orderBy('start_date')
             ->get();
 
+        $checklistItems = ChecklistItem::query()
+            ->whereHas('checklist', fn ($query) => $query->whereHas('card', fn ($cardQuery) => $cardQuery
+                ->whereNull('archived_at')
+                ->whereHas('boardList', fn ($listQuery) => $listQuery->whereIn('board_id', $boardIds)->whereNull('archived_at'))
+            ))
+            ->whereNotNull('due_date')
+            ->with(['checklist:id,card_id,name', 'checklist.card:id,board_list_id,name', 'checklist.card.boardList:id,board_id'])
+            ->orderBy('due_date')
+            ->get()
+            ->map(fn (ChecklistItem $item) => [
+                'id' => $item->id,
+                'card_id' => $item->checklist->card_id,
+                'card_name' => $item->checklist->card->name,
+                'checklist_name' => $item->checklist->name,
+                'board_id' => $item->checklist->card->boardList->board_id,
+                'name' => $item->name,
+                'due_date' => $item->due_date,
+                'is_checked' => $item->is_checked,
+            ]);
+
         $boards = Board::whereIn('id', $boardIds)
             ->with('workspace:id,name')
             ->orderBy('name')
@@ -56,6 +77,7 @@ class CalendarController extends Controller
             'cards' => $cards,
             'events' => $events,
             'boards' => $boards,
+            'checklistItems' => $checklistItems,
         ]);
     }
 

@@ -85,11 +85,11 @@ html {
        `--sidebar-gradient` paints over the flat `--sidebar-background` (kept
        as a solid fallback) via the `.bg-sidebar` rule further below. */
     [data-color-theme='blue'] {
-        --primary: 221.2 83.2% 53.3%;
+        --primary: 217.2 91.2% 59.8%;
         --primary-foreground: 210 40% 98%;
-        --ring: 221.2 83.2% 53.3%;
-        --sidebar-primary: 221.2 83.2% 53.3%;
-        --sidebar-ring: 221.2 83.2% 53.3%;
+        --ring: 217.2 91.2% 59.8%;
+        --sidebar-primary: 217.2 91.2% 59.8%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
         --sidebar-background: 221.2 60% 96%;
         --sidebar-border: 221.2 40% 89%;
         --sidebar-gradient: linear-gradient(160deg, hsl(221.2 75% 97%) 0%, hsl(217 70% 93%) 55%, hsl(221.2 55% 89%) 100%);
@@ -105,6 +105,15 @@ html {
         --sidebar-border: 221.2 30% 18%;
         --sidebar-gradient: linear-gradient(160deg, hsl(221.2 50% 15%) 0%, hsl(224 45% 11%) 55%, hsl(221.2 40% 7%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(221.2 40% 9%) 0%, hsl(224 35% 6%) 45%, hsl(0 0% 3.9%) 100%);
+    }
+
+    /* Matches the fixed blue->violet button gradient used on the auth pages
+       so primary buttons app-wide look the same when this theme is active. */
+    [data-color-theme='blue'] .btn-gradient-primary {
+        background-image: linear-gradient(to right, #3b82f6, #7c3aed);
+    }
+    [data-color-theme='blue'] .btn-gradient-primary:hover {
+        opacity: 0.9;
     }
 
     [data-color-theme='green'] {
