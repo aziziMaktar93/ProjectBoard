@@ -47,6 +47,33 @@ const cardGroup = `cards-board-${props.board.id}`;
 const reorderError = ref<string | null>(null);
 const { filters, cardMatchesFilters } = useBoardFilters();
 
+const collapsedListsStorageKey = `board-${props.board.id}-collapsed-lists`;
+const collapsedLists = ref<Record<number, boolean>>({});
+
+function persistCollapsedLists() {
+    try {
+        localStorage.setItem(collapsedListsStorageKey, JSON.stringify(collapsedLists.value));
+    } catch {
+        // Best-effort only — a private window or disabled storage just means
+        // collapsed state won't survive a reload.
+    }
+}
+
+function toggleListCollapse(listId: number) {
+    collapsedLists.value = { ...collapsedLists.value, [listId]: !collapsedLists.value[listId] };
+    persistCollapsedLists();
+}
+
+function expandAllLists() {
+    collapsedLists.value = {};
+    persistCollapsedLists();
+}
+
+function collapseAllLists() {
+    collapsedLists.value = Object.fromEntries(lists.value.map((list: BoardList): [number, boolean] => [list.id, true]));
+    persistCollapsedLists();
+}
+
 watch(
     () => props.board.lists,
     (newLists: BoardList[] | undefined) => {
@@ -184,6 +211,13 @@ function openCard(card: Card) {
 }
 
 onMounted(() => {
+    try {
+        const raw = localStorage.getItem(collapsedListsStorageKey);
+        collapsedLists.value = raw ? JSON.parse(raw) : {};
+    } catch {
+        collapsedLists.value = {};
+    }
+
     if (!props.initialCardId) {
         return;
     }
@@ -389,7 +423,7 @@ function bulkAddLabel(labelId: number) {
                         <span class="hidden sm:inline">View archive</span>
                     </Button>
 
-                    <DropdownMenu v-if="canEdit">
+                    <DropdownMenu>
                         <HoverLabel label="Board actions">
                             <DropdownMenuTrigger as-child>
                                 <button
@@ -402,13 +436,18 @@ function bulkAddLabel(labelId: number) {
                             </DropdownMenuTrigger>
                         </HoverLabel>
                         <DropdownMenuContent align="end" class="w-56">
-                            <DropdownMenuItem @click="startEditingBoardName">Rename board</DropdownMenuItem>
-                            <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Board color</DropdownMenuLabel>
-                            <div class="px-2 pb-1">
-                                <ColorSwatchPicker :model-value="board.background_color" @update:model-value="onBoardColorChange" />
-                            </div>
+                            <template v-if="canEdit">
+                                <DropdownMenuItem @click="startEditingBoardName">Rename board</DropdownMenuItem>
+                                <DropdownMenuItem @click="archiveBoard">Archive board</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Board color</DropdownMenuLabel>
+                                <div class="px-2 pb-1">
+                                    <ColorSwatchPicker :model-value="board.background_color" @update:model-value="onBoardColorChange" />
+                                </div>
+                                <DropdownMenuSeparator />
+                            </template>
+                            <DropdownMenuItem @click="expandAllLists">Expand all lists</DropdownMenuItem>
+                            <DropdownMenuItem @click="collapseAllLists">Collapse all lists</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -431,11 +470,13 @@ function bulkAddLabel(labelId: number) {
                         :list="list"
                         :group="cardGroup"
                         :can-edit="canEdit"
+                        :collapsed="!!collapsedLists[list.id]"
                         :select-mode="selectMode"
                         :selected-card-ids="selectedCardIds"
                         :matches-filters="cardMatchesFilters"
                         @open-card="openCard"
                         @toggle-select="toggleCardSelection"
+                        @toggle-collapse="toggleListCollapse(list.id)"
                         @card-drag-start="onCardDragStart"
                         @card-drag-end="onCardDragEnd"
                     />

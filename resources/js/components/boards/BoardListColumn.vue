@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { stripGradient } from '@/lib/colorGradient';
 import type { BoardList, Card } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
-import { MoreHorizontal, Plus } from 'lucide-vue-next';
+import { ChevronsLeftRight, MoreHorizontal, Plus } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
 import { nextTick, ref } from 'vue';
 
@@ -23,6 +23,7 @@ const props = defineProps<{
     list: BoardList;
     group: string;
     canEdit: boolean;
+    collapsed?: boolean;
     selectMode?: boolean;
     selectedCardIds?: Set<number>;
     matchesFilters?: (card: Card) => boolean;
@@ -31,6 +32,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     'open-card': [card: Card];
     'toggle-select': [cardId: number];
+    'toggle-collapse': [];
     'card-drag-start': [];
     'card-drag-end': [event: { from: HTMLElement; to: HTMLElement }];
 }>();
@@ -100,6 +102,35 @@ function onColorChange(color: string | null) {
 
 <template>
     <div
+        v-if="collapsed"
+        class="flex w-10 shrink-0 flex-col items-center gap-2 rounded-xl border border-neutral-200/70 bg-white py-3 shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none"
+    >
+        <HoverLabel label="Expand list" side="bottom">
+            <button
+                type="button"
+                class="shrink-0 rounded p-0.5 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                aria-label="Expand list"
+                @click="emit('toggle-collapse')"
+            >
+                <ChevronsLeftRight class="size-4" />
+            </button>
+        </HoverLabel>
+        <span
+            class="flex-1 whitespace-nowrap text-sm font-semibold text-neutral-700 dark:text-neutral-200"
+            style="writing-mode: vertical-rl; transform: rotate(180deg)"
+        >
+            {{ list.name }}
+        </span>
+        <span
+            v-if="list.cards.length"
+            class="shrink-0 rounded-full bg-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+        >
+            {{ list.cards.length }}
+        </span>
+    </div>
+
+    <div
+        v-else
         class="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-neutral-200/70 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none"
     >
         <div v-if="list.color" class="h-1.5 shrink-0" :style="{ backgroundImage: stripGradient(list.color) }" />
@@ -133,6 +164,18 @@ function onColorChange(color: string | null) {
                         {{ list.cards.length }}
                     </span>
                 </div>
+
+                <HoverLabel label="Collapse list" side="bottom">
+                    <button
+                        type="button"
+                        class="shrink-0 rounded p-0.5 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                        aria-label="Collapse list"
+                        @mousedown.stop
+                        @click="emit('toggle-collapse')"
+                    >
+                        <ChevronsLeftRight class="size-4" />
+                    </button>
+                </HoverLabel>
 
                 <DropdownMenu v-if="canEdit">
                     <HoverLabel label="List actions" side="bottom">
