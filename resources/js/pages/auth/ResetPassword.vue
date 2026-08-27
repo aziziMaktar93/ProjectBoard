@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter.vue';
 import { Button } from '@/components/ui/button';
 import { Input, PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +54,7 @@ const submit = () => {
                         autofocus
                         placeholder="Password"
                     />
+                    <PasswordStrengthMeter :password="form.password" />
                     <InputError :message="form.errors.password" />
                 </div>
 

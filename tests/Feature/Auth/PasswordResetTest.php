@@ -20,6 +20,18 @@ test('reset password link can be requested', function () {
     Notification::assertSentTo($user, ResetPasswordNotification::class);
 });
 
+test('password reset link requests are rate limited', function () {
+    Notification::fake();
+
+    foreach (range(1, 6) as $i) {
+        $this->post('/forgot-password', ['email' => "test{$i}@example.com"]);
+    }
+
+    $response = $this->post('/forgot-password', ['email' => 'test7@example.com']);
+
+    $response->assertStatus(429);
+});
+
 test('reset password screen can be rendered', function () {
     Notification::fake();
 
@@ -47,8 +59,8 @@ test('password can be reset with valid token', function () {
         $response = $this->post('/reset-password', [
             'token' => $notification->token,
             'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
         ]);
 
         $response

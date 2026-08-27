@@ -7,6 +7,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter.vue';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -85,6 +86,7 @@ const updatePassword = () => {
                             autocomplete="new-password"
                             placeholder="New password"
                         />
+                        <PasswordStrengthMeter :password="form.password" />
                         <InputError :message="form.errors.password" />
                     </div>
 

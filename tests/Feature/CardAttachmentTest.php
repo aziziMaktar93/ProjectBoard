@@ -28,6 +28,21 @@ test('a board member can upload an attachment to a card', function () {
     expect($card->activities()->where('type', 'attachment_added')->exists())->toBeTrue();
 });
 
+test('an attachment with a disallowed file type is rejected', function () {
+    Storage::fake();
+
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $file = UploadedFile::fake()->create('payload.html', 10, 'text/html');
+
+    $response = $this->actingAs($owner)->post("/cards/{$card->id}/attachments", ['file' => $file]);
+
+    $response->assertSessionHasErrors('file');
+    expect($card->attachments()->exists())->toBeFalse();
+});
+
 test('a non-board-member cannot upload an attachment to a card', function () {
     Storage::fake();
 

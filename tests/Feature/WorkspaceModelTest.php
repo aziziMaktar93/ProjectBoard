@@ -39,8 +39,8 @@ test('registering a new user creates a personal workspace', function () {
     $response = $this->post('/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => 'Password1!',
+        'password_confirmation' => 'Password1!',
     ]);
 
     $response->assertRedirect('/dashboard');
