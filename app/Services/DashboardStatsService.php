@@ -9,9 +9,10 @@ class DashboardStatsService
 {
     /**
      * @param  Collection<int, Card>  $cards  Each must be eager-loaded with 'boardList.board', 'checklists.items.members', and 'members'.
+     * @param  int|null  $limit  Cap tasksByBoard/workload to this many entries (top by count); null for no cap.
      * @return array{stats: array<string, mixed>, tasksByBoard: Collection, workload: Collection}
      */
-    public function build(Collection $cards): array
+    public function build(Collection $cards, ?int $limit = 8): array
     {
         $today = now()->toDateString();
         $weekAhead = now()->addDays(7)->toDateString();
@@ -40,7 +41,7 @@ class DashboardStatsService
             ->groupBy(fn (Card $card) => $card->boardList->board->name)
             ->map(fn ($group) => $group->count())
             ->sortDesc()
-            ->take(8)
+            ->when($limit !== null, fn ($collection) => $collection->take($limit))
             ->map(fn ($count, $name) => ['name' => $name, 'count' => $count])
             ->values();
 
@@ -50,7 +51,7 @@ class DashboardStatsService
             ->groupBy('id')
             ->map(fn ($group) => ['user' => $group->first(), 'count' => $group->count()])
             ->sortByDesc('count')
-            ->take(8)
+            ->when($limit !== null, fn ($collection) => $collection->take($limit))
             ->values();
 
         return [

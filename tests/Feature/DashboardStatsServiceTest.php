@@ -68,3 +68,38 @@ test('build groups tasks by board and merges card and checklist-item workload', 
     expect($result['tasksByBoard']->first())->toBe(['name' => 'Engineering', 'count' => 1]);
     expect($result['workload']->first()['count'])->toBe(2);
 });
+
+test('build caps tasksByBoard at 8 by default', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+
+    for ($i = 1; $i <= 10; $i++) {
+        $board = Board::factory()->for($workspace)->for($user)->create(['name' => "Board {$i}"]);
+        $list = BoardList::factory()->for($board)->create();
+        Card::factory()->for($list)->count($i)->create();
+    }
+
+    $cards = Card::with(['boardList.board', 'checklists.items.members', 'members'])->get();
+
+    $result = app(DashboardStatsService::class)->build($cards);
+
+    expect($result['tasksByBoard']->count())->toBe(8);
+});
+
+test('build with a null limit returns the full tasksByBoard breakdown for more than 8 boards', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+
+    for ($i = 1; $i <= 10; $i++) {
+        $board = Board::factory()->for($workspace)->for($user)->create(['name' => "Board {$i}"]);
+        $list = BoardList::factory()->for($board)->create();
+        Card::factory()->for($list)->count($i)->create();
+    }
+
+    $cards = Card::with(['boardList.board', 'checklists.items.members', 'members'])->get();
+
+    $result = app(DashboardStatsService::class)->build($cards, null);
+
+    expect($result['tasksByBoard']->count())->toBe(10);
+    expect($result['tasksByBoard']->count())->toBeGreaterThan(8);
+});

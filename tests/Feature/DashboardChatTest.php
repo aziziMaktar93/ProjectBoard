@@ -99,7 +99,7 @@ test('the ai context reflects the users full board set, not any dashboard filter
     $listB = BoardList::factory()->for($boardB)->create();
     Card::factory()->for($listB)->create();
 
-    $this->actingAs($user)->postJson('/dashboard/ai/messages', ['content' => 'summarize my boards']);
+    $this->actingAs($user)->postJson('/dashboard/ai/messages?workspace_id='.$workspaceA->id.'&board_id='.$boardA->id, ['content' => 'summarize my boards']);
 
     $systemText = $capturedBody['system_instruction']['parts'][0]['text'];
     expect($systemText)->toContain('Board A');

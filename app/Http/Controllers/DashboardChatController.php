@@ -44,7 +44,7 @@ class DashboardChatController extends Controller
             ->with(['boardList.board', 'checklists.items.members', 'members'])
             ->get();
 
-        $statsData = app(DashboardStatsService::class)->build($cards);
+        $statsData = app(DashboardStatsService::class)->build($cards, null);
         $boards = $user->boardMemberships()->get(['boards.id', 'boards.name']);
 
         $systemInstruction = $this->buildSystemInstruction($statsData['stats'], $statsData['tasksByBoard'], $statsData['workload'], $boards);
