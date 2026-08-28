@@ -150,6 +150,14 @@ export interface AiMessage {
     updated_at: string;
 }
 
+export interface DashboardMessage {
+    id: number;
+    role: 'user' | 'assistant';
+    content: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface CardLabel {
     id: number;
     board_id: number;

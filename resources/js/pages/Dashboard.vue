@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DashboardChatWidget from '@/components/DashboardChatWidget.vue';
 import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +20,7 @@ const props = defineProps<{
     workspaces: { id: number; name: string }[];
     boards: { id: number; name: string; workspace_id: number }[];
     filters: { workspace_id: number | null; board_id: number | null };
+    aiEnabled: boolean;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
@@ -335,5 +337,7 @@ function clearFilters() {
                 </div>
             </template>
         </div>
+
+        <DashboardChatWidget :ai-enabled="aiEnabled" :boards="boards" />
     </AppLayout>
 </template>
