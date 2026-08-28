@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\GeminiClient;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -12,7 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(GeminiClient::class, fn () => new GeminiClient(
+            (string) config('services.gemini.key'),
+            (string) config('services.gemini.model'),
+        ));
     }
 
     /**
