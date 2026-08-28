@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\GeminiApiException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class GeminiClient
@@ -19,16 +20,22 @@ class GeminiClient
      */
     public function reply(string $boardName, array $lists, array $messages): array
     {
-        $response = Http::post(
-            "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
-            [
-                'system_instruction' => [
-                    'parts' => [['text' => $this->systemInstruction($boardName, $lists)]],
-                ],
-                'contents' => $this->toContents($messages),
-                'tools' => [['function_declarations' => $this->toolDeclarations()]],
-            ]
-        );
+        try {
+            $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
+                ->timeout(20)
+                ->post(
+                    "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent",
+                    [
+                        'system_instruction' => [
+                            'parts' => [['text' => $this->systemInstruction($boardName, $lists)]],
+                        ],
+                        'contents' => $this->toContents($messages),
+                        'tools' => [['function_declarations' => $this->toolDeclarations()]],
+                    ]
+                );
+        } catch (ConnectionException $exception) {
+            throw new GeminiApiException('Gemini API request failed.', previous: $exception);
+        }
 
         if ($response->failed()) {
             throw new GeminiApiException("Gemini API request failed with status {$response->status()}.");
@@ -143,6 +150,10 @@ class GeminiClient
         if ($functionCall['name'] === 'create_lists') {
             $names = $functionCall['args']['names'] ?? [];
 
+            if (! $this->isArrayOfStringables($names)) {
+                throw new GeminiApiException('Gemini returned malformed arguments for create_lists.');
+            }
+
             return [
                 'content' => 'I\'ll create these lists: '.implode(', ', $names),
                 'tool_action' => ['type' => 'create_lists', 'names' => $names],
@@ -153,6 +164,10 @@ class GeminiClient
             $listName = $functionCall['args']['list_name'] ?? '';
             $cardNames = $functionCall['args']['card_names'] ?? [];
 
+            if (! is_string($listName) || ! $this->isArrayOfStringables($cardNames)) {
+                throw new GeminiApiException('Gemini returned malformed arguments for create_cards.');
+            }
+
             return [
                 'content' => "I'll add these cards to \"{$listName}\": ".implode(', ', $cardNames),
                 'tool_action' => ['type' => 'create_cards', 'list_name' => $listName, 'card_names' => $cardNames],
@@ -160,5 +175,23 @@ class GeminiClient
         }
 
         throw new GeminiApiException("Gemini called an unknown tool: {$functionCall['name']}");
+    }
+
+    /**
+     * Determine whether a value is an array whose elements can all be safely imploded as strings.
+     */
+    private function isArrayOfStringables(mixed $value): bool
+    {
+        if (! is_array($value)) {
+            return false;
+        }
+
+        foreach ($value as $item) {
+            if (! is_scalar($item) && ! (is_object($item) && method_exists($item, '__toString'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

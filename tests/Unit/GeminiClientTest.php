@@ -2,6 +2,7 @@
 
 use App\Exceptions\GeminiApiException;
 use App\Services\GeminiClient;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -72,5 +73,31 @@ test('reply throws GeminiApiException when the HTTP request fails', function () 
     $client = new GeminiClient('fake-key', 'gemini-2.0-flash');
 
     expect(fn () => $client->reply('My Board', [], [['role' => 'user', 'content' => 'hi']]))
+        ->toThrow(GeminiApiException::class);
+});
+
+test('reply throws GeminiApiException instead of ConnectionException when the request cannot connect', function () {
+    Http::fake(fn () => throw new ConnectionException('Connection timed out'));
+
+    $client = new GeminiClient('fake-key', 'gemini-2.0-flash');
+
+    expect(fn () => $client->reply('My Board', [], [['role' => 'user', 'content' => 'hi']]))
+        ->toThrow(GeminiApiException::class);
+});
+
+test('reply throws GeminiApiException when create_lists names is not an array', function () {
+    Http::fake([
+        'generativelanguage.googleapis.com/*' => Http::response([
+            'candidates' => [
+                ['content' => ['role' => 'model', 'parts' => [
+                    ['functionCall' => ['name' => 'create_lists', 'args' => ['names' => 'not an array']]],
+                ]]],
+            ],
+        ], 200),
+    ]);
+
+    $client = new GeminiClient('fake-key', 'gemini-2.0-flash');
+
+    expect(fn () => $client->reply('My Board', [], [['role' => 'user', 'content' => 'suggest lists']]))
         ->toThrow(GeminiApiException::class);
 });

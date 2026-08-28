@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('boards/{board}/favourite', [BoardFavouriteController::class, 'toggle'])->name('boards.favourite');
 
     Route::get('boards/{board}/ai/conversation', [AiChatController::class, 'show'])->name('ai-chat.show');
-    Route::post('boards/{board}/ai/messages', [AiChatController::class, 'sendMessage'])->name('ai-chat.messages.store');
+    Route::post('boards/{board}/ai/messages', [AiChatController::class, 'sendMessage'])->name('ai-chat.messages.store')->middleware('throttle:20,1');
     Route::post('boards/{board}/ai/messages/{message}/apply', [AiChatController::class, 'applyAction'])->name('ai-chat.messages.apply');
 
     Route::post('boards/{board}/members', [BoardMemberController::class, 'store'])->name('board-members.store');

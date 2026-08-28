@@ -40,9 +40,17 @@ async function loadConversation() {
     try {
         const response = await csrfFetch(route('ai-chat.show', props.boardId));
         const data = await response.json();
+
+        if (!response.ok) {
+            error.value = typeof data.message === 'string' ? data.message : 'Could not load the conversation.';
+            return;
+        }
+
         messages.value = data.messages;
         loaded.value = true;
         await scrollToBottom();
+    } catch {
+        error.value = "Couldn't reach the server, try again.";
     } finally {
         loading.value = false;
     }
@@ -65,6 +73,12 @@ async function send() {
             body: JSON.stringify({ content }),
         });
         const data = await response.json();
+
+        if (!response.ok && !data.error) {
+            error.value = typeof data.message === 'string' ? data.message : 'Could not send that message.';
+            draft.value = content;
+            return;
+        }
 
         messages.value.push(data.message);
 

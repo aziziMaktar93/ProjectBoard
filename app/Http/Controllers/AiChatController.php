@@ -11,6 +11,7 @@ use App\Services\GeminiClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 
 class AiChatController extends Controller
 {
@@ -100,6 +101,15 @@ class AiChatController extends Controller
                 return response()->json(['error' => 'No list names to create.'], 422);
             }
 
+            $validator = Validator::make(['names' => $names], [
+                'names' => ['required', 'array', 'max:20'],
+                'names.*' => ['required', 'string', 'max:255'],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => 'One or more list names are invalid.'], 422);
+            }
+
             $position = ($board->lists()->max('position') ?? -1) + 1;
 
             foreach ($names as $name) {
@@ -119,6 +129,15 @@ class AiChatController extends Controller
 
             if ($cardNames === []) {
                 return response()->json(['error' => 'No card names to create.'], 422);
+            }
+
+            $validator = Validator::make(['card_names' => $cardNames], [
+                'card_names' => ['required', 'array', 'max:20'],
+                'card_names.*' => ['required', 'string', 'max:255'],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => 'One or more card names are invalid.'], 422);
             }
 
             $position = ($list->cards()->max('position') ?? -1) + 1;
