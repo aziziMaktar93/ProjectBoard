@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\DashboardChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
@@ -19,6 +20,14 @@ Route::get('dashboard', [DashboardController::class, 'index'])
 Route::get('dashboard/report', [DashboardController::class, 'report'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard.report');
+
+Route::get('dashboard/ai/conversation', [DashboardChatController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard-chat.show');
+
+Route::post('dashboard/ai/messages', [DashboardChatController::class, 'sendMessage'])
+    ->middleware(['auth', 'verified', 'throttle:20,1'])
+    ->name('dashboard-chat.messages.store');
 
 Route::get('calendar', [CalendarController::class, 'index'])
     ->middleware(['auth', 'verified'])
