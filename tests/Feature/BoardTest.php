@@ -285,3 +285,17 @@ test('the board show page passes through a card query param to auto-open it', fu
 
     $response->assertInertia(fn ($page) => $page->where('initialCardId', $card->id));
 });
+
+test('aiEnabled is true only when a gemini api key is configured', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+
+    config(['services.gemini.key' => null]);
+    $this->actingAs($user)->get("/boards/{$board->id}")
+        ->assertInertia(fn ($page) => $page->where('aiEnabled', false));
+
+    config(['services.gemini.key' => 'fake-key']);
+    $this->actingAs($user)->get("/boards/{$board->id}")
+        ->assertInertia(fn ($page) => $page->where('aiEnabled', true));
+});

@@ -77,6 +77,7 @@ class BoardController extends Controller
             'archivedCards' => $archivedCards,
             'initialCardId' => $request->integer('card') ?: null,
             'canEdit' => $request->user()->can('update', $board),
+            'aiEnabled' => filled(config('services.gemini.key')),
         ]);
     }
 
