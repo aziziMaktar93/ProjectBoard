@@ -254,6 +254,7 @@ export interface Workspace {
     updated_at: string;
     boards_count?: number;
     members?: User[];
+    is_favourite?: boolean;
 }
 
 export interface Board {
@@ -271,4 +272,5 @@ export interface Board {
     workspace?: Workspace;
     cards_count?: number;
     checklist_progress?: number | null;
+    is_favourite?: boolean;
 }

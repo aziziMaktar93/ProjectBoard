@@ -21,8 +21,39 @@ test('a workspace shows only its own active boards', function () {
     $response->assertInertia(
         fn ($page) => $page
             ->component('workspaces/Show')
-            ->has('boards', 1)
-            ->where('boards.0.id', $activeBoard->id)
+            ->has('boards.data', 1)
+            ->where('boards.data.0.id', $activeBoard->id)
+    );
+});
+
+test('workspace boards can be searched by name, case-insensitively', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $sprintBoard = Board::factory()->for($workspace)->for($user)->create(['name' => 'Sprint Planning']);
+    Board::factory()->for($workspace)->for($user)->create(['name' => 'Marketing Calendar']);
+
+    $response = $this->actingAs($user)->get("/workspaces/{$workspace->id}?search=sprint");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('boards.data', 1)
+            ->where('boards.data.0.id', $sprintBoard->id)
+            ->where('filters.search', 'sprint')
+    );
+});
+
+test('workspace boards are paginated', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    Board::factory()->for($workspace)->for($user)->count(13)->create();
+
+    $response = $this->actingAs($user)->get("/workspaces/{$workspace->id}");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('boards.data', 12)
+            ->where('boards.last_page', 2)
+            ->where('boards.total', 13)
     );
 });
 

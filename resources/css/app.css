@@ -90,9 +90,9 @@ html {
         --ring: 217.2 91.2% 59.8%;
         --sidebar-primary: 217.2 91.2% 59.8%;
         --sidebar-ring: 217.2 91.2% 59.8%;
-        --sidebar-background: 221.2 60% 96%;
-        --sidebar-border: 221.2 40% 89%;
-        --sidebar-gradient: linear-gradient(160deg, hsl(221.2 75% 97%) 0%, hsl(217 70% 93%) 55%, hsl(221.2 55% 89%) 100%);
+        --sidebar-background: 221.2 60% 88%;
+        --sidebar-border: 221.2 40% 80%;
+        --sidebar-gradient: linear-gradient(160deg, hsl(221.2 80% 94%) 0%, hsl(217 75% 82%) 55%, hsl(221.2 65% 66%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(221.2 60% 99%) 0%, hsl(217 55% 97%) 45%, hsl(0 0% 100%) 100%);
     }
     .dark[data-color-theme='blue'] {
@@ -124,7 +124,7 @@ html {
         --sidebar-ring: 142.1 76.2% 36.3%;
         --sidebar-background: 142.1 45% 95%;
         --sidebar-border: 142.1 35% 87%;
-        --sidebar-gradient: linear-gradient(160deg, hsl(152 55% 96%) 0%, hsl(142.1 48% 91%) 55%, hsl(158 45% 87%) 100%);
+        --sidebar-gradient: linear-gradient(160deg, hsl(152 65% 94%) 0%, hsl(142.1 60% 80%) 55%, hsl(158 55% 60%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(152 45% 99%) 0%, hsl(142.1 40% 97%) 45%, hsl(0 0% 100%) 100%);
     }
     .dark[data-color-theme='green'] {
@@ -147,7 +147,7 @@ html {
         --sidebar-ring: 24.6 95% 53.1%;
         --sidebar-background: 24.6 70% 95%;
         --sidebar-border: 24.6 50% 87%;
-        --sidebar-gradient: linear-gradient(160deg, hsl(38 85% 96%) 0%, hsl(24.6 75% 91%) 55%, hsl(14 65% 87%) 100%);
+        --sidebar-gradient: linear-gradient(160deg, hsl(38 90% 94%) 0%, hsl(24.6 85% 80%) 55%, hsl(14 75% 60%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(38 60% 99%) 0%, hsl(24.6 50% 97%) 45%, hsl(0 0% 100%) 100%);
     }
     .dark[data-color-theme='orange'] {
@@ -170,7 +170,7 @@ html {
         --sidebar-ring: 346.8 77.2% 49.8%;
         --sidebar-background: 346.8 65% 96%;
         --sidebar-border: 346.8 45% 89%;
-        --sidebar-gradient: linear-gradient(160deg, hsl(330 80% 97%) 0%, hsl(346.8 65% 92%) 55%, hsl(360 60% 88%) 100%);
+        --sidebar-gradient: linear-gradient(160deg, hsl(330 85% 95%) 0%, hsl(346.8 78% 80%) 55%, hsl(360 68% 62%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(330 55% 99%) 0%, hsl(346.8 45% 97%) 45%, hsl(0 0% 100%) 100%);
     }
     .dark[data-color-theme='rose'] {
@@ -193,7 +193,7 @@ html {
         --sidebar-ring: 262.1 83.3% 57.8%;
         --sidebar-background: 262.1 60% 96%;
         --sidebar-border: 262.1 40% 89%;
-        --sidebar-gradient: linear-gradient(160deg, hsl(280 70% 97%) 0%, hsl(262.1 60% 92%) 55%, hsl(246 55% 88%) 100%);
+        --sidebar-gradient: linear-gradient(160deg, hsl(280 75% 94%) 0%, hsl(262.1 68% 80%) 55%, hsl(246 60% 62%) 100%);
         --content-gradient: linear-gradient(160deg, hsl(280 50% 99%) 0%, hsl(262.1 40% 97%) 45%, hsl(0 0% 100%) 100%);
     }
     .dark[data-color-theme='violet'] {

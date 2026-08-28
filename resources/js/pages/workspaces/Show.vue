@@ -18,16 +18,65 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient, washGradient } from '@/lib/colorGradient';
-import type { Board, BreadcrumbItem, SharedData, User, Workspace } from '@/types';
+import type { Board, BreadcrumbItem, Paginated, SharedData, User, Workspace } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { MoreHorizontal } from 'lucide-vue-next';
-import { computed, nextTick, ref } from 'vue';
+import { MoreHorizontal, Search, Star, X } from 'lucide-vue-next';
+import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     workspace: Workspace;
-    boards: Board[];
+    boards: Paginated<Board>;
     members: User[];
+    filters: {
+        search: string;
+    };
 }>();
+
+const search = ref(props.filters.search);
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let skipNextSearchWatch = false;
+
+watch(search, (value) => {
+    if (skipNextSearchWatch) {
+        skipNextSearchWatch = false;
+        return;
+    }
+
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    debounceTimer = setTimeout(() => {
+        router.get(
+            route('workspaces.show', props.workspace.id),
+            { search: value },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    }, 300);
+});
+
+function clearSearch() {
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    skipNextSearchWatch = true;
+    search.value = '';
+    router.get(route('workspaces.show', props.workspace.id), {}, { preserveState: true, preserveScroll: true, replace: true });
+}
+
+function goToPage(url: string | null) {
+    if (!url) {
+        return;
+    }
+
+    router.get(url, {}, { preserveState: true, preserveScroll: true });
+}
+
+function toggleFavourite(board: Board) {
+    router.patch(route('boards.favourite', board.id), {}, { preserveScroll: true, preserveState: true });
+}
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Workspaces', href: route('workspaces.index') },
@@ -180,45 +229,92 @@ function deleteWorkspace() {
                 </div>
             </div>
 
-            <p v-if="boards.length === 0" class="text-sm text-muted-foreground">No boards yet — create your first one.</p>
+            <div class="flex items-center gap-2">
+                <div class="relative w-full max-w-xs">
+                    <Search class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="search" placeholder="Search boards..." class="pl-8" />
+                </div>
+
+                <Button v-if="filters.search" variant="ghost" size="sm" @click="clearSearch">
+                    <X class="size-3.5" />
+                    Clear
+                </Button>
+            </div>
+
+            <p v-if="boards.data.length === 0" class="text-sm text-muted-foreground">
+                {{ filters.search ? 'No boards match your search.' : 'No boards yet — create your first one.' }}
+            </p>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <Link v-for="board in boards" :key="board.id" :href="route('boards.show', board.id)" class="group block">
-                    <div
-                        class="flex h-28 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
-                        :style="{ backgroundImage: tileGradient(board.background_color) }"
-                    >
-                        <p class="line-clamp-2 font-semibold text-white drop-shadow-sm">{{ board.name }}</p>
+                <div v-for="board in boards.data" :key="board.id" class="group relative">
+                    <Link :href="route('boards.show', board.id)" class="block">
+                        <div
+                            class="flex h-28 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
+                            :style="{ backgroundImage: tileGradient(board.background_color) }"
+                        >
+                            <p class="line-clamp-2 pr-6 font-semibold text-white drop-shadow-sm">{{ board.name }}</p>
 
-                        <div class="space-y-1.5">
-                            <div
-                                v-if="board.checklist_progress !== null && board.checklist_progress !== undefined"
-                                class="flex items-center gap-2"
-                            >
-                                <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
-                                    <div class="h-full rounded-full bg-white" :style="{ width: `${board.checklist_progress}%` }" />
-                                </div>
-                                <span class="shrink-0 text-[10px] font-medium text-white/90 drop-shadow-sm">{{ board.checklist_progress }}%</span>
-                            </div>
-
-                            <div class="flex items-center justify-between gap-2">
-                                <div v-if="board.members?.length" class="flex -space-x-1.5">
-                                    <MemberAvatar v-for="member in board.members.slice(0, 4)" :key="member.id" :user="member" size="xs" />
-                                    <span
-                                        v-if="board.members.length > 4"
-                                        class="flex size-6 items-center justify-center rounded-full bg-white/30 text-[10px] font-semibold text-white ring-2 ring-white/50"
-                                    >
-                                        +{{ board.members.length - 4 }}
+                            <div class="space-y-1.5">
+                                <div
+                                    v-if="board.checklist_progress !== null && board.checklist_progress !== undefined"
+                                    class="flex items-center gap-2"
+                                >
+                                    <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
+                                        <div class="h-full rounded-full bg-white" :style="{ width: `${board.checklist_progress}%` }" />
+                                    </div>
+                                    <span class="shrink-0 text-[10px] font-medium text-white/90 drop-shadow-sm">
+                                        {{ board.checklist_progress }}%
                                     </span>
                                 </div>
-                                <span v-else />
-                                <span v-if="board.cards_count" class="shrink-0 text-xs font-medium text-white/90 drop-shadow-sm">
-                                    {{ board.cards_count }} card{{ board.cards_count === 1 ? '' : 's' }}
-                                </span>
+
+                                <div class="flex items-center justify-between gap-2">
+                                    <div v-if="board.members?.length" class="flex -space-x-1.5">
+                                        <MemberAvatar v-for="member in board.members.slice(0, 4)" :key="member.id" :user="member" size="xs" />
+                                        <span
+                                            v-if="board.members.length > 4"
+                                            class="flex size-6 items-center justify-center rounded-full bg-white/30 text-[10px] font-semibold text-white ring-2 ring-white/50"
+                                        >
+                                            +{{ board.members.length - 4 }}
+                                        </span>
+                                    </div>
+                                    <span v-else />
+                                    <span v-if="board.cards_count" class="shrink-0 text-xs font-medium text-white/90 drop-shadow-sm">
+                                        {{ board.cards_count }} card{{ board.cards_count === 1 ? '' : 's' }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </Link>
+                    </Link>
+
+                    <button
+                        type="button"
+                        class="absolute right-2 top-2 rounded p-1 text-white/70 opacity-0 transition hover:text-white group-hover:opacity-100"
+                        :class="{ '!opacity-100': board.is_favourite }"
+                        :aria-label="board.is_favourite ? 'Unfavourite board' : 'Favourite board'"
+                        @click.stop.prevent="toggleFavourite(board)"
+                    >
+                        <Star class="size-4" :class="board.is_favourite ? 'fill-amber-300 text-amber-300' : ''" />
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="boards.last_page > 1" class="flex flex-wrap items-center gap-1">
+                <button
+                    v-for="link in boards.links"
+                    :key="link.label"
+                    type="button"
+                    v-html="link.label"
+                    class="rounded-md px-3 py-1.5 text-sm transition"
+                    :disabled="!link.url"
+                    :class="
+                        link.active
+                            ? 'bg-primary text-primary-foreground'
+                            : link.url
+                              ? 'text-muted-foreground hover:bg-accent'
+                              : 'cursor-not-allowed text-muted-foreground/40'
+                    "
+                    @click="goToPage(link.url)"
+                />
             </div>
         </div>
 

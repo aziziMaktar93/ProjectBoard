@@ -6,12 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient } from '@/lib/colorGradient';
-import type { BreadcrumbItem, Workspace } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import type { BreadcrumbItem, Paginated, Workspace } from '@/types';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Search, Star, X } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 
-defineProps<{
-    workspaces: Workspace[];
+const props = defineProps<{
+    workspaces: Paginated<Workspace>;
+    filters: {
+        search: string;
+    };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Workspaces', href: '/workspaces' }];
@@ -30,6 +34,48 @@ function submit() {
             form.reset();
         },
     });
+}
+
+const search = ref(props.filters.search);
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let skipNextSearchWatch = false;
+
+watch(search, (value) => {
+    if (skipNextSearchWatch) {
+        skipNextSearchWatch = false;
+        return;
+    }
+
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    debounceTimer = setTimeout(() => {
+        router.get(route('workspaces.index'), { search: value }, { preserveState: true, preserveScroll: true, replace: true });
+    }, 300);
+});
+
+function clearSearch() {
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    skipNextSearchWatch = true;
+    search.value = '';
+    router.get(route('workspaces.index'), {}, { preserveState: true, preserveScroll: true, replace: true });
+}
+
+function goToPage(url: string | null) {
+    if (!url) {
+        return;
+    }
+
+    router.get(url, {}, { preserveState: true, preserveScroll: true });
+}
+
+function toggleFavourite(workspace: Workspace) {
+    router.patch(route('workspaces.favourite', workspace.id), {}, { preserveScroll: true, preserveState: true });
 }
 </script>
 
@@ -75,18 +121,63 @@ function submit() {
                 </Dialog>
             </div>
 
-            <p v-if="workspaces.length === 0" class="text-sm text-muted-foreground">No workspaces yet — create your first one.</p>
+            <div class="flex items-center gap-2">
+                <div class="relative w-full max-w-xs">
+                    <Search class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="search" placeholder="Search workspaces..." class="pl-8" />
+                </div>
+
+                <Button v-if="filters.search" variant="ghost" size="sm" @click="clearSearch">
+                    <X class="size-3.5" />
+                    Clear
+                </Button>
+            </div>
+
+            <p v-if="workspaces.data.length === 0" class="text-sm text-muted-foreground">
+                {{ filters.search ? 'No workspaces match your search.' : 'No workspaces yet — create your first one.' }}
+            </p>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <Link v-for="workspace in workspaces" :key="workspace.id" :href="route('workspaces.show', workspace.id)" class="group block">
-                    <div
-                        class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
-                        :style="{ backgroundImage: tileGradient(workspace.background_color) }"
+                <div v-for="workspace in workspaces.data" :key="workspace.id" class="group relative">
+                    <Link :href="route('workspaces.show', workspace.id)" class="block">
+                        <div
+                            class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
+                            :style="{ backgroundImage: tileGradient(workspace.background_color) }"
+                        >
+                            <p class="line-clamp-2 pr-6 font-semibold text-white drop-shadow-sm">{{ workspace.name }}</p>
+                            <p class="text-xs text-white/80 drop-shadow-sm">{{ workspace.boards_count ?? 0 }} board(s)</p>
+                        </div>
+                    </Link>
+
+                    <button
+                        type="button"
+                        class="absolute right-2 top-2 rounded p-1 text-white/70 opacity-0 transition hover:text-white group-hover:opacity-100"
+                        :class="{ '!opacity-100': workspace.is_favourite }"
+                        :aria-label="workspace.is_favourite ? 'Unfavourite workspace' : 'Favourite workspace'"
+                        @click.stop.prevent="toggleFavourite(workspace)"
                     >
-                        <p class="line-clamp-2 font-semibold text-white drop-shadow-sm">{{ workspace.name }}</p>
-                        <p class="text-xs text-white/80 drop-shadow-sm">{{ workspace.boards_count ?? 0 }} board(s)</p>
-                    </div>
-                </Link>
+                        <Star class="size-4" :class="workspace.is_favourite ? 'fill-amber-300 text-amber-300' : ''" />
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="workspaces.last_page > 1" class="flex flex-wrap items-center gap-1">
+                <button
+                    v-for="link in workspaces.links"
+                    :key="link.label"
+                    type="button"
+                    v-html="link.label"
+                    class="rounded-md px-3 py-1.5 text-sm transition"
+                    :disabled="!link.url"
+                    :class="
+                        link.active
+                            ? 'bg-primary text-primary-foreground'
+                            : link.url
+                              ? 'text-muted-foreground hover:bg-accent'
+                              : 'cursor-not-allowed text-muted-foreground/40'
+                    "
+                    @click="goToPage(link.url)"
+                />
             </div>
         </div>
     </AppLayout>

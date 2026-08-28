@@ -127,9 +127,9 @@ test('a workspace board tile includes card count, members, and checklist progres
     $response->assertInertia(
         fn ($page) => $page
             ->component('workspaces/Show')
-            ->where('boards.0.cards_count', 2)
-            ->where('boards.0.checklist_progress', 50)
-            ->has('boards.0.members', 2)
+            ->where('boards.data.0.cards_count', 2)
+            ->where('boards.data.0.checklist_progress', 50)
+            ->has('boards.data.0.members', 2)
     );
 });
 
@@ -141,6 +141,35 @@ test('the workspaces index only lists workspaces the user belongs to', function 
     $response = $this->actingAs($user)->get('/workspaces');
 
     $response->assertInertia(
-        fn ($page) => $page->component('workspaces/Index')->has('workspaces', 1)->where('workspaces.0.id', $myWorkspace->id)
+        fn ($page) => $page->component('workspaces/Index')->has('workspaces.data', 1)->where('workspaces.data.0.id', $myWorkspace->id)
+    );
+});
+
+test('workspaces can be searched by name, case-insensitively', function () {
+    $user = User::factory()->create();
+    $marketing = Workspace::factory()->for($user, 'owner')->create(['name' => 'Marketing Team']);
+    Workspace::factory()->for($user, 'owner')->create(['name' => 'Engineering']);
+
+    $response = $this->actingAs($user)->get('/workspaces?search=marketing');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('workspaces.data', 1)
+            ->where('workspaces.data.0.id', $marketing->id)
+            ->where('filters.search', 'marketing')
+    );
+});
+
+test('workspaces are paginated', function () {
+    $user = User::factory()->create();
+    Workspace::factory()->for($user, 'owner')->count(13)->create();
+
+    $response = $this->actingAs($user)->get('/workspaces');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('workspaces.data', 12)
+            ->where('workspaces.last_page', 2)
+            ->where('workspaces.total', 13)
     );
 });

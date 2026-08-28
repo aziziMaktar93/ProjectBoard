@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { CheckCircle2, Moon, Sun, Sunrise, Users } from 'lucide-vue-next';
+import { CheckCircle2, Users } from 'lucide-vue-next';
 
 defineProps<{
     title?: string;
@@ -9,8 +9,7 @@ defineProps<{
 
 const hour = new Date().getHours();
 const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-const greetingIcon = hour < 12 ? Sunrise : hour < 18 ? Sun : Moon;
-const greetingIconColor = hour < 18 ? 'text-amber-300' : 'text-slate-300';
+const greetingEmoji = hour < 12 ? '🌅' : hour < 18 ? '☀️' : '🌙';
 const year = new Date().getFullYear();
 </script>
 
@@ -22,7 +21,7 @@ const year = new Date().getFullYear();
         <div class="pointer-events-none absolute right-[12%] top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full bg-blue-500/20 blur-3xl lg:block" />
 
         <div
-            class="pointer-events-none absolute left-0 top-0 hidden h-64 w-64 opacity-30 lg:block"
+            class="dot-grid-drift pointer-events-none absolute left-0 top-0 hidden h-64 w-64 opacity-30 lg:block"
             style="
                 background-image: radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
                 background-size: 18px 18px;
@@ -30,7 +29,7 @@ const year = new Date().getFullYear();
             "
         />
         <div
-            class="pointer-events-none absolute bottom-0 right-0 hidden h-64 w-64 opacity-30 lg:block"
+            class="dot-grid-drift pointer-events-none absolute bottom-0 right-0 hidden h-64 w-64 opacity-30 lg:block"
             style="
                 background-image: radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
                 background-size: 18px 18px;
@@ -220,7 +219,7 @@ const year = new Date().getFullYear();
             <div class="relative z-10 mt-8 space-y-3">
                 <h1 class="flex items-center gap-3 text-3xl font-bold text-white sm:text-4xl">
                     {{ greeting }},
-                    <component :is="greetingIcon" class="size-7 shrink-0 sm:size-8" :class="greetingIconColor" />
+                    <span class="text-2xl sm:text-3xl" role="img" :aria-label="greeting">{{ greetingEmoji }}</span>
                 </h1>
                 <p class="max-w-sm text-sm leading-relaxed text-blue-100/80">
                     Plan sprints, track cards, and ship work together — all in one board.
@@ -294,5 +293,18 @@ const year = new Date().getFullYear();
 
 .board-float {
     animation: board-float 6s ease-in-out infinite;
+}
+
+@keyframes dot-grid-drift {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 18px 18px;
+    }
+}
+
+.dot-grid-drift {
+    animation: dot-grid-drift 12s linear infinite;
 }
 </style>
