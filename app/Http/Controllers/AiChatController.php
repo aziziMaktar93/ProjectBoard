@@ -75,4 +75,63 @@ class AiChatController extends Controller
             'reply' => $assistantMessage,
         ]);
     }
+
+    public function applyAction(Request $request, Board $board, AiMessage $message): JsonResponse
+    {
+        Gate::authorize('update', $board);
+
+        abort_unless($message->conversation->board_id === $board->id, 404);
+        abort_unless($message->conversation->user_id === $request->user()->id, 404);
+
+        if ($message->applied_at !== null) {
+            return response()->json(['error' => 'This suggestion was already applied.'], 422);
+        }
+
+        $action = $message->tool_action;
+
+        if (! is_array($action) || ! isset($action['type'])) {
+            return response()->json(['error' => 'This message has no action to apply.'], 422);
+        }
+
+        if ($action['type'] === 'create_lists') {
+            $names = array_values(array_filter($action['names'] ?? [], fn ($name) => trim((string) $name) !== ''));
+
+            if ($names === []) {
+                return response()->json(['error' => 'No list names to create.'], 422);
+            }
+
+            $position = ($board->lists()->max('position') ?? -1) + 1;
+
+            foreach ($names as $name) {
+                $board->lists()->create(['name' => $name, 'position' => $position++]);
+            }
+        } elseif ($action['type'] === 'create_cards') {
+            $list = $board->lists()
+                ->whereNull('archived_at')
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) ($action['list_name'] ?? ''))])
+                ->first();
+
+            if (! $list) {
+                return response()->json(['error' => "No list named \"{$action['list_name']}\" found on this board."], 422);
+            }
+
+            $cardNames = array_values(array_filter($action['card_names'] ?? [], fn ($name) => trim((string) $name) !== ''));
+
+            if ($cardNames === []) {
+                return response()->json(['error' => 'No card names to create.'], 422);
+            }
+
+            $position = ($list->cards()->max('position') ?? -1) + 1;
+
+            foreach ($cardNames as $name) {
+                $list->cards()->create(['name' => $name, 'position' => $position++]);
+            }
+        } else {
+            return response()->json(['error' => "Unknown action type \"{$action['type']}\"."], 422);
+        }
+
+        $message->update(['applied_at' => now()]);
+
+        return response()->json(['success' => true]);
+    }
 }

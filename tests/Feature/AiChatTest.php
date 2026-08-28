@@ -2,6 +2,7 @@
 
 use App\Models\AiConversation;
 use App\Models\Board;
+use App\Models\BoardList;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Support\Facades\Http;
@@ -115,4 +116,95 @@ test('a failed gemini call keeps the user message but does not create a bogus as
     $conversation = AiConversation::where('board_id', $board->id)->where('user_id', $user->id)->first();
     expect($conversation->messages)->toHaveCount(1);
     expect($conversation->messages->first()->role)->toBe('user');
+});
+
+test('applying a create_lists action creates the lists and marks the message applied', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+    $conversation = AiConversation::create(['board_id' => $board->id, 'user_id' => $user->id]);
+    $message = $conversation->messages()->create([
+        'role' => 'assistant',
+        'content' => 'I will create these lists: Research, Design',
+        'tool_action' => ['type' => 'create_lists', 'names' => ['Research', 'Design']],
+    ]);
+
+    $response = $this->actingAs($user)->postJson("/boards/{$board->id}/ai/messages/{$message->id}/apply");
+
+    $response->assertOk()->assertJson(['success' => true]);
+    expect($board->lists()->pluck('name')->all())->toBe(['Research', 'Design']);
+    expect($message->fresh()->applied_at)->not->toBeNull();
+});
+
+test('a viewer cannot apply an ai action', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $viewer = User::factory()->create();
+    $board->members()->attach($viewer->id, ['role' => 'viewer']);
+    $conversation = AiConversation::create(['board_id' => $board->id, 'user_id' => $viewer->id]);
+    $message = $conversation->messages()->create([
+        'role' => 'assistant',
+        'content' => 'I will create these lists: Research',
+        'tool_action' => ['type' => 'create_lists', 'names' => ['Research']],
+    ]);
+
+    $response = $this->actingAs($viewer)->postJson("/boards/{$board->id}/ai/messages/{$message->id}/apply");
+
+    $response->assertForbidden();
+    expect($board->lists()->count())->toBe(0);
+});
+
+test('applying a create_cards action with an unknown list name fails and creates nothing', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+    BoardList::factory()->for($board)->create(['name' => 'Research']);
+    $conversation = AiConversation::create(['board_id' => $board->id, 'user_id' => $user->id]);
+    $message = $conversation->messages()->create([
+        'role' => 'assistant',
+        'content' => 'I will add cards to "Nope"',
+        'tool_action' => ['type' => 'create_cards', 'list_name' => 'Nope', 'card_names' => ['Task 1']],
+    ]);
+
+    $response = $this->actingAs($user)->postJson("/boards/{$board->id}/ai/messages/{$message->id}/apply");
+
+    $response->assertStatus(422);
+    expect(BoardList::where('name', 'Research')->first()->cards()->count())->toBe(0);
+});
+
+test('applying a create_cards action creates cards under the matching list', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+    $list = BoardList::factory()->for($board)->create(['name' => 'Research']);
+    $conversation = AiConversation::create(['board_id' => $board->id, 'user_id' => $user->id]);
+    $message = $conversation->messages()->create([
+        'role' => 'assistant',
+        'content' => 'I will add cards to "Research"',
+        'tool_action' => ['type' => 'create_cards', 'list_name' => 'research', 'card_names' => ['Competitor audit']],
+    ]);
+
+    $response = $this->actingAs($user)->postJson("/boards/{$board->id}/ai/messages/{$message->id}/apply");
+
+    $response->assertOk();
+    expect($list->fresh()->cards()->pluck('name')->all())->toBe(['Competitor audit']);
+});
+
+test('applying an already-applied message is rejected', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+    $conversation = AiConversation::create(['board_id' => $board->id, 'user_id' => $user->id]);
+    $message = $conversation->messages()->create([
+        'role' => 'assistant',
+        'content' => 'I will create these lists: Research',
+        'tool_action' => ['type' => 'create_lists', 'names' => ['Research']],
+        'applied_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->postJson("/boards/{$board->id}/ai/messages/{$message->id}/apply");
+
+    $response->assertStatus(422);
+    expect($board->lists()->count())->toBe(0);
 });
