@@ -361,3 +361,15 @@ test('the dashboard report respects the board filter', function () {
     SnappyPdf::assertSee('Engineering');
     SnappyPdf::assertDontSee('Marketing');
 });
+
+test('aiEnabled is true only when a gemini api key is configured', function () {
+    $user = User::factory()->create();
+
+    config(['services.gemini.key' => null]);
+    $this->actingAs($user)->get('/dashboard')
+        ->assertInertia(fn ($page) => $page->where('aiEnabled', false));
+
+    config(['services.gemini.key' => 'fake-key']);
+    $this->actingAs($user)->get('/dashboard')
+        ->assertInertia(fn ($page) => $page->where('aiEnabled', true));
+});

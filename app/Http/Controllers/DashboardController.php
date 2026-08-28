@@ -33,6 +33,7 @@ class DashboardController extends Controller
                 'workspace_id' => $data['selectedWorkspaceId'],
                 'board_id' => $data['selectedBoardId'],
             ],
+            'aiEnabled' => filled(config('services.gemini.key')),
         ]);
     }
 
