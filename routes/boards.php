@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardEventController;
+use App\Http\Controllers\BoardFavouriteController;
 use App\Http\Controllers\BoardLabelController;
 use App\Http\Controllers\BoardListController;
 use App\Http\Controllers\BoardMemberController;
@@ -22,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('boards/{board}/archive', [BoardController::class, 'archive'])->name('boards.archive');
     Route::patch('boards/{board}/restore', [BoardController::class, 'restore'])->name('boards.restore');
     Route::delete('boards/{board}', [BoardController::class, 'destroy'])->name('boards.destroy');
+    Route::patch('boards/{board}/favourite', [BoardFavouriteController::class, 'toggle'])->name('boards.favourite');
+
+    Route::get('boards/{board}/ai/conversation', [AiChatController::class, 'show'])->name('ai-chat.show');
+    Route::post('boards/{board}/ai/messages', [AiChatController::class, 'sendMessage'])->name('ai-chat.messages.store');
 
     Route::post('boards/{board}/members', [BoardMemberController::class, 'store'])->name('board-members.store');
     Route::patch('boards/{board}/members/{user}/role', [BoardMemberController::class, 'updateRole'])->name('board-members.update-role');
