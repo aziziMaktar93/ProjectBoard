@@ -75,22 +75,29 @@ async function send() {
         }
 
         await scrollToBottom();
+    } catch {
+        error.value = "Couldn't reach the server, try again.";
+        draft.value = content;
     } finally {
         loading.value = false;
     }
 }
 
 async function applyMessage(message: AiMessage) {
-    const response = await csrfFetch(route('ai-chat.messages.apply', [props.boardId, message.id]), {
-        method: 'POST',
-    });
-    const data = await response.json();
+    try {
+        const response = await csrfFetch(route('ai-chat.messages.apply', [props.boardId, message.id]), {
+            method: 'POST',
+        });
+        const data = await response.json();
 
-    if (response.ok) {
-        appliedIds.value.add(message.id);
-        router.reload({ only: ['board'] });
-    } else {
-        error.value = data.error ?? 'Could not apply this suggestion.';
+        if (response.ok) {
+            appliedIds.value.add(message.id);
+            router.reload({ only: ['board'] });
+        } else {
+            error.value = data.error ?? 'Could not apply this suggestion.';
+        }
+    } catch {
+        error.value = "Couldn't reach the server, try again.";
     }
 }
 
