@@ -101,3 +101,38 @@ test('reply throws GeminiApiException when create_lists names is not an array', 
     expect(fn () => $client->reply('My Board', [], [['role' => 'user', 'content' => 'suggest lists']]))
         ->toThrow(GeminiApiException::class);
 });
+
+test('converse returns concatenated text from the response', function () {
+    Http::fake([
+        'generativelanguage.googleapis.com/*' => Http::response([
+            'candidates' => [
+                ['content' => ['role' => 'model', 'parts' => [['text' => 'Your overdue count is 2.']]]],
+            ],
+        ], 200),
+    ]);
+
+    $client = new GeminiClient('fake-key', 'gemini-3.6-flash');
+    $result = $client->converse('You are a dashboard assistant.', [['role' => 'user', 'content' => 'how many overdue tasks?']]);
+
+    expect($result)->toBe('Your overdue count is 2.');
+});
+
+test('converse throws GeminiApiException when the HTTP request fails', function () {
+    Http::fake([
+        'generativelanguage.googleapis.com/*' => Http::response(['error' => 'boom'], 500),
+    ]);
+
+    $client = new GeminiClient('fake-key', 'gemini-3.6-flash');
+
+    expect(fn () => $client->converse('You are a dashboard assistant.', [['role' => 'user', 'content' => 'hi']]))
+        ->toThrow(GeminiApiException::class);
+});
+
+test('converse throws GeminiApiException on connection failure', function () {
+    Http::fake(fn () => throw new ConnectionException('Connection timed out'));
+
+    $client = new GeminiClient('fake-key', 'gemini-3.6-flash');
+
+    expect(fn () => $client->converse('You are a dashboard assistant.', [['role' => 'user', 'content' => 'hi']]))
+        ->toThrow(GeminiApiException::class);
+});

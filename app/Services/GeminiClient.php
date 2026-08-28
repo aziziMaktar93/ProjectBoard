@@ -20,28 +20,15 @@ class GeminiClient
      */
     public function reply(string $boardName, array $lists, array $messages): array
     {
-        try {
-            $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
-                ->timeout(20)
-                ->post(
-                    "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent",
-                    [
-                        'system_instruction' => [
-                            'parts' => [['text' => $this->systemInstruction($boardName, $lists)]],
-                        ],
-                        'contents' => $this->toContents($messages),
-                        'tools' => [['function_declarations' => $this->toolDeclarations()]],
-                    ]
-                );
-        } catch (ConnectionException $exception) {
-            throw new GeminiApiException('Gemini API request failed.', previous: $exception);
-        }
+        $data = $this->sendRequest([
+            'system_instruction' => [
+                'parts' => [['text' => $this->systemInstruction($boardName, $lists)]],
+            ],
+            'contents' => $this->toContents($messages),
+            'tools' => [['function_declarations' => $this->toolDeclarations()]],
+        ]);
 
-        if ($response->failed()) {
-            throw new GeminiApiException("Gemini API request failed with status {$response->status()}.");
-        }
-
-        $parts = $response->json('candidates.0.content.parts');
+        $parts = data_get($data, 'candidates.0.content.parts');
 
         if (! is_array($parts)) {
             throw new GeminiApiException('Gemini API returned an unexpected response shape.');
@@ -60,6 +47,54 @@ class GeminiClient
         }
 
         return ['content' => $text, 'tool_action' => null];
+    }
+
+    /**
+     * @param  array<int, array{role: string, content: string}>  $messages  Oldest first; the last entry is the new user message.
+     */
+    public function converse(string $systemInstruction, array $messages): string
+    {
+        $data = $this->sendRequest([
+            'system_instruction' => [
+                'parts' => [['text' => $systemInstruction]],
+            ],
+            'contents' => $this->toContents($messages),
+        ]);
+
+        $parts = data_get($data, 'candidates.0.content.parts');
+
+        if (! is_array($parts)) {
+            throw new GeminiApiException('Gemini API returned an unexpected response shape.');
+        }
+
+        $text = collect($parts)->pluck('text')->filter()->implode("\n");
+
+        if ($text === '') {
+            throw new GeminiApiException('Gemini API returned an empty response.');
+        }
+
+        return $text;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     * @return array<string, mixed>
+     */
+    private function sendRequest(array $body): array
+    {
+        try {
+            $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
+                ->timeout(20)
+                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent", $body);
+        } catch (ConnectionException $exception) {
+            throw new GeminiApiException('Gemini API request failed.', previous: $exception);
+        }
+
+        if ($response->failed()) {
+            throw new GeminiApiException("Gemini API request failed with status {$response->status()}.");
+        }
+
+        return $response->json();
     }
 
     /**
