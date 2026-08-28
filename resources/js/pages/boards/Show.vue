@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HoverLabel from '@/components/HoverLabel.vue';
+import AiChatWidget from '@/components/boards/AiChatWidget.vue';
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
 import BoardFilterBar from '@/components/boards/BoardFilterBar.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
@@ -34,6 +35,7 @@ const props = defineProps<{
     archivedCards: Card[];
     initialCardId: number | null;
     canEdit: boolean;
+    aiEnabled: boolean;
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -559,5 +561,6 @@ function bulkAddLabel(labelId: number) {
         />
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
         <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" :can-edit="canEdit" />
+        <AiChatWidget :board-id="board.id" :ai-enabled="aiEnabled" :can-edit="canEdit" />
     </AppLayout>
 </template>

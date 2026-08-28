@@ -136,6 +136,20 @@ export interface CardActivity {
     };
 }
 
+export type AiToolAction =
+    | { type: 'create_lists'; names: string[] }
+    | { type: 'create_cards'; list_name: string; card_names: string[] };
+
+export interface AiMessage {
+    id: number;
+    role: 'user' | 'assistant';
+    content: string;
+    tool_action: AiToolAction | null;
+    applied_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface CardLabel {
     id: number;
     board_id: number;
