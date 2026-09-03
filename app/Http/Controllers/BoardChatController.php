@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 
 class BoardChatController extends Controller
@@ -19,6 +20,7 @@ class BoardChatController extends Controller
 
         $membership = $board->members()->where('users.id', $request->user()->id)->first();
         $lastReadAt = $membership->pivot->chat_last_read_at;
+        $lastReadAt = $lastReadAt ? Carbon::parse($lastReadAt) : null;
 
         $messages = $board->messages()->with('user:id,name')->latest()->limit(100)->get()->reverse()->values();
 

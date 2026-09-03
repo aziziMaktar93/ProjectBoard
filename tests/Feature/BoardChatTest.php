@@ -131,3 +131,27 @@ test('listing messages with mark_read=false does not update chat_last_read_at, w
     expect(Carbon\Carbon::parse($pivotAfterSecondRead->chat_last_read_at)->toJSON())
         ->not->toEqual(Carbon\Carbon::parse($pivotAfterFirstRead->chat_last_read_at)->toJSON());
 });
+
+test('last_read_at is formatted so it can be string-compared against created_at like the frontend does', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+
+    $olderMessage = BoardMessage::factory()->for($board)->for($user)->create();
+
+    // Mark the board as read now, so chat_last_read_at lands strictly after $olderMessage.
+    $this->actingAs($user)->getJson("/boards/{$board->id}/chat/messages")->assertOk();
+
+    $this->travel(1)->minutes();
+    $newerMessage = BoardMessage::factory()->for($board)->for($user)->create();
+
+    $response = $this->actingAs($user)->getJson("/boards/{$board->id}/chat/messages?mark_read=false")->assertOk();
+    $data = $response->json();
+
+    $lastReadAt = $data['last_read_at'];
+    $messagesById = collect($data['messages'])->keyBy('id');
+
+    // Same string comparison used by BoardChatWidget.vue's checkForUnread().
+    expect($messagesById[$olderMessage->id]['created_at'] > $lastReadAt)->toBeFalse();
+    expect($messagesById[$newerMessage->id]['created_at'] > $lastReadAt)->toBeTrue();
+});
