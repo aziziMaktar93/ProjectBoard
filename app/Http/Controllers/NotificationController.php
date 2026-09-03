@@ -53,6 +53,10 @@ class NotificationController extends Controller
             $notification->update(['read_at' => now()]);
         }
 
+        if (! array_key_exists('card_id', $notification->data)) {
+            return redirect()->route('boards.show', ['board' => $notification->data['board_id']]);
+        }
+
         return redirect()->route('boards.show', [
             'board' => $notification->data['board_id'],
             'card' => $notification->data['card_id'],

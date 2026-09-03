@@ -5,7 +5,7 @@ import { formatTimestamp } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { AppNotification, BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AtSign, Check, ListChecks, Search, UserPlus, X } from 'lucide-vue-next';
+import { AtSign, Check, ListChecks, MessageSquare, Search, UserPlus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -71,6 +71,10 @@ function clearFilters() {
 function sentenceFor(notification: AppNotification): string {
     if (notification.type === 'mention') {
         return `${notification.data.actor_name} mentioned you on "${notification.data.card_name}"`;
+    }
+
+    if (notification.type === 'board_message_mention') {
+        return `${notification.data.actor_name} mentioned you in "${notification.data.board_name}" chat`;
     }
 
     if (notification.type === 'checklist_item_assigned') {
@@ -158,10 +162,12 @@ function goToPage(url: string | null) {
                                     notification.type === 'checklist_item_assigned',
                                 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400':
                                     notification.type === 'card_assigned',
+                                'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400': notification.type === 'board_message_mention',
                             }"
                         >
                             <AtSign v-if="notification.type === 'mention'" class="size-4" />
                             <ListChecks v-else-if="notification.type === 'checklist_item_assigned'" class="size-4" />
+                            <MessageSquare v-else-if="notification.type === 'board_message_mention'" class="size-4" />
                             <UserPlus v-else class="size-4" />
                         </span>
                         <div class="min-w-0 flex-1">

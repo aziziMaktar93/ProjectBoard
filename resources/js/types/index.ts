@@ -19,13 +19,15 @@ export interface NavItem {
 export interface AppNotification {
     id: number;
     user_id: number;
-    type: 'card_assigned' | 'mention' | 'checklist_item_assigned';
+    type: 'card_assigned' | 'mention' | 'checklist_item_assigned' | 'board_message_mention';
     data: {
-        card_id: number;
-        card_name: string;
+        card_id?: number;
+        card_name?: string;
         board_id: number;
+        board_name?: string;
         actor_name: string;
         item_name?: string;
+        message_preview?: string;
     };
     read_at: string | null;
     created_at: string;
