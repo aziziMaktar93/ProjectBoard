@@ -26,6 +26,7 @@ const props = defineProps<{
     boardMembers: User[];
     boardLabels: CardLabel[];
     canEdit: boolean;
+    canManageDueDates: boolean;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
@@ -206,7 +207,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                             </PopoverContent>
                         </Popover>
 
-                        <Popover>
+                        <Popover v-if="canManageDueDates">
                             <PopoverTrigger as-child>
                                 <Button variant="outline" size="sm"><CalendarDays class="size-3.5" /> Dates</Button>
                             </PopoverTrigger>
@@ -321,6 +322,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                             :key="item.id"
                             :checklist="item"
                             :can-edit="canEdit"
+                            :can-manage-due-dates="canManageDueDates"
                             :board-members="boardMembers"
                         />
                     </div>

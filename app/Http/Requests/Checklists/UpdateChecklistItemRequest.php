@@ -8,7 +8,17 @@ class UpdateChecklistItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('checklistItem')->checklist->card->boardList->board);
+        $board = $this->route('checklistItem')->checklist->card->boardList->board;
+
+        if (! $this->user()->can('update', $board)) {
+            return false;
+        }
+
+        if ($this->has('due_date') && ! $this->user()->can('manageDueDates', $board)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

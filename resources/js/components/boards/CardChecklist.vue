@@ -8,12 +8,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { celebrate } from '@/composables/useCelebration';
 import type { Checklist, ChecklistItem, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
-import { CalendarDays, Trash2, Users } from 'lucide-vue-next';
+import { CalendarDays, CircleCheck, Clock, Trash2, Users } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
 
 const props = defineProps<{
     checklist: Checklist;
     canEdit: boolean;
+    canManageDueDates: boolean;
     boardMembers: User[];
 }>();
 
@@ -111,6 +112,14 @@ function itemDueDateLabel(item: ChecklistItem): string | null {
     }
 
     return new Date(`${item.due_date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function itemCompletedDateLabel(item: ChecklistItem): string | null {
+    if (!item.completed_at) {
+        return null;
+    }
+
+    return new Date(item.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function isItemOverdue(item: ChecklistItem): boolean {
@@ -230,14 +239,22 @@ function duplicateChecklist() {
                 </span>
                 <span
                     v-if="itemDueDateLabel(item)"
-                    class="shrink-0 rounded px-1.5 py-0.5 text-[11px]"
+                    class="flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px]"
                     :class="
                         isItemOverdue(item)
                             ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                             : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300'
                     "
                 >
+                    <Clock class="size-3" />
                     {{ itemDueDateLabel(item) }}
+                </span>
+                <span
+                    v-if="itemCompletedDateLabel(item)"
+                    class="flex shrink-0 items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                >
+                    <CircleCheck class="size-3" />
+                    {{ itemCompletedDateLabel(item) }}
                 </span>
                 <div v-if="item.members?.length" class="flex shrink-0 -space-x-1.5">
                     <MemberAvatar v-for="member in item.members" :key="member.id" :user="member" size="xs" />
@@ -259,7 +276,7 @@ function duplicateChecklist() {
                         <ChecklistItemMemberPicker :item="item" :board-members="boardMembers" />
                     </PopoverContent>
                 </Popover>
-                <Popover v-if="canEdit">
+                <Popover v-if="canManageDueDates">
                     <PopoverTrigger as-child>
                         <button
                             type="button"

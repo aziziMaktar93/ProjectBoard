@@ -9,7 +9,17 @@ class UpdateCardRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('card')->boardList->board);
+        $board = $this->route('card')->boardList->board;
+
+        if (! $this->user()->can('update', $board)) {
+            return false;
+        }
+
+        if ($this->has('due_date') && ! $this->user()->can('manageDueDates', $board)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

@@ -179,6 +179,37 @@ test('a viewer cannot change another member\'s role', function () {
     expect($board->members()->where('users.id', $other->id)->first()->pivot->role)->toBe('editor');
 });
 
+test('the board owner can assign the hod role', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id, ['role' => 'editor']);
+
+    $response = $this->actingAs($owner)->patch("/boards/{$board->id}/members/{$member->id}/role", ['role' => 'hod']);
+
+    $response->assertRedirect();
+    expect($board->members()->where('users.id', $member->id)->first()->pivot->role)->toBe('hod');
+});
+
+test('a non-owner editor cannot assign the hod role', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $editor = User::factory()->create();
+    $workspace->members()->attach($editor->id);
+    $board->members()->attach($editor->id, ['role' => 'editor']);
+    $other = User::factory()->create();
+    $workspace->members()->attach($other->id);
+    $board->members()->attach($other->id, ['role' => 'editor']);
+
+    $response = $this->actingAs($editor)->patch("/boards/{$board->id}/members/{$other->id}/role", ['role' => 'hod']);
+
+    $response->assertForbidden();
+    expect($board->members()->where('users.id', $other->id)->first()->pivot->role)->toBe('editor');
+});
+
 test('the board creator\'s role cannot be changed', function () {
     $owner = User::factory()->create();
     $board = Board::factory()->for($owner)->create();

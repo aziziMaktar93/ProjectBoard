@@ -15,6 +15,8 @@ const props = defineProps<{
 
 const currentUserId = usePage<SharedData>().props.auth.user.id;
 
+const isOwner = computed(() => currentUserId === props.board.user_id);
+
 const open = defineModel<boolean>('open', { default: false });
 
 const availableMembers = computed(() => {
@@ -71,6 +73,7 @@ function updateMemberRole(user: User, role: string) {
                                     <SelectContent>
                                         <SelectItem value="editor">Editor</SelectItem>
                                         <SelectItem value="viewer">Viewer</SelectItem>
+                                        <SelectItem v-if="isOwner" value="hod">HOD</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <span v-else class="text-xs capitalize text-muted-foreground">{{ member.pivot?.role ?? 'editor' }}</span>

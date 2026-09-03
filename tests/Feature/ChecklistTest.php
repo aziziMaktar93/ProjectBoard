@@ -252,6 +252,36 @@ test('a user can check and uncheck a checklist item', function () {
     expect($item->fresh()->is_checked)->toBeFalse();
 });
 
+test('checking a checklist item sets completed_at, unchecking clears it', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['is_checked' => false, 'completed_at' => null]);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => true])->assertRedirect();
+    expect($item->fresh()->completed_at)->not->toBeNull();
+    expect($item->fresh()->completed_at->diffInSeconds(now()))->toBeLessThan(5);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => false])->assertRedirect();
+    expect($item->fresh()->completed_at)->toBeNull();
+});
+
+test('updating a checklist item without toggling is_checked does not touch completed_at', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['is_checked' => true, 'completed_at' => now()->subDay()]);
+    $originalCompletedAt = $item->completed_at;
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['name' => 'Renamed'])->assertRedirect();
+
+    expect($item->fresh()->completed_at->toDateTimeString())->toBe($originalCompletedAt->toDateTimeString());
+});
+
 test('a user can rename a checklist item', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();
@@ -319,6 +349,40 @@ test('a user cannot set a checklist item due date on another user\'s board', fun
     $other = User::factory()->create();
 
     $response = $this->actingAs($other)->patch("/checklist-items/{$item->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertForbidden();
+    expect($item->fresh()->due_date)->toBeNull();
+});
+
+test('an hod member can set a checklist item due date', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['due_date' => null]);
+    $hod = User::factory()->create();
+    $board->workspace->members()->attach($hod->id);
+    $board->members()->attach($hod->id, ['role' => 'hod']);
+
+    $response = $this->actingAs($hod)->patch("/checklist-items/{$item->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertRedirect();
+    expect($item->fresh()->due_date)->toBe('2026-09-01');
+});
+
+test('a plain editor member cannot set a checklist item due date', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['due_date' => null]);
+    $editor = User::factory()->create();
+    $board->workspace->members()->attach($editor->id);
+    $board->members()->attach($editor->id, ['role' => 'editor']);
+
+    $response = $this->actingAs($editor)->patch("/checklist-items/{$item->id}", ['due_date' => '2026-09-01']);
 
     $response->assertForbidden();
     expect($item->fresh()->due_date)->toBeNull();

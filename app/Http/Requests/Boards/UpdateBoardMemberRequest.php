@@ -8,7 +8,13 @@ class UpdateBoardMemberRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('board'));
+        $board = $this->route('board');
+
+        if ($this->input('role') === 'hod') {
+            return $this->user()->id === $board->user_id;
+        }
+
+        return $this->user()->can('update', $board);
     }
 
     /**
@@ -17,7 +23,7 @@ class UpdateBoardMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', 'in:editor,viewer'],
+            'role' => ['required', 'in:editor,viewer,hod'],
         ];
     }
 }

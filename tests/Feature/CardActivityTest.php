@@ -86,14 +86,14 @@ test('checking a checklist item logs a completed activity', function () {
     $board = Board::factory()->for($user)->create();
     $list = BoardList::factory()->for($board)->create();
     $card = Card::factory()->for($list)->create();
-    $checklist = Checklist::factory()->for($card)->create();
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'Launch Checklist']);
     $item = $checklist->items()->create(['name' => 'Write tests', 'is_checked' => false, 'position' => 0]);
 
     $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => true]);
 
     $activity = $card->activities()->where('type', 'checklist_item_completed')->first();
     expect($activity)->not->toBeNull();
-    expect($activity->data)->toBe(['item_name' => 'Write tests']);
+    expect($activity->data)->toBe(['item_name' => 'Write tests', 'checklist_name' => 'Launch Checklist']);
 });
 
 test('unchecking a checklist item logs an uncompleted activity', function () {

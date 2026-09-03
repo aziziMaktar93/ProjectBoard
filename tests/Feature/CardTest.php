@@ -251,6 +251,48 @@ test('a user cannot set a due date on a card on another user\'s board', function
     expect($card->fresh()->due_date)->toBeNull();
 });
 
+test('an hod member can set a card\'s due date', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+    $hod = User::factory()->create();
+    $board->workspace->members()->attach($hod->id);
+    $board->members()->attach($hod->id, ['role' => 'hod']);
+
+    $response = $this->actingAs($hod)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertRedirect();
+    expect($card->fresh()->due_date)->toBe('2026-09-01');
+});
+
+test('a plain editor member cannot set a card\'s due date', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+    $editor = User::factory()->create();
+    $board->workspace->members()->attach($editor->id);
+    $board->members()->attach($editor->id, ['role' => 'editor']);
+
+    $response = $this->actingAs($editor)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertForbidden();
+    expect($card->fresh()->due_date)->toBeNull();
+});
+
+test('the board owner can always set a card\'s due date regardless of role', function () {
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['due_date' => null]);
+
+    $response = $this->actingAs($owner)->patch("/cards/{$card->id}", ['due_date' => '2026-09-01']);
+
+    $response->assertRedirect();
+    expect($card->fresh()->due_date)->toBe('2026-09-01');
+});
+
 test('a user can reorder cards within a list', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create();

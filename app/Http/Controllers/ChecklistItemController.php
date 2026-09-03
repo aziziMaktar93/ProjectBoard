@@ -30,11 +30,13 @@ class ChecklistItemController extends Controller
         $validated = $request->validated();
 
         if (array_key_exists('is_checked', $validated) && $validated['is_checked'] !== $checklistItem->is_checked) {
+            $validated['completed_at'] = $validated['is_checked'] ? now() : null;
+
             CardActivity::create([
                 'card_id' => $checklistItem->checklist->card_id,
                 'user_id' => $request->user()->id,
                 'type' => $validated['is_checked'] ? 'checklist_item_completed' : 'checklist_item_uncompleted',
-                'data' => ['item_name' => $checklistItem->name],
+                'data' => ['item_name' => $checklistItem->name, 'checklist_name' => $checklistItem->checklist->name],
             ]);
         }
 

@@ -11,9 +11,13 @@ export function sentenceFor(activity: CardActivity): string {
         case 'moved':
             return `moved this card from ${data.from_list} to ${data.to_list}`;
         case 'checklist_item_completed':
-            return `completed ${data.item_name} on this card`;
+            return data.checklist_name
+                ? `completed ${data.item_name} in ${data.checklist_name} on this card`
+                : `completed ${data.item_name} on this card`;
         case 'checklist_item_uncompleted':
-            return `marked ${data.item_name} incomplete on this card`;
+            return data.checklist_name
+                ? `marked ${data.item_name} incomplete in ${data.checklist_name} on this card`
+                : `marked ${data.item_name} incomplete on this card`;
         case 'member_added':
             return `added ${data.member_name} to this card`;
         case 'member_removed':

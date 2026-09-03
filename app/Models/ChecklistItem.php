@@ -21,6 +21,7 @@ class ChecklistItem extends Model
         'name',
         'is_checked',
         'due_date',
+        'completed_at',
         'position',
     ];
 
@@ -31,6 +32,7 @@ class ChecklistItem extends Model
     {
         return [
             'is_checked' => 'boolean',
+            'completed_at' => 'datetime',
         ];
     }
 

@@ -36,6 +36,7 @@ const props = defineProps<{
     archivedCards: Card[];
     initialCardId: number | null;
     canEdit: boolean;
+    canManageDueDates: boolean;
     aiEnabled: boolean;
 }>();
 
@@ -561,6 +562,7 @@ function bulkAddLabel(labelId: number) {
             :board-members="board.members ?? []"
             :board-labels="board.labels ?? []"
             :can-edit="canEdit"
+            :can-manage-due-dates="canManageDueDates"
         />
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
         <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" :can-edit="canEdit" />

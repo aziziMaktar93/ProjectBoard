@@ -25,4 +25,13 @@ class BoardPolicy
     {
         return $user->id === $board->user_id;
     }
+
+    public function manageDueDates(User $user, Board $board): bool
+    {
+        if ($user->id === $board->user_id) {
+            return true;
+        }
+
+        return $board->members()->where('users.id', $user->id)->wherePivot('role', 'hod')->exists();
+    }
 }
