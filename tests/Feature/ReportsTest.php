@@ -236,3 +236,16 @@ test('the checklist-timeline report groups items by board, card, and checklist',
     SnappyPdf::assertSee('GPPK100');
     SnappyPdf::assertSee('GPPK200');
 });
+
+test('a user can view the reports index page', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+
+    $response = $this->actingAs($user)->get('/reports');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Reports')
+        ->has('boards', 1)
+        ->where('boards.0.name', 'Engineering'));
+});

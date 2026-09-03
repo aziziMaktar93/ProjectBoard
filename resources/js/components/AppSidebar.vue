@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { CalendarDays, Kanban, LayoutGrid, Users } from 'lucide-vue-next';
+import { CalendarDays, FileText, Kanban, LayoutGrid, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -33,6 +33,11 @@ const mainNavItems: NavItem[] = [
         title: 'Calendar',
         href: '/calendar',
         icon: CalendarDays,
+    },
+    {
+        title: 'Reports',
+        href: '/reports',
+        icon: FileText,
     },
     {
         title: 'Members',
