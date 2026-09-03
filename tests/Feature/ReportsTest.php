@@ -237,6 +237,72 @@ test('the checklist-timeline report groups items by board, card, and checklist',
     SnappyPdf::assertSee('GPPK200');
 });
 
+test('the activity-log csv export neutralizes formula injection in user-controlled cells', function () {
+    $user = User::factory()->create(['name' => '=cmd|/C calc']);
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Fix bug']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'archived']);
+
+    $response = $this->actingAs($user)->get('/reports/activity-log/csv');
+
+    $response->assertOk();
+
+    $lines = array_filter(explode("\n", $response->streamedContent()));
+    expect($lines)->toHaveCount(2);
+    expect($lines[1])->toContain('\'=cmd|/C calc');
+    expect($lines[1])->not->toContain(',=cmd|/C calc');
+});
+
+test('a users own boards never leak into another users reports', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'My Board']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'My Card']);
+    $checklist = Checklist::factory()->for($card)->create();
+    ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'My Task',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'archived']);
+
+    $outsider = User::factory()->create();
+    $outsiderBoard = Board::factory()->for($outsider)->create(['name' => 'Outsiders Board']);
+    $outsiderList = BoardList::factory()->for($outsiderBoard)->create();
+    $outsiderCard = Card::factory()->for($outsiderList)->create(['name' => 'Outsiders Card']);
+    $outsiderChecklist = Checklist::factory()->for($outsiderCard)->create();
+    ChecklistItem::factory()->for($outsiderChecklist)->create([
+        'name' => 'Outsiders Secret Task',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+    $outsiderCard->activities()->create(['user_id' => $outsider->id, 'type' => 'archived']);
+
+    $this->actingAs($user)->get('/reports/on-time-completion')->assertOk();
+    SnappyPdf::assertDontSee('Outsiders Secret Task');
+    SnappyPdf::assertDontSee('Outsiders Board');
+
+    $this->actingAs($user)->get('/reports/member-performance')->assertOk();
+    SnappyPdf::assertDontSee($outsider->name);
+
+    $this->actingAs($user)->get('/reports/activity-log')->assertOk();
+    SnappyPdf::assertDontSee('Outsiders Card');
+    SnappyPdf::assertDontSee($outsider->name);
+
+    $this->actingAs($user)->get('/reports/checklist-timeline')->assertOk();
+    SnappyPdf::assertDontSee('Outsiders Secret Task');
+    SnappyPdf::assertDontSee('Outsiders Card');
+
+    $csvResponse = $this->actingAs($user)->get('/reports/activity-log/csv');
+    $csvResponse->assertOk();
+    expect($csvResponse->streamedContent())->not->toContain('Outsiders Card');
+});
+
 test('a user can view the reports index page', function () {
     $user = User::factory()->create();
     $board = Board::factory()->for($user)->create(['name' => 'Engineering']);

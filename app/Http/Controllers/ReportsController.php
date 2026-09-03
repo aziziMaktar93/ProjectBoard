@@ -149,14 +149,27 @@ class ReportsController extends Controller
             foreach ($activities as $activity) {
                 fputcsv($handle, [
                     $activity->created_at->format('Y-m-d H:i:s'),
-                    $activity->card->boardList->board->name ?? '',
-                    $activity->user->name,
-                    $describer->describe($activity),
+                    $this->sanitizeCsvCell($activity->card->boardList->board->name ?? ''),
+                    $this->sanitizeCsvCell($activity->user->name),
+                    $this->sanitizeCsvCell($describer->describe($activity)),
                 ]);
             }
 
             fclose($handle);
         }, 'activity-log-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Neutralize CSV formula injection by prefixing risky leading characters
+     * with a single quote, per OWASP's CSV injection guidance.
+     */
+    private function sanitizeCsvCell(string $value): string
+    {
+        if (preg_match('/^[=+\-@\t\r]/', $value)) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 
     public function checklistTimeline(Request $request): HttpResponse
