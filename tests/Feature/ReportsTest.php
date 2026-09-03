@@ -109,3 +109,70 @@ test('the on-time-completion report excludes items on archived cards', function 
     SnappyPdf::assertViewHas('totalCompleted', 0);
     SnappyPdf::assertDontSee('Archived card item');
 });
+
+test('the member-performance report ranks members by completed count', function () {
+    SnappyPdf::fake();
+
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+
+    $topPerformer = User::factory()->create(['name' => 'Priya']);
+    $board->workspace->members()->attach($topPerformer->id);
+    $board->members()->attach($topPerformer->id);
+
+    $card1 = Card::factory()->for($list)->create();
+    $checklist1 = Checklist::factory()->for($card1)->create();
+    $item1 = ChecklistItem::factory()->for($checklist1)->create(['is_checked' => true]);
+    $item1->members()->attach($topPerformer->id);
+
+    $card2 = Card::factory()->for($list)->create();
+    $checklist2 = Checklist::factory()->for($card2)->create();
+    $item2 = ChecklistItem::factory()->for($checklist2)->create(['is_checked' => true]);
+    $item2->members()->attach($topPerformer->id);
+
+    $slower = User::factory()->create(['name' => 'Sam']);
+    $board->workspace->members()->attach($slower->id);
+    $board->members()->attach($slower->id);
+    $card3 = Card::factory()->for($list)->create();
+    $checklist3 = Checklist::factory()->for($card3)->create();
+    $item3 = ChecklistItem::factory()->for($checklist3)->create(['is_checked' => false, 'due_date' => '2020-01-01']);
+    $item3->members()->attach($slower->id);
+
+    $response = $this->actingAs($owner)->get('/reports/member-performance');
+
+    $response->assertOk();
+    SnappyPdf::assertViewIs('reports.member-performance');
+    SnappyPdf::assertViewHas('rows', function ($rows) use ($topPerformer, $slower) {
+        $first = $rows->first();
+
+        return $first['user']->id === $topPerformer->id
+            && $first['completed'] === 2
+            && $rows->firstWhere(fn ($row) => $row['user']->id === $slower->id)['overdue'] === 1;
+    });
+});
+
+test('the member-performance report computes average days late', function () {
+    SnappyPdf::fake();
+
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $member = User::factory()->create(['name' => 'Priya']);
+    $board->workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create([
+        'is_checked' => true,
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+    ]);
+    $item->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->get('/reports/member-performance');
+
+    $response->assertOk();
+    SnappyPdf::assertViewHas('rows', fn ($rows) => $rows->first()['avg_days_late'] === 4.0);
+});

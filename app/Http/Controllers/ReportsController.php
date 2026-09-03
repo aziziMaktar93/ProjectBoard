@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Board;
+use App\Models\Card;
 use App\Models\ChecklistItem;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use Carbon\Carbon;
@@ -58,6 +59,64 @@ class ReportsController extends Controller
             'lateDetails' => $lateDetails,
             'generatedAt' => now(),
         ])->download('on-time-completion-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    public function memberPerformance(Request $request): HttpResponse
+    {
+        $scope = $this->resolveScope($request);
+
+        $cards = Card::query()
+            ->whereHas('boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
+            ->whereNull('archived_at')
+            ->with(['checklists.items.members', 'members'])
+            ->get();
+
+        $today = now()->toDateString();
+        $memberStats = [];
+
+        foreach ($cards as $card) {
+            $items = $card->checklists->flatMap(fn ($checklist) => $checklist->items);
+            $cardComplete = $items->isNotEmpty() && $items->every(fn ($item) => $item->is_checked);
+
+            foreach ($card->members as $member) {
+                $memberStats[$member->id] ??= ['user' => $member, 'completed' => 0, 'overdue' => 0, 'lateDays' => []];
+
+                if ($cardComplete) {
+                    $memberStats[$member->id]['completed']++;
+                } elseif ($card->due_date && $card->due_date < $today) {
+                    $memberStats[$member->id]['overdue']++;
+                }
+            }
+
+            foreach ($items as $item) {
+                foreach ($item->members as $member) {
+                    $memberStats[$member->id] ??= ['user' => $member, 'completed' => 0, 'overdue' => 0, 'lateDays' => []];
+
+                    if ($item->is_checked) {
+                        $memberStats[$member->id]['completed']++;
+
+                        if ($item->due_date && $item->completed_at && $item->completed_at->toDateString() > $item->due_date) {
+                            $memberStats[$member->id]['lateDays'][] = Carbon::parse($item->due_date)->diffInDays($item->completed_at->toDateString());
+                        }
+                    } elseif ($item->due_date && $item->due_date < $today) {
+                        $memberStats[$member->id]['overdue']++;
+                    }
+                }
+            }
+        }
+
+        $rows = collect($memberStats)->map(fn (array $stat) => [
+            'user' => $stat['user'],
+            'completed' => $stat['completed'],
+            'overdue' => $stat['overdue'],
+            'avg_days_late' => count($stat['lateDays']) ? round(array_sum($stat['lateDays']) / count($stat['lateDays']), 1) : null,
+        ])->sortByDesc('completed')->values();
+
+        return SnappyPdf::loadView('reports.member-performance', [
+            'scopeLabel' => $scope['scopeLabel'],
+            'rows' => $rows,
+            'generatedAt' => now(),
+        ])->download('member-performance-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**

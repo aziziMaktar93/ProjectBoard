@@ -66,6 +66,10 @@ Route::get('reports/on-time-completion', [ReportsController::class, 'onTimeCompl
     ->middleware(['auth', 'verified'])
     ->name('reports.on-time-completion');
 
+Route::get('reports/member-performance', [ReportsController::class, 'memberPerformance'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.member-performance');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
 require __DIR__.'/boards.php';
