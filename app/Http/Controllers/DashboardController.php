@@ -61,7 +61,7 @@ class DashboardController extends Controller
                 'created_at' => $activity->created_at,
             ]),
             'scopeLabel' => $scopeLabel,
-            'generatedAt' => now(),
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
         ])->download('dashboard-report-'.now()->format('Y-m-d').'.pdf');
     }
 

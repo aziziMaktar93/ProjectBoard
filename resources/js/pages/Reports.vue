@@ -42,8 +42,10 @@ const memberPerformanceUrl = computed(() => reportUrl('reports.member-performanc
 const activityLogUrl = computed(() => reportUrl('reports.activity-log'));
 const activityLogCsvUrl = computed(() => reportUrl('reports.activity-log-csv'));
 const checklistTimelineUrl = computed(() => reportUrl('reports.checklist-timeline'));
+const progressUrl = computed(() => reportUrl('reports.progress'));
 
 const reportCards = computed(() => [
+    { title: 'Progress %', description: 'Checklist completion percentage per board and per card.', href: progressUrl.value },
     { title: 'On-Time vs Late Completion', description: 'Checklist items compared against their due date.', href: onTimeUrl.value },
     { title: 'Member Performance', description: 'Completed, overdue, and average days late per member.', href: memberPerformanceUrl.value },
     { title: 'Checklist Completion Timeline', description: 'Every checklist item grouped by board, card, and checklist.', href: checklistTimelineUrl.value },
@@ -120,7 +122,7 @@ const reportCards = computed(() => [
                         <Button as-child>
                             <a :href="activityLogUrl"><Download class="size-3.5" /> PDF</a>
                         </Button>
-                        <Button as-child variant="outline">
+                        <Button as-child variant="secondary" class="bg-emerald-600 text-white hover:bg-emerald-700">
                             <a :href="activityLogCsvUrl"><FileSpreadsheet class="size-3.5" /> CSV</a>
                         </Button>
                     </div>

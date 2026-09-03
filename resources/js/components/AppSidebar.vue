@@ -35,14 +35,14 @@ const mainNavItems: NavItem[] = [
         icon: CalendarDays,
     },
     {
-        title: 'Reports',
-        href: '/reports',
-        icon: FileText,
-    },
-    {
         title: 'Members',
         href: '/members',
         icon: Users,
+    },
+    {
+        title: 'Reports',
+        href: '/reports',
+        icon: FileText,
     },
 ];
 </script>

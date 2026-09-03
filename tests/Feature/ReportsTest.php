@@ -6,6 +6,7 @@ use App\Models\Card;
 use App\Models\Checklist;
 use App\Models\ChecklistItem;
 use App\Models\User;
+use App\Models\Workspace;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 
 test('a guest cannot access any reports route', function () {
@@ -51,6 +52,7 @@ test('the on-time-completion report separates on-time from late items', function
     SnappyPdf::assertViewHas('lateCount', 1);
     SnappyPdf::assertViewHas('totalCompleted', 2);
     SnappyPdf::assertSee('Late item');
+    SnappyPdf::assertSee('On time item');
     SnappyPdf::assertDontSee('Never completed');
 });
 
@@ -152,6 +154,34 @@ test('the member-performance report ranks members by completed count', function 
     });
 });
 
+test('the member-performance report counts pending tasks separately from overdue and completed', function () {
+    SnappyPdf::fake();
+
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $member = User::factory()->create(['name' => 'Priya']);
+    $board->workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create([
+        'is_checked' => false,
+        'due_date' => now()->addDays(5)->toDateString(),
+    ]);
+    $item->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->get('/reports/member-performance');
+
+    $response->assertOk();
+    SnappyPdf::assertViewHas('rows', function ($rows) use ($member) {
+        $row = $rows->firstWhere(fn ($row) => $row['user']->id === $member->id);
+
+        return $row['pending'] === 1 && $row['completed'] === 0 && $row['overdue'] === 0;
+    });
+});
+
 test('the member-performance report computes average days late', function () {
     SnappyPdf::fake();
 
@@ -175,6 +205,45 @@ test('the member-performance report computes average days late', function () {
 
     $response->assertOk();
     SnappyPdf::assertViewHas('rows', fn ($rows) => $rows->first()['avg_days_late'] === 4.0);
+});
+
+test('the member-performance report lists each members assigned tasks with details', function () {
+    SnappyPdf::fake();
+
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create(['name' => 'Team Alpha']);
+    $board = Board::factory()->for($workspace)->for($owner)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+
+    $member = User::factory()->create(['name' => 'Priya']);
+    $workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $card = Card::factory()->for($list)->create(['name' => 'Ship feature']);
+    $card->members()->attach($member->id);
+
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'Write tests',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+    $item->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->get('/reports/member-performance');
+
+    $response->assertOk();
+    SnappyPdf::assertViewHas('rows', function ($rows) use ($member) {
+        $row = $rows->firstWhere(fn ($row) => $row['user']->id === $member->id);
+
+        return $row['tasks']->count() === 2
+            && $row['tasks']->firstWhere('type', 'Card')['name'] === 'Ship feature'
+            && $row['tasks']->firstWhere('type', 'Checklist Item')['name'] === 'Write tests';
+    });
+    SnappyPdf::assertSee('Ship feature');
+    SnappyPdf::assertSee('Write tests');
+    SnappyPdf::assertSee('Team Alpha');
 });
 
 test('the activity-log report lists activities newest first', function () {
@@ -210,7 +279,47 @@ test('the activity-log csv export has a header row and one row per activity', fu
 
     $lines = array_filter(explode("\n", $response->streamedContent()));
     expect($lines)->toHaveCount(3);
-    expect($lines[0])->toBe('Date,Board,User,Activity');
+    expect($lines[0])->toBe('Date,Workspace,Board,User,Activity');
+});
+
+test('the progress report computes checklist completion percentage per board and per card', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Team Alpha']);
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+
+    $card1 = Card::factory()->for($list)->create(['name' => 'Fully done']);
+    $checklist1 = Checklist::factory()->for($card1)->create();
+    ChecklistItem::factory()->for($checklist1)->create(['is_checked' => true]);
+    ChecklistItem::factory()->for($checklist1)->create(['is_checked' => true]);
+
+    $card2 = Card::factory()->for($list)->create(['name' => 'Half done']);
+    $checklist2 = Checklist::factory()->for($card2)->create();
+    ChecklistItem::factory()->for($checklist2)->create(['is_checked' => true]);
+    ChecklistItem::factory()->for($checklist2)->create(['is_checked' => false]);
+
+    $card3 = Card::factory()->for($list)->create(['name' => 'No checklist']);
+
+    $response = $this->actingAs($user)->get('/reports/progress');
+
+    $response->assertOk();
+    SnappyPdf::assertViewIs('reports.progress');
+    SnappyPdf::assertViewHas('grouped', function ($grouped) {
+        $workspace = $grouped['Team Alpha'];
+        $board = $workspace['boards']['Engineering'];
+
+        return $workspace['percent'] === 75
+            && $board['percent'] === 75
+            && $board['cards']->firstWhere('name', 'Fully done')['percent'] === 100
+            && $board['cards']->firstWhere('name', 'Half done')['percent'] === 50
+            && $board['cards']->firstWhere('name', 'No checklist')['percent'] === null;
+    });
+    SnappyPdf::assertSee('Team Alpha');
+    SnappyPdf::assertSee('Engineering');
+    SnappyPdf::assertSee('Fully done');
+    SnappyPdf::assertSee('No checklist');
 });
 
 test('the checklist-timeline report groups items by board, card, and checklist', function () {
@@ -235,6 +344,29 @@ test('the checklist-timeline report groups items by board, card, and checklist',
     SnappyPdf::assertSee('Sprint 1');
     SnappyPdf::assertSee('GPPK100');
     SnappyPdf::assertSee('GPPK200');
+});
+
+test('the checklist-timeline report shows assigned members, or "Unassigned" when none', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Sprint 1']);
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'GPPK100']);
+
+    $assignee = User::factory()->create(['name' => 'Priya Sharma']);
+    $board->workspace->members()->attach($assignee->id);
+    $assignedItem = ChecklistItem::factory()->for($checklist)->create(['name' => 'FORM', 'due_date' => '2026-08-31', 'is_checked' => true, 'completed_at' => '2026-08-30']);
+    $assignedItem->members()->attach($assignee->id);
+
+    ChecklistItem::factory()->for($checklist)->create(['name' => 'DELETE', 'due_date' => '2026-08-26', 'is_checked' => false]);
+
+    $response = $this->actingAs($user)->get('/reports/checklist-timeline');
+
+    $response->assertOk();
+    SnappyPdf::assertSee('Priya Sharma');
+    SnappyPdf::assertSee('Unassigned');
 });
 
 test('the activity-log csv export neutralizes formula injection in user-controlled cells', function () {
@@ -314,4 +446,96 @@ test('a user can view the reports index page', function () {
         ->component('Reports')
         ->has('boards', 1)
         ->where('boards.0.name', 'Engineering'));
+});
+
+test('the checklist-timeline report shows the workspace name above each board', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Team Alpha']);
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Sprint 1']);
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'GPPK100']);
+    ChecklistItem::factory()->for($checklist)->create(['name' => 'FORM', 'due_date' => '2026-08-31', 'is_checked' => true, 'completed_at' => '2026-08-30']);
+
+    $response = $this->actingAs($user)->get('/reports/checklist-timeline');
+
+    $response->assertOk();
+    SnappyPdf::assertSee('Team Alpha');
+});
+
+test('the on-time-completion report shows the workspace name for each late item', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Team Alpha']);
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'Late item',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+
+    $response = $this->actingAs($user)->get('/reports/on-time-completion');
+
+    $response->assertOk();
+    SnappyPdf::assertSee('Team Alpha');
+});
+
+test('the on-time-completion report shows assigned members, or "Unassigned" when none', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+
+    $assignee = User::factory()->create(['name' => 'Priya Sharma']);
+    $board->workspace->members()->attach($assignee->id);
+    $assignedItem = ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'Assigned late item',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+    $assignedItem->members()->attach($assignee->id);
+
+    ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'Unassigned late item',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+
+    $response = $this->actingAs($user)->get('/reports/on-time-completion');
+
+    $response->assertOk();
+    SnappyPdf::assertSee('Priya Sharma');
+    SnappyPdf::assertSee('Unassigned');
+});
+
+test('the activity-log report and csv export both show the workspace name', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Team Alpha']);
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Fix bug']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'archived']);
+
+    $this->actingAs($user)->get('/reports/activity-log')->assertOk();
+    SnappyPdf::assertSee('Team Alpha');
+
+    $csvResponse = $this->actingAs($user)->get('/reports/activity-log/csv');
+    $csvResponse->assertOk();
+    $lines = array_filter(explode("\n", $csvResponse->streamedContent()));
+    expect($lines[0])->toBe('Date,Workspace,Board,User,Activity');
+    expect($lines[1])->toContain('Team Alpha');
 });

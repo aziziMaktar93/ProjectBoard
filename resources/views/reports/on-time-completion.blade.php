@@ -3,22 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>On-Time vs Late Completion Report</title>
-    <style>
-        body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1f1f1f; font-size: 12px; margin: 0; padding: 24px; }
-        h1 { font-size: 20px; margin: 0 0 4px; }
-        .subtitle { color: #6b7280; margin: 0 0 20px; }
-        h2 { font-size: 14px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin: 24px 0 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
-        th { color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; }
-        .stat-grid { width: 100%; }
-        .stat-grid td { border: none; padding: 0 12px 0 0; }
-        .stat-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 12px; }
-        .stat-value { font-size: 18px; font-weight: 700; display: block; }
-        .stat-label { color: #6b7280; font-size: 10px; text-transform: uppercase; }
-        .muted { color: #6b7280; }
-        .footer { margin-top: 24px; color: #9ca3af; font-size: 10px; }
-    </style>
+    @include('reports.partials.styles')
 </head>
 <body>
     <h1>On-Time vs Late Completion Report</h1>
@@ -53,28 +38,90 @@
         </tr>
     </table>
 
-    <h2>Late items</h2>
+    <span class="section-title">Late items</span>
     @if ($lateDetails->isEmpty())
         <p class="muted">No late items in scope.</p>
     @else
-        <table>
+        <table class="data">
             <thead>
-                <tr><th>Item</th><th>Checklist</th><th>Board</th><th>Due</th><th>Completed</th><th>Days late</th></tr>
+                <tr>
+                    <th width="16%">Item</th>
+                    <th width="13%">Checklist</th>
+                    <th width="12%">Workspace</th>
+                    <th width="12%">Board</th>
+                    <th width="14%">Assigned</th>
+                    <th width="11%">Due</th>
+                    <th width="12%">Completed</th>
+                    <th width="10%">Days late</th>
+                </tr>
             </thead>
             <tbody>
                 @foreach ($lateDetails as $row)
                     <tr>
                         <td>{{ $row['item_name'] }}</td>
                         <td>{{ $row['checklist_name'] }}</td>
+                        <td>{{ $row['workspace_name'] }}</td>
                         <td>{{ $row['board_name'] }}</td>
+                        <td>
+                            @if ($row['assignees'] !== '')
+                                <span class="assignee">{{ $row['assignees'] }}</span>
+                            @else
+                                <span class="assignee-empty">Unassigned</span>
+                            @endif
+                        </td>
                         <td>{{ \Carbon\Carbon::parse($row['due_date'])->format('M j, Y') }}</td>
                         <td>{{ $row['completed_at']->format('M j, Y') }}</td>
-                        <td>{{ $row['days_late'] }}</td>
+                        <td><span class="pill pill-bad">{{ $row['days_late'] }}d late</span></td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     @endif
+
+    <span class="section-title">On-time items</span>
+    @if ($onTimeDetails->isEmpty())
+        <p class="muted">No on-time items in scope.</p>
+    @else
+        <table class="data">
+            <thead>
+                <tr>
+                    <th width="18%">Item</th>
+                    <th width="14%">Checklist</th>
+                    <th width="13%">Workspace</th>
+                    <th width="13%">Board</th>
+                    <th width="16%">Assigned</th>
+                    <th width="13%">Due</th>
+                    <th width="13%">Completed</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($onTimeDetails as $row)
+                    <tr>
+                        <td>{{ $row['item_name'] }}</td>
+                        <td>{{ $row['checklist_name'] }}</td>
+                        <td>{{ $row['workspace_name'] }}</td>
+                        <td>{{ $row['board_name'] }}</td>
+                        <td>
+                            @if ($row['assignees'] !== '')
+                                <span class="assignee">{{ $row['assignees'] }}</span>
+                            @else
+                                <span class="assignee-empty">Unassigned</span>
+                            @endif
+                        </td>
+                        <td>{{ \Carbon\Carbon::parse($row['due_date'])->format('M j, Y') }}</td>
+                        <td>{{ $row['completed_at']->format('M j, Y') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
+    <div class="methodology">
+        <strong>How this is calculated:</strong> only checklist items with both a due date and a completion date are compared.
+        An item is <strong>on time</strong> if its completion date is on or before its due date, otherwise it's <strong>late</strong>.
+        On-time rate = on time &divide; compared &times; 100%. Days late = due date to completion date, in whole days.
+        Items without a due date, or not yet completed, are excluded. Archived cards are excluded.
+    </div>
 
     <p class="footer">ProjectBoard &middot; {{ $generatedAt->format('Y') }}</p>
 </body>

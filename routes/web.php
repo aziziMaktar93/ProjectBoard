@@ -82,6 +82,10 @@ Route::get('reports/checklist-timeline', [ReportsController::class, 'checklistTi
     ->middleware(['auth', 'verified'])
     ->name('reports.checklist-timeline');
 
+Route::get('reports/progress', [ReportsController::class, 'progress'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.progress');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
 require __DIR__.'/boards.php';

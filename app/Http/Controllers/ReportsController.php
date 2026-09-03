@@ -38,20 +38,28 @@ class ReportsController extends Controller
             ->whereHas('checklist.card.boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
             ->whereNotNull('due_date')
             ->whereNotNull('completed_at')
-            ->with('checklist.card.boardList.board')
+            ->with(['checklist.card.boardList.board.workspace', 'members'])
             ->get();
 
         $onTime = $items->filter(fn (ChecklistItem $item) => $item->completed_at->toDateString() <= $item->due_date);
         $late = $items->filter(fn (ChecklistItem $item) => $item->completed_at->toDateString() > $item->due_date);
 
-        $lateDetails = $late->map(fn (ChecklistItem $item) => [
+        $mapItem = fn (ChecklistItem $item) => [
             'item_name' => $item->name,
             'checklist_name' => $item->checklist->name,
+            'workspace_name' => $item->checklist->card->boardList->board->workspace->name,
             'board_name' => $item->checklist->card->boardList->board->name,
+            'assignees' => $item->members->pluck('name')->implode(', '),
             'due_date' => $item->due_date,
             'completed_at' => $item->completed_at,
+        ];
+
+        $lateDetails = $late->map(fn (ChecklistItem $item) => [
+            ...$mapItem($item),
             'days_late' => Carbon::parse($item->due_date)->diffInDays($item->completed_at->toDateString()),
         ])->sortByDesc('days_late')->values();
+
+        $onTimeDetails = $onTime->map($mapItem)->sortByDesc('completed_at')->values();
 
         return SnappyPdf::loadView('reports.on-time-completion', [
             'scopeLabel' => $scope['scopeLabel'],
@@ -60,7 +68,8 @@ class ReportsController extends Controller
             'lateCount' => $late->count(),
             'onTimePercent' => $items->isEmpty() ? null : (int) round($onTime->count() / $items->count() * 100),
             'lateDetails' => $lateDetails,
-            'generatedAt' => now(),
+            'onTimeDetails' => $onTimeDetails,
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
         ])->download('on-time-completion-report-'.now()->format('Y-m-d').'.pdf');
     }
 
@@ -71,7 +80,7 @@ class ReportsController extends Controller
         $cards = Card::query()
             ->whereHas('boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
             ->whereNull('archived_at')
-            ->with(['checklists.items.members', 'members'])
+            ->with(['checklists.items.members', 'members', 'boardList.board.workspace'])
             ->get();
 
         $today = now()->toDateString();
@@ -80,45 +89,65 @@ class ReportsController extends Controller
         foreach ($cards as $card) {
             $items = $card->checklists->flatMap(fn ($checklist) => $checklist->items);
             $cardComplete = $items->isNotEmpty() && $items->every(fn ($item) => $item->is_checked);
+            $cardStatus = $cardComplete ? 'Done' : ($card->due_date && $card->due_date < $today ? 'Overdue' : 'Pending');
 
             foreach ($card->members as $member) {
-                $memberStats[$member->id] ??= ['user' => $member, 'completed' => 0, 'overdue' => 0, 'lateDays' => []];
+                $memberStats[$member->id] ??= ['user' => $member, 'lateDays' => [], 'tasks' => []];
 
-                if ($cardComplete) {
-                    $memberStats[$member->id]['completed']++;
-                } elseif ($card->due_date && $card->due_date < $today) {
-                    $memberStats[$member->id]['overdue']++;
-                }
+                $memberStats[$member->id]['tasks'][] = [
+                    'name' => $card->name,
+                    'type' => 'Card',
+                    'workspace_name' => $card->boardList->board->workspace->name,
+                    'board_name' => $card->boardList->board->name,
+                    'due_date' => $card->due_date,
+                    'completed_at' => null,
+                    'status' => $cardStatus,
+                ];
             }
 
             foreach ($items as $item) {
+                $itemStatus = $item->is_checked ? 'Done' : ($item->due_date && $item->due_date < $today ? 'Overdue' : 'Pending');
+
                 foreach ($item->members as $member) {
-                    $memberStats[$member->id] ??= ['user' => $member, 'completed' => 0, 'overdue' => 0, 'lateDays' => []];
+                    $memberStats[$member->id] ??= ['user' => $member, 'lateDays' => [], 'tasks' => []];
 
-                    if ($item->is_checked) {
-                        $memberStats[$member->id]['completed']++;
-
-                        if ($item->due_date && $item->completed_at && $item->completed_at->toDateString() > $item->due_date) {
-                            $memberStats[$member->id]['lateDays'][] = Carbon::parse($item->due_date)->diffInDays($item->completed_at->toDateString());
-                        }
-                    } elseif ($item->due_date && $item->due_date < $today) {
-                        $memberStats[$member->id]['overdue']++;
+                    if ($item->is_checked && $item->due_date && $item->completed_at && $item->completed_at->toDateString() > $item->due_date) {
+                        $memberStats[$member->id]['lateDays'][] = Carbon::parse($item->due_date)->diffInDays($item->completed_at->toDateString());
                     }
+
+                    $memberStats[$member->id]['tasks'][] = [
+                        'name' => $item->name,
+                        'type' => 'Checklist Item',
+                        'workspace_name' => $card->boardList->board->workspace->name,
+                        'board_name' => $card->boardList->board->name,
+                        'due_date' => $item->due_date,
+                        'completed_at' => $item->completed_at,
+                        'status' => $itemStatus,
+                    ];
                 }
             }
         }
 
-        $rows = collect($memberStats)->map(fn (array $stat) => [
-            'user' => $stat['user'],
-            'completed' => $stat['completed'],
-            'overdue' => $stat['overdue'],
-            'avg_days_late' => count($stat['lateDays']) ? round(array_sum($stat['lateDays']) / count($stat['lateDays']), 1) : null,
-        ])->sortByDesc('completed')->values();
+        $statusOrder = ['Overdue' => 0, 'Pending' => 1, 'Done' => 2];
+
+        $rows = collect($memberStats)->map(function (array $stat) use ($statusOrder) {
+            $tasks = collect($stat['tasks']);
+            $counts = $tasks->countBy('status');
+
+            return [
+                'user' => $stat['user'],
+                'completed' => $counts->get('Done', 0),
+                'pending' => $counts->get('Pending', 0),
+                'overdue' => $counts->get('Overdue', 0),
+                'avg_days_late' => count($stat['lateDays']) ? round(array_sum($stat['lateDays']) / count($stat['lateDays']), 1) : null,
+                'tasks' => $tasks->sortBy(fn (array $task) => $statusOrder[$task['status']])->values(),
+            ];
+        })->sortByDesc('completed')->values();
 
         return SnappyPdf::loadView('reports.member-performance', [
             'scopeLabel' => $scope['scopeLabel'],
             'rows' => $rows,
-            'generatedAt' => now(),
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
         ])->download('member-performance-report-'.now()->format('Y-m-d').'.pdf');
     }
 
@@ -132,7 +161,7 @@ class ReportsController extends Controller
             'scopeLabel' => $scope['scopeLabel'],
             'activities' => $activities,
             'describer' => $describer,
-            'generatedAt' => now(),
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
         ])->download('activity-log-report-'.now()->format('Y-m-d').'.pdf');
     }
 
@@ -144,12 +173,15 @@ class ReportsController extends Controller
 
         return response()->streamDownload(function () use ($activities, $describer) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Date', 'Board', 'User', 'Activity']);
+            fputcsv($handle, ['Date', 'Workspace', 'Board', 'User', 'Activity']);
 
             foreach ($activities as $activity) {
+                $board = $activity->card->boardList->board ?? null;
+
                 fputcsv($handle, [
-                    $activity->created_at->format('Y-m-d H:i:s'),
-                    $this->sanitizeCsvCell($activity->card->boardList->board->name ?? ''),
+                    $activity->created_at->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                    $this->sanitizeCsvCell($board?->workspace->name ?? ''),
+                    $this->sanitizeCsvCell($board?->name ?? ''),
                     $this->sanitizeCsvCell($activity->user->name),
                     $this->sanitizeCsvCell($describer->describe($activity)),
                 ]);
@@ -181,29 +213,91 @@ class ReportsController extends Controller
             ->whereHas('checklist.card', fn ($query) => $query->whereNull('archived_at'))
             ->whereHas('checklist.card.boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
             ->where(fn ($query) => $query->whereNotNull('due_date')->orWhereNotNull('completed_at'))
-            ->with('checklist.card.boardList.board')
+            ->with(['checklist.card.boardList.board.workspace', 'members'])
             ->get();
 
         $grouped = $items
-            ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->boardList->board->name)
-            ->map(fn ($boardItems) => $boardItems
-                ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->name)
-                ->map(fn ($cardItems) => $cardItems
-                    ->groupBy(fn (ChecklistItem $item) => $item->checklist->name)
-                    ->map(fn ($checklistItems) => $checklistItems->map(fn (ChecklistItem $item) => [
-                        'name' => $item->name,
-                        'due_date' => $item->due_date,
-                        'completed_at' => $item->completed_at,
-                        'status' => $item->is_checked
-                            ? 'Done'
-                            : ($item->due_date && $item->due_date < $today ? 'Overdue' : 'Pending'),
-                    ]))));
+            ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->boardList->board->workspace->name)
+            ->map(fn ($workspaceItems) => $workspaceItems
+                ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->boardList->board->name)
+                ->map(fn ($boardItems) => $boardItems
+                    ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->name)
+                    ->map(fn ($cardItems) => $cardItems
+                        ->groupBy(fn (ChecklistItem $item) => $item->checklist->name)
+                        ->map(fn ($checklistItems) => $checklistItems->map(fn (ChecklistItem $item) => [
+                            'name' => $item->name,
+                            'due_date' => $item->due_date,
+                            'completed_at' => $item->completed_at,
+                            'assignees' => $item->members->pluck('name')->implode(', '),
+                            'status' => $item->is_checked
+                                ? 'Done'
+                                : ($item->due_date && $item->due_date < $today ? 'Overdue' : 'Pending'),
+                        ])))));
 
         return SnappyPdf::loadView('reports.checklist-timeline', [
             'scopeLabel' => $scope['scopeLabel'],
             'grouped' => $grouped,
-            'generatedAt' => now(),
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
         ])->download('checklist-timeline-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    public function progress(Request $request): HttpResponse
+    {
+        $scope = $this->resolveScope($request);
+
+        $cards = Card::query()
+            ->whereHas('boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
+            ->whereNull('archived_at')
+            ->with(['checklists.items', 'boardList.board.workspace'])
+            ->get();
+
+        $cardProgress = fn (Card $card): array => (function ($items) use ($card) {
+            $total = $items->count();
+            $checked = $items->where('is_checked', true)->count();
+
+            return [
+                'name' => $card->name,
+                'checked' => $checked,
+                'total' => $total,
+                'percent' => $total > 0 ? (int) round($checked / $total * 100) : null,
+            ];
+        })($card->checklists->flatMap(fn ($checklist) => $checklist->items));
+
+        $grouped = $cards
+            ->groupBy(fn (Card $card) => $card->boardList->board->workspace->name)
+            ->map(function ($workspaceCards) use ($cardProgress) {
+                $boards = $workspaceCards
+                    ->groupBy(fn (Card $card) => $card->boardList->board->name)
+                    ->map(function ($boardCards) use ($cardProgress) {
+                        $items = $boardCards->flatMap(fn (Card $card) => $card->checklists->flatMap(fn ($checklist) => $checklist->items));
+                        $total = $items->count();
+                        $checked = $items->where('is_checked', true)->count();
+
+                        return [
+                            'percent' => $total > 0 ? (int) round($checked / $total * 100) : null,
+                            'checked' => $checked,
+                            'total' => $total,
+                            'cards' => $boardCards->map($cardProgress)->values(),
+                        ];
+                    });
+
+                $workspaceItems = $workspaceCards->flatMap(fn (Card $card) => $card->checklists->flatMap(fn ($checklist) => $checklist->items));
+                $workspaceTotal = $workspaceItems->count();
+                $workspaceChecked = $workspaceItems->where('is_checked', true)->count();
+
+                return [
+                    'percent' => $workspaceTotal > 0 ? (int) round($workspaceChecked / $workspaceTotal * 100) : null,
+                    'checked' => $workspaceChecked,
+                    'total' => $workspaceTotal,
+                    'boards' => $boards,
+                ];
+            });
+
+        return SnappyPdf::loadView('reports.progress', [
+            'scopeLabel' => $scope['scopeLabel'],
+            'grouped' => $grouped,
+            'generatedAt' => now()->timezone('Asia/Kuala_Lumpur'),
+        ])->download('progress-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -214,7 +308,7 @@ class ReportsController extends Controller
     {
         return CardActivity::query()
             ->whereHas('card.boardList', fn ($query) => $query->whereIn('board_id', $boardIds)->whereNull('archived_at'))
-            ->with(['user', 'card.boardList.board'])
+            ->with(['user', 'card.boardList.board.workspace'])
             ->latest()
             ->limit(500)
             ->get();

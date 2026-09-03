@@ -3,18 +3,33 @@
 <head>
     <meta charset="utf-8">
     <title>Checklist Completion Timeline Report</title>
+    @include('reports.partials.styles')
     <style>
-        body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1f1f1f; font-size: 12px; margin: 0; padding: 24px; }
-        h1 { font-size: 20px; margin: 0 0 4px; }
-        .subtitle { color: #6b7280; margin: 0 0 20px; }
-        h2 { font-size: 16px; margin: 20px 0 6px; }
-        h3 { font-size: 13px; margin: 12px 0 4px; color: #374151; }
-        h4 { font-size: 11px; text-transform: uppercase; color: #6b7280; margin: 8px 0 4px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
-        th { color: #6b7280; font-weight: 600; font-size: 10px; text-transform: uppercase; }
-        .muted { color: #6b7280; }
-        .footer { margin-top: 24px; color: #9ca3af; font-size: 10px; }
+        .workspace-section { margin-bottom: 26px; }
+        .workspace-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #3b5bfd;
+            margin: 0 0 8px;
+        }
+        .board-section { margin-bottom: 22px; margin-left: 4px; }
+        .board-title { margin: 0 0 10px; }
+        .card-block { margin: 0 0 14px 4px; padding-left: 10px; border-left: 2px solid #e5e7eb; }
+        .card-title { font-size: 13px; font-weight: 700; color: #1f2937; margin: 0 0 6px; }
+        .checklist-block { margin: 0 0 10px; }
+        .checklist-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px 4px 0 0;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -24,29 +39,62 @@
     @if ($grouped->isEmpty())
         <p class="muted">No checklist items with a due date or completion date in scope.</p>
     @else
-        @foreach ($grouped as $boardName => $cards)
-            <h2>{{ $boardName }}</h2>
-            @foreach ($cards as $cardName => $checklists)
-                <h3>{{ $cardName }}</h3>
-                @foreach ($checklists as $checklistName => $items)
-                    <h4>{{ $checklistName }}</h4>
-                    <table>
-                        <thead>
-                            <tr><th>Item</th><th>Due</th><th>Completed</th><th>Status</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($items as $item)
-                                <tr>
-                                    <td>{{ $item['name'] }}</td>
-                                    <td>{{ $item['due_date'] ? \Carbon\Carbon::parse($item['due_date'])->format('M j, Y') : '—' }}</td>
-                                    <td>{{ $item['completed_at'] ? $item['completed_at']->format('M j, Y') : '—' }}</td>
-                                    <td>{{ $item['status'] }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+        @php
+            $pillClass = ['Done' => 'pill-good', 'Overdue' => 'pill-bad', 'Pending' => 'pill-neutral'];
+        @endphp
+
+        @foreach ($grouped as $workspaceName => $boards)
+            <div class="workspace-section">
+                <p class="workspace-title">Workspace: {{ $workspaceName }}</p>
+
+                @foreach ($boards as $boardName => $cards)
+                    <div class="board-section">
+                        <p class="section-title board-title">{{ $boardName }}</p>
+
+                        @foreach ($cards as $cardName => $checklists)
+                            <div class="card-block">
+                                <p class="card-title">{{ $cardName }}</p>
+
+                                @foreach ($checklists as $checklistName => $items)
+                                    <div class="checklist-block">
+                                        <span class="checklist-title">{{ $checklistName }}</span>
+                                        <table class="data">
+                                            <thead>
+                                                <tr>
+                                                    <th width="28%">Item</th>
+                                                    <th width="20%">Assigned</th>
+                                                    <th width="14%">Due</th>
+                                                    <th width="16%">Completed</th>
+                                                    <th width="14%">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($items as $item)
+                                                    <tr>
+                                                        <td>{{ $item['name'] }}</td>
+                                                        <td>
+                                                            @if ($item['assignees'] !== '')
+                                                                <span class="assignee">{{ $item['assignees'] }}</span>
+                                                            @else
+                                                                <span class="assignee-empty">Unassigned</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>{{ $item['due_date'] ? \Carbon\Carbon::parse($item['due_date'])->format('M j, Y') : '—' }}</td>
+                                                        <td>{{ $item['completed_at'] ? $item['completed_at']->format('M j, Y') : '—' }}</td>
+                                                        <td>
+                                                            <span class="pill {{ $pillClass[$item['status']] }}">{{ $item['status'] }}</span>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
                 @endforeach
-            @endforeach
+            </div>
         @endforeach
     @endif
 
