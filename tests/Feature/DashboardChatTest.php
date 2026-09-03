@@ -105,3 +105,25 @@ test('the ai context reflects the users full board set, not any dashboard filter
     expect($systemText)->toContain('Board A');
     expect($systemText)->toContain('Board B');
 });
+
+test('the ai context includes overdue and due-soon task names, not just counts', function () {
+    $capturedBody = null;
+    Http::fake(function ($request) use (&$capturedBody) {
+        $capturedBody = $request->data();
+
+        return Http::response([
+            'candidates' => [['content' => ['role' => 'model', 'parts' => [['text' => 'ok']]]]],
+        ], 200);
+    });
+
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->overdue()->create(['name' => 'Fix bug']);
+
+    $this->actingAs($user)->postJson('/dashboard/ai/messages', ['content' => 'what is overdue?']);
+
+    $systemText = $capturedBody['system_instruction']['parts'][0]['text'];
+    expect($systemText)->toContain('Fix bug');
+});

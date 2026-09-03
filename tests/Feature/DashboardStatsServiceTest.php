@@ -86,6 +86,23 @@ test('build caps tasksByBoard at 8 by default', function () {
     expect($result['tasksByBoard']->count())->toBe(8);
 });
 
+test('build lists overdue and due-soon cards with their board and due date', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+
+    Card::factory()->for($list)->overdue()->create(['name' => 'Fix bug']);
+    Card::factory()->for($list)->create(['name' => 'Ship feature', 'due_date' => now()->addDays(2)->toDateString()]);
+
+    $cards = Card::with(['boardList.board', 'checklists.items.members', 'members'])->get();
+
+    $result = app(DashboardStatsService::class)->build($cards);
+
+    expect($result['overdueCards']->first())->toMatchArray(['name' => 'Fix bug', 'board' => 'Engineering']);
+    expect($result['dueSoonCards']->first())->toMatchArray(['name' => 'Ship feature', 'board' => 'Engineering']);
+});
+
 test('build with a null limit returns the full tasksByBoard breakdown for more than 8 boards', function () {
     $user = User::factory()->create();
     $workspace = Workspace::factory()->for($user, 'owner')->create();

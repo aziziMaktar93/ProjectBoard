@@ -115,6 +115,9 @@ class GeminiClient
 
             Help the user brainstorm and plan the board's structure. When they ask you to add lists or cards,
             call the appropriate tool instead of just describing what to do. Keep replies short and practical.
+
+            Reply in the same language the user writes in. If the user writes in Malay, reply in Bahasa Malaysia (Malay),
+            not Bahasa Indonesia — they are different languages.
             TEXT;
     }
 

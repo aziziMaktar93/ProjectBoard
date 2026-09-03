@@ -47,7 +47,14 @@ class DashboardChatController extends Controller
         $statsData = app(DashboardStatsService::class)->build($cards, null);
         $boards = $user->boardMemberships()->get(['boards.id', 'boards.name']);
 
-        $systemInstruction = $this->buildSystemInstruction($statsData['stats'], $statsData['tasksByBoard'], $statsData['workload'], $boards);
+        $systemInstruction = $this->buildSystemInstruction(
+            $statsData['stats'],
+            $statsData['tasksByBoard'],
+            $statsData['workload'],
+            $boards,
+            $statsData['overdueCards'],
+            $statsData['dueSoonCards'],
+        );
 
         $history = $conversation->messages()
             ->get(['role', 'content'])
@@ -79,7 +86,7 @@ class DashboardChatController extends Controller
     /**
      * @param  array<string, mixed>  $stats
      */
-    private function buildSystemInstruction(array $stats, Collection $tasksByBoard, Collection $workload, Collection $boards): string
+    private function buildSystemInstruction(array $stats, Collection $tasksByBoard, Collection $workload, Collection $boards, Collection $overdueCards, Collection $dueSoonCards): string
     {
         $statsSummary = "Total tasks: {$stats['total']}, Completed: {$stats['completed']}, "
             ."Overdue: {$stats['overdue']}, Due within 7 days: {$stats['dueSoon']}, "
@@ -98,6 +105,14 @@ class DashboardChatController extends Controller
         $boardNames = $boards->pluck('name')->implode(', ');
         $boardNames = $boardNames === '' ? '(no boards)' : $boardNames;
 
+        $overdueSummary = $overdueCards->isEmpty()
+            ? '(none)'
+            : $overdueCards->map(fn (array $card) => "- {$card['name']} ({$card['board']}, due {$card['due_date']})")->implode("\n");
+
+        $dueSoonSummary = $dueSoonCards->isEmpty()
+            ? '(none)'
+            : $dueSoonCards->map(fn (array $card) => "- {$card['name']} ({$card['board']}, due {$card['due_date']})")->implode("\n");
+
         return <<<TEXT
             You are a helpful assistant embedded in the Dashboard of a Trello-style project management app called Trellow.
             Answer questions about the user's overall task progress using only the data below. Do not make up numbers not given here.
@@ -110,9 +125,18 @@ class DashboardChatController extends Controller
             Workload by member:
             {$workloadSummary}
 
+            Overdue tasks:
+            {$overdueSummary}
+
+            Tasks due within 7 days:
+            {$dueSoonSummary}
+
             When you refer to a specific board by name, wrap it in double square brackets exactly like [[Board Name]], using
             only these exact board names: {$boardNames}. Do not invent board names. You cannot create, edit, or delete
             anything on the board — you can only answer questions and point the user at a board. Keep replies short and practical.
+
+            Reply in the same language the user writes in. If the user writes in Malay, reply in Bahasa Malaysia (Malay),
+            not Bahasa Indonesia — they are different languages.
             TEXT;
     }
 }

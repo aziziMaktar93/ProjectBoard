@@ -10,7 +10,7 @@ class DashboardStatsService
     /**
      * @param  Collection<int, Card>  $cards  Each must be eager-loaded with 'boardList.board', 'checklists.items.members', and 'members'.
      * @param  int|null  $limit  Cap tasksByBoard/workload to this many entries (top by count); null for no cap.
-     * @return array{stats: array<string, mixed>, tasksByBoard: Collection, workload: Collection}
+     * @return array{stats: array<string, mixed>, tasksByBoard: Collection, workload: Collection, overdueCards: Collection, dueSoonCards: Collection}
      */
     public function build(Collection $cards, ?int $limit = 8): array
     {
@@ -54,10 +54,22 @@ class DashboardStatsService
             ->when($limit !== null, fn ($collection) => $collection->take($limit))
             ->values();
 
+        $overdueCards = $cards
+            ->filter(fn (Card $card) => $card->due_date && $card->due_date < $today && ! $isCompleted($card))
+            ->map(fn (Card $card) => ['name' => $card->name, 'board' => $card->boardList->board->name, 'due_date' => $card->due_date])
+            ->values();
+
+        $dueSoonCards = $cards
+            ->filter(fn (Card $card) => $card->due_date && $card->due_date >= $today && $card->due_date <= $weekAhead)
+            ->map(fn (Card $card) => ['name' => $card->name, 'board' => $card->boardList->board->name, 'due_date' => $card->due_date])
+            ->values();
+
         return [
             'stats' => $stats,
             'tasksByBoard' => $tasksByBoard,
             'workload' => $workload,
+            'overdueCards' => $overdueCards,
+            'dueSoonCards' => $dueSoonCards,
         ];
     }
 }
