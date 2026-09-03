@@ -159,6 +159,40 @@ class ReportsController extends Controller
         }, 'activity-log-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
+    public function checklistTimeline(Request $request): HttpResponse
+    {
+        $scope = $this->resolveScope($request);
+        $today = now()->toDateString();
+
+        $items = ChecklistItem::query()
+            ->whereHas('checklist.card', fn ($query) => $query->whereNull('archived_at'))
+            ->whereHas('checklist.card.boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
+            ->where(fn ($query) => $query->whereNotNull('due_date')->orWhereNotNull('completed_at'))
+            ->with('checklist.card.boardList.board')
+            ->get();
+
+        $grouped = $items
+            ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->boardList->board->name)
+            ->map(fn ($boardItems) => $boardItems
+                ->groupBy(fn (ChecklistItem $item) => $item->checklist->card->name)
+                ->map(fn ($cardItems) => $cardItems
+                    ->groupBy(fn (ChecklistItem $item) => $item->checklist->name)
+                    ->map(fn ($checklistItems) => $checklistItems->map(fn (ChecklistItem $item) => [
+                        'name' => $item->name,
+                        'due_date' => $item->due_date,
+                        'completed_at' => $item->completed_at,
+                        'status' => $item->is_checked
+                            ? 'Done'
+                            : ($item->due_date && $item->due_date < $today ? 'Overdue' : 'Pending'),
+                    ]))));
+
+        return SnappyPdf::loadView('reports.checklist-timeline', [
+            'scopeLabel' => $scope['scopeLabel'],
+            'grouped' => $grouped,
+            'generatedAt' => now(),
+        ])->download('checklist-timeline-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
     /**
      * @param  Collection<int, int>  $boardIds
      * @return Collection<int, CardActivity>

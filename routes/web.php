@@ -78,6 +78,10 @@ Route::get('reports/activity-log/csv', [ReportsController::class, 'activityLogCs
     ->middleware(['auth', 'verified'])
     ->name('reports.activity-log-csv');
 
+Route::get('reports/checklist-timeline', [ReportsController::class, 'checklistTimeline'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.checklist-timeline');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
 require __DIR__.'/boards.php';

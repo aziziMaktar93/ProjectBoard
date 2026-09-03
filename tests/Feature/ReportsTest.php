@@ -212,3 +212,27 @@ test('the activity-log csv export has a header row and one row per activity', fu
     expect($lines)->toHaveCount(3);
     expect($lines[0])->toBe('Date,Board,User,Activity');
 });
+
+test('the checklist-timeline report groups items by board, card, and checklist', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Sprint 1']);
+
+    $checklistA = Checklist::factory()->for($card)->create(['name' => 'GPPK100']);
+    ChecklistItem::factory()->for($checklistA)->create(['name' => 'UPDATE', 'due_date' => '2026-08-26', 'is_checked' => false]);
+
+    $checklistB = Checklist::factory()->for($card)->create(['name' => 'GPPK200']);
+    ChecklistItem::factory()->for($checklistB)->create(['name' => 'UPDATE', 'due_date' => '2026-09-01', 'completed_at' => '2026-08-30', 'is_checked' => true]);
+
+    $response = $this->actingAs($user)->get('/reports/checklist-timeline');
+
+    $response->assertOk();
+    SnappyPdf::assertViewIs('reports.checklist-timeline');
+    SnappyPdf::assertSee('Engineering');
+    SnappyPdf::assertSee('Sprint 1');
+    SnappyPdf::assertSee('GPPK100');
+    SnappyPdf::assertSee('GPPK200');
+});
