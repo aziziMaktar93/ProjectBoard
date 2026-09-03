@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -56,6 +57,14 @@ Route::get('notifications/{notification}/open', [NotificationController::class, 
 Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
     ->middleware(['auth', 'verified'])
     ->name('notifications.read');
+
+Route::get('reports', [ReportsController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.index');
+
+Route::get('reports/on-time-completion', [ReportsController::class, 'onTimeCompletion'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.on-time-completion');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
