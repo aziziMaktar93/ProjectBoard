@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\BoardChatController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardEventController;
 use App\Http\Controllers\BoardFavouriteController;
@@ -29,6 +30,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('boards/{board}/ai/conversation', [AiChatController::class, 'show'])->name('ai-chat.show');
     Route::post('boards/{board}/ai/messages', [AiChatController::class, 'sendMessage'])->name('ai-chat.messages.store')->middleware('throttle:20,1');
     Route::post('boards/{board}/ai/messages/{message}/apply', [AiChatController::class, 'applyAction'])->name('ai-chat.messages.apply');
+
+    Route::get('boards/{board}/chat/messages', [BoardChatController::class, 'index'])->name('board-chat.index');
+    Route::post('boards/{board}/chat/messages', [BoardChatController::class, 'store'])->name('board-chat.store')->middleware('throttle:30,1');
+    Route::delete('boards/{board}/chat/messages/{message}', [BoardChatController::class, 'destroy'])->name('board-chat.destroy');
 
     Route::post('boards/{board}/members', [BoardMemberController::class, 'store'])->name('board-members.store');
     Route::patch('boards/{board}/members/{user}/role', [BoardMemberController::class, 'updateRole'])->name('board-members.update-role');
