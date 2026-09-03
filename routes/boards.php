@@ -31,7 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('boards/{board}/ai/messages', [AiChatController::class, 'sendMessage'])->name('ai-chat.messages.store')->middleware('throttle:20,1');
     Route::post('boards/{board}/ai/messages/{message}/apply', [AiChatController::class, 'applyAction'])->name('ai-chat.messages.apply');
 
-    Route::get('boards/{board}/chat/messages', [BoardChatController::class, 'index'])->name('board-chat.index');
+    Route::get('boards/{board}/chat/messages', [BoardChatController::class, 'index'])->name('board-chat.index')->middleware('throttle:60,1');
     Route::post('boards/{board}/chat/messages', [BoardChatController::class, 'store'])->name('board-chat.store')->middleware('throttle:30,1');
     Route::delete('boards/{board}/chat/messages/{message}', [BoardChatController::class, 'destroy'])->name('board-chat.destroy');
 

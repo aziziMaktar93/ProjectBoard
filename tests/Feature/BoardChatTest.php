@@ -109,3 +109,25 @@ test('listing messages updates the requesting users chat_last_read_at pivot valu
     $pivot = $board->members()->where('users.id', $user->id)->first()->pivot;
     expect($pivot->chat_last_read_at)->not->toBeNull();
 });
+
+test('listing messages with mark_read=false does not update chat_last_read_at, while a normal request does', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create();
+
+    $this->actingAs($user)->getJson("/boards/{$board->id}/chat/messages")->assertOk();
+    $pivotAfterFirstRead = $board->members()->where('users.id', $user->id)->first()->pivot;
+    expect($pivotAfterFirstRead->chat_last_read_at)->not->toBeNull();
+
+    $this->travel(1)->minutes();
+
+    $this->actingAs($user)->getJson("/boards/{$board->id}/chat/messages?mark_read=false")->assertOk();
+    $pivotAfterPoll = $board->members()->where('users.id', $user->id)->first()->pivot;
+    expect(Carbon\Carbon::parse($pivotAfterPoll->chat_last_read_at)->toJSON())
+        ->toEqual(Carbon\Carbon::parse($pivotAfterFirstRead->chat_last_read_at)->toJSON());
+
+    $this->actingAs($user)->getJson("/boards/{$board->id}/chat/messages")->assertOk();
+    $pivotAfterSecondRead = $board->members()->where('users.id', $user->id)->first()->pivot;
+    expect(Carbon\Carbon::parse($pivotAfterSecondRead->chat_last_read_at)->toJSON())
+        ->not->toEqual(Carbon\Carbon::parse($pivotAfterFirstRead->chat_last_read_at)->toJSON());
+});

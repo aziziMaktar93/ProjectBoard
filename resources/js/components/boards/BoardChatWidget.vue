@@ -20,7 +20,7 @@ const messages = ref<BoardMessage[]>([]);
 const scrollRef = ref<HTMLElement | null>(null);
 const mentionQuery = ref<string | null>(null);
 const unreadCount = ref(0);
-const lastSeenId = ref(0);
+const lastReadAt = ref<string | null>(null);
 let openPollTimer: ReturnType<typeof setInterval> | null = null;
 let closedPollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -45,25 +45,12 @@ async function toggleOpen() {
     if (open.value) {
         stopClosedPolling();
         unreadCount.value = 0;
-
-        if (!loaded.value) {
-            await loadMessages();
-        }
-
-        if (messages.value.length) {
-            lastSeenId.value = messages.value[messages.value.length - 1].id;
-        }
-
+        await loadMessages();
         startOpenPolling();
     } else {
         stopOpenPolling();
-
-        if (messages.value.length) {
-            lastSeenId.value = messages.value[messages.value.length - 1].id;
-        }
-
-        unreadCount.value = 0;
         startClosedPolling();
+        await checkForUnread();
     }
 }
 
@@ -80,6 +67,7 @@ async function loadMessages() {
         }
 
         messages.value = data.messages;
+        lastReadAt.value = data.last_read_at;
         loaded.value = true;
         await scrollToBottom();
     } catch {
@@ -90,12 +78,8 @@ async function loadMessages() {
 }
 
 async function checkForUnread() {
-    if (open.value) {
-        return;
-    }
-
     try {
-        const response = await csrfFetch(route('board-chat.index', props.boardId));
+        const response = await csrfFetch(route('board-chat.index', props.boardId) + '?mark_read=false');
 
         if (!response.ok) {
             return;
@@ -103,8 +87,11 @@ async function checkForUnread() {
 
         const data = await response.json();
         const fetched: BoardMessage[] = data.messages;
+        lastReadAt.value = data.last_read_at;
 
-        unreadCount.value = fetched.filter((m) => m.id > lastSeenId.value && m.user_id !== props.currentUserId).length;
+        unreadCount.value = fetched.filter(
+            (m) => m.user_id !== props.currentUserId && (lastReadAt.value === null || m.created_at > lastReadAt.value),
+        ).length;
     } catch {
         // Silent — this is a background refresh, not a user-initiated action.
     }
@@ -198,7 +185,6 @@ async function send() {
         }
 
         messages.value.push(data.message);
-        lastSeenId.value = data.message.id;
         await scrollToBottom();
     } catch {
         error.value = "Couldn't reach the server, try again.";
@@ -257,6 +243,7 @@ function renderSegments(content: string): { text: string; mention: boolean }[] {
 }
 
 onMounted(() => {
+    checkForUnread();
     startClosedPolling();
 });
 

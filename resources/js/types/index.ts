@@ -27,7 +27,6 @@ export interface AppNotification {
         board_name?: string;
         actor_name: string;
         item_name?: string;
-        message_preview?: string;
     };
     read_at: string | null;
     created_at: string;

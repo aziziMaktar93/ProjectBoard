@@ -17,11 +17,19 @@ class BoardChatController extends Controller
     {
         Gate::authorize('view', $board);
 
-        $messages = $board->messages()->with('user:id,name')->oldest()->get();
+        $membership = $board->members()->where('users.id', $request->user()->id)->first();
+        $lastReadAt = $membership->pivot->chat_last_read_at;
 
-        $board->members()->updateExistingPivot($request->user()->id, ['chat_last_read_at' => now()]);
+        $messages = $board->messages()->with('user:id,name')->latest()->limit(100)->get()->reverse()->values();
 
-        return response()->json(['messages' => $messages]);
+        if ($request->boolean('mark_read', true)) {
+            $board->members()->updateExistingPivot($request->user()->id, ['chat_last_read_at' => now()]);
+        }
+
+        return response()->json([
+            'messages' => $messages,
+            'last_read_at' => $lastReadAt,
+        ]);
     }
 
     public function store(StoreBoardMessageRequest $request, Board $board): JsonResponse
@@ -62,7 +70,6 @@ class BoardChatController extends Controller
                     'board_id' => $board->id,
                     'board_name' => $board->name,
                     'actor_name' => $author->name,
-                    'message_preview' => str($message->content)->limit(80)->toString(),
                 ],
             ]);
         }
