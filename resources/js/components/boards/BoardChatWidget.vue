@@ -62,6 +62,7 @@ async function toggleOpen() {
             lastSeenId.value = messages.value[messages.value.length - 1].id;
         }
 
+        unreadCount.value = 0;
         startClosedPolling();
     }
 }
@@ -89,6 +90,10 @@ async function loadMessages() {
 }
 
 async function checkForUnread() {
+    if (open.value) {
+        return;
+    }
+
     try {
         const response = await csrfFetch(route('board-chat.index', props.boardId));
 
@@ -98,11 +103,8 @@ async function checkForUnread() {
 
         const data = await response.json();
         const fetched: BoardMessage[] = data.messages;
-        const newest = fetched.length ? fetched[fetched.length - 1] : null;
 
-        if (newest && newest.id > lastSeenId.value) {
-            unreadCount.value = fetched.filter((m) => m.id > lastSeenId.value && m.user_id !== props.currentUserId).length;
-        }
+        unreadCount.value = fetched.filter((m) => m.id > lastSeenId.value && m.user_id !== props.currentUserId).length;
     } catch {
         // Silent — this is a background refresh, not a user-initiated action.
     }
