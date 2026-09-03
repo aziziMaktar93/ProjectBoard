@@ -176,3 +176,39 @@ test('the member-performance report computes average days late', function () {
     $response->assertOk();
     SnappyPdf::assertViewHas('rows', fn ($rows) => $rows->first()['avg_days_late'] === 4.0);
 });
+
+test('the activity-log report lists activities newest first', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Fix bug']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'archived']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'restored']);
+
+    $response = $this->actingAs($user)->get('/reports/activity-log');
+
+    $response->assertOk();
+    SnappyPdf::assertViewIs('reports.activity-log');
+    SnappyPdf::assertSee('archived Fix bug');
+    SnappyPdf::assertSee('restored Fix bug');
+});
+
+test('the activity-log csv export has a header row and one row per activity', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'Fix bug']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'archived']);
+    $card->activities()->create(['user_id' => $user->id, 'type' => 'restored']);
+
+    $response = $this->actingAs($user)->get('/reports/activity-log/csv');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+    $lines = array_filter(explode("\n", $response->streamedContent()));
+    expect($lines)->toHaveCount(3);
+    expect($lines[0])->toBe('Date,Board,User,Activity');
+});

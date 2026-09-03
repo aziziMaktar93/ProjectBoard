@@ -70,6 +70,14 @@ Route::get('reports/member-performance', [ReportsController::class, 'memberPerfo
     ->middleware(['auth', 'verified'])
     ->name('reports.member-performance');
 
+Route::get('reports/activity-log', [ReportsController::class, 'activityLog'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.activity-log');
+
+Route::get('reports/activity-log/csv', [ReportsController::class, 'activityLogCsv'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.activity-log-csv');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/workspaces.php';
 require __DIR__.'/boards.php';

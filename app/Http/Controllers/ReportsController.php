@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Board;
 use App\Models\Card;
+use App\Models\CardActivity;
 use App\Models\ChecklistItem;
+use App\Services\CardActivityDescriber;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,6 +14,7 @@ use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportsController extends Controller
 {
@@ -117,6 +120,57 @@ class ReportsController extends Controller
             'rows' => $rows,
             'generatedAt' => now(),
         ])->download('member-performance-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    public function activityLog(Request $request): HttpResponse
+    {
+        $scope = $this->resolveScope($request);
+        $activities = $this->activitiesInScope($scope['boardIds']);
+        $describer = app(CardActivityDescriber::class);
+
+        return SnappyPdf::loadView('reports.activity-log', [
+            'scopeLabel' => $scope['scopeLabel'],
+            'activities' => $activities,
+            'describer' => $describer,
+            'generatedAt' => now(),
+        ])->download('activity-log-report-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    public function activityLogCsv(Request $request): StreamedResponse
+    {
+        $scope = $this->resolveScope($request);
+        $activities = $this->activitiesInScope($scope['boardIds']);
+        $describer = app(CardActivityDescriber::class);
+
+        return response()->streamDownload(function () use ($activities, $describer) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Date', 'Board', 'User', 'Activity']);
+
+            foreach ($activities as $activity) {
+                fputcsv($handle, [
+                    $activity->created_at->format('Y-m-d H:i:s'),
+                    $activity->card->boardList->board->name ?? '',
+                    $activity->user->name,
+                    $describer->describe($activity),
+                ]);
+            }
+
+            fclose($handle);
+        }, 'activity-log-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * @param  Collection<int, int>  $boardIds
+     * @return Collection<int, CardActivity>
+     */
+    private function activitiesInScope(Collection $boardIds): Collection
+    {
+        return CardActivity::query()
+            ->whereHas('card.boardList', fn ($query) => $query->whereIn('board_id', $boardIds)->whereNull('archived_at'))
+            ->with(['user', 'card.boardList.board'])
+            ->latest()
+            ->limit(500)
+            ->get();
     }
 
     /**
