@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { csrfFetch } from '@/lib/csrfFetch';
 import type { BoardMessage } from '@/types';
 import { MessageCircle, Send, Trash2, X } from 'lucide-vue-next';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 const props = defineProps<{
     boardId: number;
@@ -19,6 +19,10 @@ const draft = ref('');
 const messages = ref<BoardMessage[]>([]);
 const scrollRef = ref<HTMLElement | null>(null);
 const mentionQuery = ref<string | null>(null);
+const unreadCount = ref(0);
+const lastSeenId = ref(0);
+let openPollTimer: ReturnType<typeof setInterval> | null = null;
+let closedPollTimer: ReturnType<typeof setInterval> | null = null;
 
 const mentionMatches = computed(() => {
     if (mentionQuery.value === null) {
@@ -38,8 +42,27 @@ async function scrollToBottom() {
 async function toggleOpen() {
     open.value = !open.value;
 
-    if (open.value && !loaded.value) {
-        await loadMessages();
+    if (open.value) {
+        stopClosedPolling();
+        unreadCount.value = 0;
+
+        if (!loaded.value) {
+            await loadMessages();
+        }
+
+        if (messages.value.length) {
+            lastSeenId.value = messages.value[messages.value.length - 1].id;
+        }
+
+        startOpenPolling();
+    } else {
+        stopOpenPolling();
+
+        if (messages.value.length) {
+            lastSeenId.value = messages.value[messages.value.length - 1].id;
+        }
+
+        startClosedPolling();
     }
 }
 
@@ -62,6 +85,76 @@ async function loadMessages() {
         error.value = "Couldn't reach the server, try again.";
     } finally {
         loading.value = false;
+    }
+}
+
+async function checkForUnread() {
+    try {
+        const response = await csrfFetch(route('board-chat.index', props.boardId));
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        const fetched: BoardMessage[] = data.messages;
+        const newest = fetched.length ? fetched[fetched.length - 1] : null;
+
+        if (newest && newest.id > lastSeenId.value) {
+            unreadCount.value = fetched.filter((m) => m.id > lastSeenId.value && m.user_id !== props.currentUserId).length;
+        }
+    } catch {
+        // Silent — this is a background refresh, not a user-initiated action.
+    }
+}
+
+function startClosedPolling() {
+    stopClosedPolling();
+    closedPollTimer = setInterval(checkForUnread, 15000);
+}
+
+function stopClosedPolling() {
+    if (closedPollTimer) {
+        clearInterval(closedPollTimer);
+        closedPollTimer = null;
+    }
+}
+
+async function pollForNewMessages() {
+    try {
+        const response = await csrfFetch(route('board-chat.index', props.boardId));
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        const fetched: BoardMessage[] = data.messages;
+        const existingIds = new Set(messages.value.map((m) => m.id));
+        const hasNew = fetched.some((m) => !existingIds.has(m.id));
+
+        if (hasNew || fetched.length !== messages.value.length) {
+            const wasAtBottom = scrollRef.value ? scrollRef.value.scrollHeight - scrollRef.value.scrollTop - scrollRef.value.clientHeight < 40 : true;
+            messages.value = fetched;
+
+            if (wasAtBottom) {
+                await scrollToBottom();
+            }
+        }
+    } catch {
+        // Silent — background refresh.
+    }
+}
+
+function startOpenPolling() {
+    stopOpenPolling();
+    openPollTimer = setInterval(pollForNewMessages, 5000);
+}
+
+function stopOpenPolling() {
+    if (openPollTimer) {
+        clearInterval(openPollTimer);
+        openPollTimer = null;
     }
 }
 
@@ -103,6 +196,7 @@ async function send() {
         }
 
         messages.value.push(data.message);
+        lastSeenId.value = data.message.id;
         await scrollToBottom();
     } catch {
         error.value = "Couldn't reach the server, try again.";
@@ -159,18 +253,33 @@ function renderSegments(content: string): { text: string; mention: boolean }[] {
 
     return segments;
 }
+
+onMounted(() => {
+    startClosedPolling();
+});
+
+onBeforeUnmount(() => {
+    stopClosedPolling();
+    stopOpenPolling();
+});
 </script>
 
 <template>
     <div class="fixed bottom-4 right-20 z-40">
         <button
             type="button"
-            class="flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg transition hover:opacity-90"
+            class="relative flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg transition hover:opacity-90"
             aria-label="Board chat"
             @click="toggleOpen"
         >
             <X v-if="open" class="size-5" />
             <MessageCircle v-else class="size-5" />
+            <span
+                v-if="!open && unreadCount > 0"
+                class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
+            >
+                {{ unreadCount > 9 ? '9+' : unreadCount }}
+            </span>
         </button>
 
         <div
