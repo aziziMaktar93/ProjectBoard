@@ -30,6 +30,7 @@ class ReportsController extends Controller
         $scope = $this->resolveScope($request);
 
         $items = ChecklistItem::query()
+            ->whereHas('checklist.card', fn ($query) => $query->whereNull('archived_at'))
             ->whereHas('checklist.card.boardList', fn ($query) => $query->whereIn('board_id', $scope['boardIds'])->whereNull('archived_at'))
             ->whereNotNull('due_date')
             ->whereNotNull('completed_at')
