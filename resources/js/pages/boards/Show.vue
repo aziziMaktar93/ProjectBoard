@@ -2,6 +2,7 @@
 import HoverLabel from '@/components/HoverLabel.vue';
 import AiChatWidget from '@/components/boards/AiChatWidget.vue';
 import ArchivePanel from '@/components/boards/ArchivePanel.vue';
+import BoardChatWidget from '@/components/boards/BoardChatWidget.vue';
 import BoardFilterBar from '@/components/boards/BoardFilterBar.vue';
 import BoardListColumn from '@/components/boards/BoardListColumn.vue';
 import BoardMemberPanel from '@/components/boards/BoardMemberPanel.vue';
@@ -23,8 +24,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useBoardFilters } from '@/composables/useBoardFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
-import type { Board, BoardList, BreadcrumbItem, Card } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import type { Board, BoardList, BreadcrumbItem, Card, SharedData } from '@/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Archive, CalendarDays, CheckSquare, MoreHorizontal, Tag, Users, X } from 'lucide-vue-next';
 import { VueDraggable } from 'vue-draggable-plus';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
@@ -37,6 +38,8 @@ const props = defineProps<{
     canEdit: boolean;
     aiEnabled: boolean;
 }>();
+
+const currentUserId = computed(() => usePage<SharedData>().props.auth.user.id);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Workspaces', href: route('workspaces.index') },
@@ -562,5 +565,6 @@ function bulkAddLabel(labelId: number) {
         <ArchivePanel v-model:open="showArchive" :lists="archivedLists" :cards="archivedCards" />
         <BoardMemberPanel v-model:open="showMembers" :board="board" :workspace-members="board.workspace?.members ?? []" :can-edit="canEdit" />
         <AiChatWidget :board-id="board.id" :ai-enabled="aiEnabled" :can-edit="canEdit" />
+        <BoardChatWidget :board-id="board.id" :current-user-id="currentUserId" :members="board.members ?? []" />
     </AppLayout>
 </template>
