@@ -58,7 +58,7 @@ class Board extends Model
 
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'board_user')->withPivot(['role', 'is_favourite'])->withTimestamps();
+        return $this->belongsToMany(User::class, 'board_user')->withPivot(['role', 'is_favourite', 'chat_last_read_at'])->withTimestamps();
     }
 
     public function labels(): HasMany
@@ -69,5 +69,10 @@ class Board extends Model
     public function events(): HasMany
     {
         return $this->hasMany(BoardEvent::class);
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(BoardMessage::class);
     }
 }
