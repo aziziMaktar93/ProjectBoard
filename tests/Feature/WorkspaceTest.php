@@ -133,6 +133,43 @@ test('a workspace board tile includes card count, members, and checklist progres
     );
 });
 
+test('a workspace tile on the index page includes members and checklist progress', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $doneCard = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($doneCard)->create();
+    ChecklistItem::factory()->for($checklist)->create(['is_checked' => true]);
+    ChecklistItem::factory()->for($checklist)->create(['is_checked' => false]);
+
+    $response = $this->actingAs($owner)->get('/workspaces');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->component('workspaces/Index')
+            ->where('workspaces.data.0.checklist_progress', 50)
+            ->where('workspaces.data.0.boards_count', 1)
+            ->has('workspaces.data.0.members', 2)
+    );
+});
+
+test('a workspace tile shows null checklist progress when it has no checklist items', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($owner)->create();
+    BoardList::factory()->for($board)->create();
+
+    $response = $this->actingAs($owner)->get('/workspaces');
+
+    $response->assertInertia(
+        fn ($page) => $page->where('workspaces.data.0.checklist_progress', null)
+    );
+});
+
 test('the workspaces index only lists workspaces the user belongs to', function () {
     $user = User::factory()->create();
     $myWorkspace = Workspace::factory()->for($user, 'owner')->create();

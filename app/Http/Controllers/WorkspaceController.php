@@ -30,13 +30,29 @@ class WorkspaceController extends Controller
                     ->limit(1),
             ])
             ->withCount('boards')
+            ->with([
+                'members' => fn ($query) => $query->orderBy('name'),
+                'boards' => fn ($query) => $query->whereHas('members', fn ($q) => $q->whereKey($request->user()->id))->whereNull('archived_at'),
+                'boards.cards' => fn ($query) => $query->whereNull('cards.archived_at'),
+                'boards.cards.checklists.items',
+            ])
             ->orderByDesc('is_favourite')
             ->orderBy('name')
             ->paginate(12)
             ->withQueryString();
 
         $workspaces->each(function (Workspace $workspace) {
+            $items = $workspace->boards->flatMap(fn (Board $board) => $board->cards)
+                ->flatMap(fn (Card $card) => $card->checklists)
+                ->flatMap(fn ($checklist) => $checklist->items);
+
+            $workspace->checklist_progress = $items->isEmpty()
+                ? null
+                : (int) round($items->filter(fn ($item) => $item->is_checked)->count() / $items->count() * 100);
+
             $workspace->is_favourite = (bool) $workspace->is_favourite;
+
+            $workspace->unsetRelation('boards');
         });
 
         return Inertia::render('workspaces/Index', [

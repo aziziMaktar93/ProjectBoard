@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -141,11 +142,40 @@ function toggleFavourite(workspace: Workspace) {
                 <div v-for="workspace in workspaces.data" :key="workspace.id" class="group relative">
                     <Link :href="route('workspaces.show', workspace.id)" class="block">
                         <div
-                            class="flex h-24 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
+                            class="flex h-28 flex-col justify-between rounded-lg p-4 shadow-sm transition group-hover:shadow-md group-hover:brightness-110"
                             :style="{ backgroundImage: tileGradient(workspace.background_color) }"
                         >
                             <p class="line-clamp-2 pr-6 font-semibold text-white drop-shadow-sm">{{ workspace.name }}</p>
-                            <p class="text-xs text-white/80 drop-shadow-sm">{{ workspace.boards_count ?? 0 }} board(s)</p>
+
+                            <div class="space-y-1.5">
+                                <div
+                                    v-if="workspace.checklist_progress !== null && workspace.checklist_progress !== undefined"
+                                    class="flex items-center gap-2"
+                                >
+                                    <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
+                                        <div class="h-full rounded-full bg-white" :style="{ width: `${workspace.checklist_progress}%` }" />
+                                    </div>
+                                    <span class="shrink-0 text-[10px] font-medium text-white/90 drop-shadow-sm">
+                                        {{ workspace.checklist_progress }}%
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-2">
+                                    <div v-if="workspace.members?.length" class="flex -space-x-1.5">
+                                        <MemberAvatar v-for="member in workspace.members.slice(0, 4)" :key="member.id" :user="member" size="xs" />
+                                        <span
+                                            v-if="workspace.members.length > 4"
+                                            class="flex size-6 items-center justify-center rounded-full bg-white/30 text-[10px] font-semibold text-white ring-2 ring-white/50"
+                                        >
+                                            +{{ workspace.members.length - 4 }}
+                                        </span>
+                                    </div>
+                                    <span v-else />
+                                    <span class="shrink-0 text-xs font-medium text-white/90 drop-shadow-sm">
+                                        {{ workspace.boards_count ?? 0 }} board{{ workspace.boards_count === 1 ? '' : 's' }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </Link>
 

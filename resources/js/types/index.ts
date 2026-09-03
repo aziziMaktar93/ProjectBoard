@@ -72,7 +72,7 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    pivot?: { role: 'editor' | 'viewer' };
+    pivot?: { role: 'editor' | 'viewer' | 'hod' };
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
@@ -83,6 +83,7 @@ export interface ChecklistItem {
     name: string;
     is_checked: boolean;
     due_date: string | null;
+    completed_at: string | null;
     position: number;
     created_at: string;
     updated_at: string;
@@ -266,6 +267,7 @@ export interface Workspace {
     boards_count?: number;
     members?: User[];
     is_favourite?: boolean;
+    checklist_progress?: number | null;
 }
 
 export interface Board {
