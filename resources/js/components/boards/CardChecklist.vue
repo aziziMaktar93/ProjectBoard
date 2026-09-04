@@ -112,7 +112,11 @@ function saveItemName(item: ChecklistItem) {
     );
 }
 
-function deleteItem(item: ChecklistItem) {
+async function deleteItem(item: ChecklistItem) {
+    if (!(await confirmDialog({ title: `Delete "${item.name}"?`, confirmText: 'Delete', variant: 'destructive' }))) {
+        return;
+    }
+
     router.delete(route('checklist-items.destroy', item.id), {
         preserveScroll: true,
         onSuccess: () => showToast('Checklist item deleted'),
