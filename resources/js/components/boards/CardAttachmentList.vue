@@ -59,10 +59,10 @@ function onFileChange(event: Event) {
 
 defineExpose({ pickFile });
 
-async function deleteAttachment(attachmentId: number) {
+async function deleteAttachment(attachment: CardAttachment) {
     if (
         !(await confirmDialog({
-            title: 'Delete this attachment?',
+            title: `Delete "${attachment.name}"?`,
             description: 'This cannot be undone.',
             confirmText: 'Delete',
             variant: 'destructive',
@@ -71,7 +71,7 @@ async function deleteAttachment(attachmentId: number) {
         return;
     }
 
-    router.delete(route('card-attachments.destroy', attachmentId), {
+    router.delete(route('card-attachments.destroy', attachment.id), {
         preserveScroll: true,
         onSuccess: () => showToast('Attachment deleted'),
         onError: () => showToast('Could not delete attachment, try again.', 'error'),
@@ -155,7 +155,7 @@ function formatSize(bytes: number): string {
                             type="button"
                             class="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                             aria-label="Delete attachment"
-                            @click="deleteAttachment(attachment.id)"
+                            @click="deleteAttachment(attachment)"
                         >
                             <Trash2 class="size-3.5" />
                         </button>
