@@ -174,7 +174,7 @@ function submitAddItem() {
 async function deleteChecklist() {
     if (
         !(await confirmDialog({
-            title: 'Delete this checklist?',
+            title: `Delete the checklist "${props.checklist.name}"?`,
             description: 'This cannot be undone.',
             confirmText: 'Delete',
             variant: 'destructive',
