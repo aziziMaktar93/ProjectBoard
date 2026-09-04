@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { showToast } from '@/composables/useToast';
 import type { BoardList, Card } from '@/types';
 import { router } from '@inertiajs/vue3';
 
@@ -12,7 +13,15 @@ defineProps<{
 const open = defineModel<boolean>('open', { default: false });
 
 function restoreList(list: BoardList) {
-    router.patch(route('board-lists.restore', list.id), {}, { preserveScroll: true });
+    router.patch(
+        route('board-lists.restore', list.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('List restored'),
+            onError: () => showToast('Could not restore list, try again.', 'error'),
+        },
+    );
 }
 
 function deleteList(list: BoardList) {
@@ -20,11 +29,23 @@ function deleteList(list: BoardList) {
         return;
     }
 
-    router.delete(route('board-lists.destroy', list.id), { preserveScroll: true });
+    router.delete(route('board-lists.destroy', list.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('List deleted'),
+        onError: () => showToast('Could not delete list, try again.', 'error'),
+    });
 }
 
 function restoreCard(card: Card) {
-    router.patch(route('cards.restore', card.id), {}, { preserveScroll: true });
+    router.patch(
+        route('cards.restore', card.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Card restored'),
+            onError: () => showToast('Could not restore card, try again.', 'error'),
+        },
+    );
 }
 
 function deleteCard(card: Card) {
@@ -32,7 +53,11 @@ function deleteCard(card: Card) {
         return;
     }
 
-    router.delete(route('cards.destroy', card.id), { preserveScroll: true });
+    router.delete(route('cards.destroy', card.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Card deleted'),
+        onError: () => showToast('Could not delete card, try again.', 'error'),
+    });
 }
 </script>
 

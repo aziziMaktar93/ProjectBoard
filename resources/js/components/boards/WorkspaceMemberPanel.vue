@@ -3,6 +3,7 @@ import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { showToast } from '@/composables/useToast';
 import type { SharedData, User, Workspace } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
@@ -62,7 +63,9 @@ function addMember(user: User) {
             onSuccess: () => {
                 query.value = '';
                 results.value = [];
+                showToast('Member added');
             },
+            onError: () => showToast('Could not add member, try again.', 'error'),
         },
     );
 }
@@ -74,7 +77,11 @@ function removeMember(user: User) {
         return;
     }
 
-    router.delete(route('workspace-members.destroy', [props.workspace.id, user.id]), { preserveScroll: true });
+    router.delete(route('workspace-members.destroy', [props.workspace.id, user.id]), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Member removed'),
+        onError: () => showToast('Could not remove member, try again.', 'error'),
+    });
 }
 </script>
 

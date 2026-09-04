@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBoardFilters } from '@/composables/useBoardFilters';
+import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card, SharedData } from '@/types';
@@ -202,7 +203,9 @@ function submitAddList() {
         onSuccess: () => {
             addListForm.reset();
             showAddList.value = false;
+            showToast('List added');
         },
+        onError: () => showToast('Could not add list, try again.', 'error'),
     });
 }
 
@@ -243,7 +246,14 @@ function archiveBoard() {
         return;
     }
 
-    router.patch(route('boards.archive', props.board.id));
+    router.patch(
+        route('boards.archive', props.board.id),
+        {},
+        {
+            onSuccess: () => showToast('Board archived'),
+            onError: () => showToast('Could not archive board, try again.', 'error'),
+        },
+    );
 }
 
 const isEditingBoardName = ref(false);
@@ -269,7 +279,11 @@ function saveBoardName() {
         return;
     }
 
-    boardNameForm.patch(route('boards.update', props.board.id), { preserveScroll: true });
+    boardNameForm.patch(route('boards.update', props.board.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Board renamed'),
+        onError: () => showToast('Could not rename board, try again.', 'error'),
+    });
 }
 
 function onBoardColorChange(color: string | null) {
@@ -313,7 +327,11 @@ function bulkArchive() {
         { card_ids: Array.from(selectedCardIds.value) },
         {
             preserveScroll: true,
-            onSuccess: () => clearSelection(),
+            onSuccess: () => {
+                clearSelection();
+                showToast('Cards archived');
+            },
+            onError: () => showToast('Could not archive cards, try again.', 'error'),
             onFinish: () => {
                 bulkProcessing.value = false;
             },
@@ -328,7 +346,11 @@ function bulkMove(boardListId: string) {
         { card_ids: Array.from(selectedCardIds.value), board_list_id: Number(boardListId) },
         {
             preserveScroll: true,
-            onSuccess: () => clearSelection(),
+            onSuccess: () => {
+                clearSelection();
+                showToast('Cards moved');
+            },
+            onError: () => showToast('Could not move cards, try again.', 'error'),
             onFinish: () => {
                 bulkProcessing.value = false;
             },
@@ -343,7 +365,11 @@ function bulkAddLabel(labelId: number) {
         { card_ids: Array.from(selectedCardIds.value), label_id: labelId },
         {
             preserveScroll: true,
-            onSuccess: () => clearSelection(),
+            onSuccess: () => {
+                clearSelection();
+                showToast('Label added to cards');
+            },
+            onError: () => showToast('Could not add label to cards, try again.', 'error'),
             onFinish: () => {
                 bulkProcessing.value = false;
             },

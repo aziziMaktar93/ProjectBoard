@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MemberAvatar from '@/components/MemberAvatar.vue';
+import { showToast } from '@/composables/useToast';
 import type { ChecklistItem, User } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Check } from 'lucide-vue-next';
@@ -15,9 +16,21 @@ function isAssigned(user: User): boolean {
 
 function toggle(user: User) {
     if (isAssigned(user)) {
-        router.delete(route('checklist-item-members.destroy', [props.item.id, user.id]), { preserveScroll: true });
+        router.delete(route('checklist-item-members.destroy', [props.item.id, user.id]), {
+            preserveScroll: true,
+            onSuccess: () => showToast('Member removed'),
+            onError: () => showToast('Could not remove member, try again.', 'error'),
+        });
     } else {
-        router.post(route('checklist-item-members.store', props.item.id), { user_id: user.id }, { preserveScroll: true });
+        router.post(
+            route('checklist-item-members.store', props.item.id),
+            { user_id: user.id },
+            {
+                preserveScroll: true,
+                onSuccess: () => showToast('Member added'),
+                onError: () => showToast('Could not add member, try again.', 'error'),
+            },
+        );
     }
 }
 </script>

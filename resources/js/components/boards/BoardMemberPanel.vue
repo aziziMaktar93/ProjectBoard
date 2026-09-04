@@ -3,6 +3,7 @@ import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { showToast } from '@/composables/useToast';
 import type { Board, SharedData, User } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -26,15 +27,35 @@ const availableMembers = computed(() => {
 });
 
 function addMember(user: User) {
-    router.post(route('board-members.store', props.board.id), { user_id: user.id }, { preserveScroll: true });
+    router.post(
+        route('board-members.store', props.board.id),
+        { user_id: user.id },
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Member added'),
+            onError: () => showToast('Could not add member, try again.', 'error'),
+        },
+    );
 }
 
 function removeMember(user: User) {
-    router.delete(route('board-members.destroy', [props.board.id, user.id]), { preserveScroll: true });
+    router.delete(route('board-members.destroy', [props.board.id, user.id]), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Member removed'),
+        onError: () => showToast('Could not remove member, try again.', 'error'),
+    });
 }
 
 function updateMemberRole(user: User, role: string) {
-    router.patch(route('board-members.update-role', [props.board.id, user.id]), { role }, { preserveScroll: true });
+    router.patch(
+        route('board-members.update-role', [props.board.id, user.id]),
+        { role },
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Role updated'),
+            onError: () => showToast('Could not update role, try again.', 'error'),
+        },
+    );
 }
 </script>
 

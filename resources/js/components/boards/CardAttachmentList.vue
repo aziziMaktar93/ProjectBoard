@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { showToast } from '@/composables/useToast';
 import type { Card, CardAttachment } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { Download, Eye, Image, ImageOff, Paperclip, Trash2 } from 'lucide-vue-next';
@@ -49,7 +50,9 @@ function onFileChange(event: Event) {
         onSuccess: () => {
             form.reset();
             target.value = '';
+            showToast('Attachment uploaded');
         },
+        onError: () => showToast('Could not upload attachment, try again.', 'error'),
     });
 }
 
@@ -60,7 +63,11 @@ function deleteAttachment(attachmentId: number) {
         return;
     }
 
-    router.delete(route('card-attachments.destroy', attachmentId), { preserveScroll: true });
+    router.delete(route('card-attachments.destroy', attachmentId), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Attachment deleted'),
+        onError: () => showToast('Could not delete attachment, try again.', 'error'),
+    });
 }
 
 function formatSize(bytes: number): string {

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { celebrate } from '@/composables/useCelebration';
+import { showToast } from '@/composables/useToast';
 import type { Checklist, ChecklistItem, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { CalendarDays, CircleCheck, Clock, Trash2, Users } from 'lucide-vue-next';
@@ -45,7 +46,11 @@ function saveName() {
         return;
     }
 
-    nameForm.patch(route('checklists.update', props.checklist.id), { preserveScroll: true });
+    nameForm.patch(route('checklists.update', props.checklist.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Checklist renamed'),
+        onError: () => showToast('Could not rename checklist, try again.', 'error'),
+    });
 }
 
 const visibleItems = computed(() => (hideChecked.value ? props.checklist.items.filter((item) => !item.is_checked) : props.checklist.items));
@@ -95,11 +100,23 @@ function saveItemName(item: ChecklistItem) {
         return;
     }
 
-    router.patch(route('checklist-items.update', item.id), { name: editingItemName.value }, { preserveScroll: true });
+    router.patch(
+        route('checklist-items.update', item.id),
+        { name: editingItemName.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Checklist item renamed'),
+            onError: () => showToast('Could not rename checklist item, try again.', 'error'),
+        },
+    );
 }
 
 function deleteItem(item: ChecklistItem) {
-    router.delete(route('checklist-items.destroy', item.id), { preserveScroll: true });
+    router.delete(route('checklist-items.destroy', item.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Checklist item deleted'),
+        onError: () => showToast('Could not delete checklist item, try again.', 'error'),
+    });
 }
 
 function setItemDueDate(item: ChecklistItem, value: string) {
@@ -142,7 +159,9 @@ function submitAddItem() {
             preserveScroll: true,
             onSuccess: () => {
                 newItemName.value = '';
+                showToast('Checklist item added');
             },
+            onError: () => showToast('Could not add checklist item, try again.', 'error'),
         },
     );
 }
@@ -152,11 +171,23 @@ function deleteChecklist() {
         return;
     }
 
-    router.delete(route('checklists.destroy', props.checklist.id), { preserveScroll: true });
+    router.delete(route('checklists.destroy', props.checklist.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Checklist deleted'),
+        onError: () => showToast('Could not delete checklist, try again.', 'error'),
+    });
 }
 
 function duplicateChecklist() {
-    router.post(route('checklists.duplicate', props.checklist.id), {}, { preserveScroll: true });
+    router.post(
+        route('checklists.duplicate', props.checklist.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Checklist duplicated'),
+            onError: () => showToast('Could not duplicate checklist, try again.', 'error'),
+        },
+    );
 }
 </script>
 

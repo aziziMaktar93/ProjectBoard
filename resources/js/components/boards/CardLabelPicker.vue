@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { showToast } from '@/composables/useToast';
 import type { Card, CardLabel } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { Check, Plus } from 'lucide-vue-next';
@@ -20,9 +21,21 @@ function isAssigned(label: CardLabel): boolean {
 
 function toggle(label: CardLabel) {
     if (isAssigned(label)) {
-        router.delete(route('card-labels.destroy', [props.card.id, label.id]), { preserveScroll: true });
+        router.delete(route('card-labels.destroy', [props.card.id, label.id]), {
+            preserveScroll: true,
+            onSuccess: () => showToast('Label removed'),
+            onError: () => showToast('Could not remove label, try again.', 'error'),
+        });
     } else {
-        router.post(route('card-labels.store', props.card.id), { label_id: label.id }, { preserveScroll: true });
+        router.post(
+            route('card-labels.store', props.card.id),
+            { label_id: label.id },
+            {
+                preserveScroll: true,
+                onSuccess: () => showToast('Label added'),
+                onError: () => showToast('Could not add label, try again.', 'error'),
+            },
+        );
     }
 }
 
@@ -39,7 +52,9 @@ function submitCreate() {
         onSuccess: () => {
             createForm.reset();
             showCreate.value = false;
+            showToast('Label created');
         },
+        onError: () => showToast('Could not create label, try again.', 'error'),
     });
 }
 </script>

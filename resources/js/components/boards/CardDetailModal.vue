@@ -66,7 +66,15 @@ function setDueDate(value: string) {
         return;
     }
 
-    router.patch(route('cards.update', props.card.id), { due_date: value || null }, { preserveScroll: true });
+    router.patch(
+        route('cards.update', props.card.id),
+        { due_date: value || null },
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast(value ? 'Due date updated' : 'Due date cleared'),
+            onError: () => showToast('Could not update due date, try again.', 'error'),
+        },
+    );
 }
 
 const colorModel = computed<string | null>({
@@ -112,7 +120,9 @@ function submitAddChecklist() {
         onSuccess: () => {
             addChecklistForm.reset();
             showAddChecklist.value = false;
+            showToast('Checklist added');
         },
+        onError: () => showToast('Could not add checklist, try again.', 'error'),
     });
 }
 

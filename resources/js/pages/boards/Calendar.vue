@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMonthCalendar } from '@/composables/useMonthCalendar';
+import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BoardEvent, BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -71,7 +72,9 @@ function submitAddEvent() {
         onSuccess: () => {
             addEventForm.reset();
             openAddPopover.value = null;
+            showToast('Event created');
         },
+        onError: () => showToast('Could not create event, try again.', 'error'),
     });
 }
 
@@ -101,7 +104,9 @@ function submitEditEvent(eventId: number) {
         preserveScroll: true,
         onSuccess: () => {
             openEditPopover.value = null;
+            showToast('Event updated');
         },
+        onError: () => showToast('Could not update event, try again.', 'error'),
     });
 }
 
@@ -114,7 +119,9 @@ function deleteEvent(eventId: number) {
         preserveScroll: true,
         onSuccess: () => {
             openEditPopover.value = null;
+            showToast('Event deleted');
         },
+        onError: () => showToast('Could not delete event, try again.', 'error'),
     });
 }
 </script>

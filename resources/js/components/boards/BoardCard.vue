@@ -10,6 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { showToast } from '@/composables/useToast';
 import { isCardChecklistComplete } from '@/lib/cardCompletion';
 import { stripGradient } from '@/lib/colorGradient';
 import type { Card, Checklist, ChecklistItem } from '@/types';
@@ -74,11 +75,27 @@ const isOverdue = computed(() => {
 });
 
 function archive() {
-    router.patch(route('cards.archive', props.card.id), {}, { preserveScroll: true });
+    router.patch(
+        route('cards.archive', props.card.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Card archived'),
+            onError: () => showToast('Could not archive card, try again.', 'error'),
+        },
+    );
 }
 
 function duplicateCard() {
-    router.post(route('cards.duplicate', props.card.id), {}, { preserveScroll: true });
+    router.post(
+        route('cards.duplicate', props.card.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('Card duplicated'),
+            onError: () => showToast('Could not duplicate card, try again.', 'error'),
+        },
+    );
 }
 
 function onColorChange(color: string | null) {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient } from '@/lib/colorGradient';
 import type { BreadcrumbItem, Paginated, Workspace } from '@/types';
@@ -33,6 +34,7 @@ function submit() {
         onSuccess: () => {
             showCreate.value = false;
             form.reset();
+            showToast('Workspace created');
         },
     });
 }

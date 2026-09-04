@@ -12,6 +12,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { showToast } from '@/composables/useToast';
 import { stripGradient } from '@/lib/colorGradient';
 import type { BoardList, Card } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
@@ -49,16 +50,34 @@ function submitAddCard() {
         onSuccess: () => {
             addCardForm.reset();
             showAddCard.value = false;
+            showToast('Card added');
         },
+        onError: () => showToast('Could not add card, try again.', 'error'),
     });
 }
 
 function archiveList() {
-    router.patch(route('board-lists.archive', props.list.id), {}, { preserveScroll: true });
+    router.patch(
+        route('board-lists.archive', props.list.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('List archived'),
+            onError: () => showToast('Could not archive list, try again.', 'error'),
+        },
+    );
 }
 
 function duplicateList() {
-    router.post(route('board-lists.duplicate', props.list.id), {}, { preserveScroll: true });
+    router.post(
+        route('board-lists.duplicate', props.list.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => showToast('List duplicated'),
+            onError: () => showToast('Could not duplicate list, try again.', 'error'),
+        },
+    );
 }
 
 function onCardDragStart() {
@@ -92,7 +111,11 @@ function saveName() {
         return;
     }
 
-    nameForm.patch(route('board-lists.update', props.list.id), { preserveScroll: true });
+    nameForm.patch(route('board-lists.update', props.list.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('List renamed'),
+        onError: () => showToast('Could not rename list, try again.', 'error'),
+    });
 }
 
 function onColorChange(color: string | null) {

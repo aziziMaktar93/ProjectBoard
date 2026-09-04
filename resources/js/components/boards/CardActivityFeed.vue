@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
+import { showToast } from '@/composables/useToast';
 import { formatTimestamp, sentenceFor } from '@/lib/activitySentence';
 import type { Card, SharedData, User } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
@@ -120,7 +121,9 @@ function submitComment() {
             preserveScroll: true,
             onSuccess: () => {
                 commentBody.value = '';
+                showToast('Comment posted');
             },
+            onError: () => showToast('Could not post comment, try again.', 'error'),
             onFinish: () => {
                 submitting.value = false;
             },

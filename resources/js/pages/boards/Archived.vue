@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BreadcrumbItem, Workspace } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -16,7 +17,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 function restore(board: Board) {
-    router.patch(route('boards.restore', board.id));
+    router.patch(
+        route('boards.restore', board.id),
+        {},
+        {
+            onSuccess: () => showToast('Board restored'),
+            onError: () => showToast('Could not restore board, try again.', 'error'),
+        },
+    );
 }
 
 function destroy(board: Board) {
@@ -24,7 +32,10 @@ function destroy(board: Board) {
         return;
     }
 
-    router.delete(route('boards.destroy', board.id));
+    router.delete(route('boards.destroy', board.id), {
+        onSuccess: () => showToast('Board deleted'),
+        onError: () => showToast('Could not delete board, try again.', 'error'),
+    });
 }
 </script>
 

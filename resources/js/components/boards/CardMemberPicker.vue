@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MemberAvatar from '@/components/MemberAvatar.vue';
+import { showToast } from '@/composables/useToast';
 import type { Card, User } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Check } from 'lucide-vue-next';
@@ -15,9 +16,21 @@ function isAssigned(user: User): boolean {
 
 function toggle(user: User) {
     if (isAssigned(user)) {
-        router.delete(route('card-members.destroy', [props.card.id, user.id]), { preserveScroll: true });
+        router.delete(route('card-members.destroy', [props.card.id, user.id]), {
+            preserveScroll: true,
+            onSuccess: () => showToast('Member removed'),
+            onError: () => showToast('Could not remove member, try again.', 'error'),
+        });
     } else {
-        router.post(route('card-members.store', props.card.id), { user_id: user.id }, { preserveScroll: true });
+        router.post(
+            route('card-members.store', props.card.id),
+            { user_id: user.id },
+            {
+                preserveScroll: true,
+                onSuccess: () => showToast('Member added'),
+                onError: () => showToast('Could not add member, try again.', 'error'),
+            },
+        );
     }
 }
 </script>

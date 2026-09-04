@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient, washGradient } from '@/lib/colorGradient';
 import type { Board, BreadcrumbItem, Paginated, SharedData, User, Workspace } from '@/types';
@@ -98,6 +99,7 @@ function submitBoard() {
         onSuccess: () => {
             showCreateBoard.value = false;
             boardForm.reset();
+            showToast('Board created');
         },
     });
 }
@@ -127,7 +129,11 @@ function saveWorkspaceName() {
         return;
     }
 
-    workspaceNameForm.patch(route('workspaces.update', props.workspace.id), { preserveScroll: true });
+    workspaceNameForm.patch(route('workspaces.update', props.workspace.id), {
+        preserveScroll: true,
+        onSuccess: () => showToast('Workspace renamed'),
+        onError: () => showToast('Could not rename workspace, try again.', 'error'),
+    });
 }
 
 function onWorkspaceColorChange(color: string | null) {
@@ -139,7 +145,10 @@ function deleteWorkspace() {
         return;
     }
 
-    router.delete(route('workspaces.destroy', props.workspace.id));
+    router.delete(route('workspaces.destroy', props.workspace.id), {
+        onSuccess: () => showToast('Workspace deleted'),
+        onError: () => showToast('Could not delete workspace, try again.', 'error'),
+    });
 }
 </script>
 
