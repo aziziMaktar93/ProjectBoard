@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, SharedData, Workspace } from '@/types';
@@ -27,8 +28,15 @@ function restore(workspace: Workspace) {
     );
 }
 
-function destroy(workspace: Workspace) {
-    if (!confirm(`Permanently delete the workspace "${workspace.name}"? This deletes all its boards too and cannot be undone.`)) {
+async function destroy(workspace: Workspace) {
+    if (
+        !(await confirmDialog({
+            title: `Permanently delete the workspace "${workspace.name}"?`,
+            description: 'This deletes all its boards too and cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import type { Card, CardAttachment } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
@@ -58,8 +59,15 @@ function onFileChange(event: Event) {
 
 defineExpose({ pickFile });
 
-function deleteAttachment(attachmentId: number) {
-    if (!confirm('Delete this attachment? This cannot be undone.')) {
+async function deleteAttachment(attachmentId: number) {
+    if (
+        !(await confirmDialog({
+            title: 'Delete this attachment?',
+            description: 'This cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Board, BreadcrumbItem, Workspace } from '@/types';
@@ -27,8 +28,15 @@ function restore(board: Board) {
     );
 }
 
-function destroy(board: Board) {
-    if (!confirm(`Permanently delete the board "${board.name}"? This cannot be undone.`)) {
+async function destroy(board: Board) {
+    if (
+        !(await confirmDialog({
+            title: `Permanently delete the board "${board.name}"?`,
+            description: 'This cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 

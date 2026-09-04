@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient, washGradient } from '@/lib/colorGradient';
@@ -136,8 +137,8 @@ function onWorkspaceColorChange(color: string | null) {
     router.patch(route('workspaces.update', props.workspace.id), { background_color: color }, { preserveScroll: true });
 }
 
-function archiveWorkspace() {
-    if (!confirm(`Archive the workspace "${props.workspace.name}"?`)) {
+async function archiveWorkspace() {
+    if (!(await confirmDialog({ title: `Archive the workspace "${props.workspace.name}"?`, confirmText: 'Archive' }))) {
         return;
     }
 
@@ -151,8 +152,15 @@ function archiveWorkspace() {
     );
 }
 
-function deleteWorkspace() {
-    if (!confirm(`Delete the workspace "${props.workspace.name}"? This permanently deletes all its boards too.`)) {
+async function deleteWorkspace() {
+    if (
+        !(await confirmDialog({
+            title: `Delete the workspace "${props.workspace.name}"?`,
+            description: 'This permanently deletes all its boards too.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 

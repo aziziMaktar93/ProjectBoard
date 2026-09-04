@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { celebrate } from '@/composables/useCelebration';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import type { Checklist, ChecklistItem, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
@@ -166,8 +167,15 @@ function submitAddItem() {
     );
 }
 
-function deleteChecklist() {
-    if (!confirm('Delete this checklist? This cannot be undone.')) {
+async function deleteChecklist() {
+    if (
+        !(await confirmDialog({
+            title: 'Delete this checklist?',
+            description: 'This cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 
@@ -222,9 +230,7 @@ function duplicateChecklist() {
                     {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
                 </button>
                 <template v-if="canEdit">
-                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">
-                        Duplicate
-                    </button>
+                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">Duplicate</button>
                     <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
                 </template>
             </div>
@@ -327,9 +333,7 @@ function duplicateChecklist() {
                                 :model-value="item.due_date ?? ''"
                                 @change="setItemDueDate(item, ($event.target as HTMLInputElement).value)"
                             />
-                            <Button v-if="item.due_date" type="button" variant="ghost" size="sm" @click="setItemDueDate(item, '')">
-                                Clear
-                            </Button>
+                            <Button v-if="item.due_date" type="button" variant="ghost" size="sm" @click="setItemDueDate(item, '')"> Clear </Button>
                         </div>
                     </PopoverContent>
                 </Popover>

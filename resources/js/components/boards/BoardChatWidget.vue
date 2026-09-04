@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { confirmDialog } from '@/composables/useConfirm';
 import { csrfFetch } from '@/lib/csrfFetch';
 import type { BoardMessage } from '@/types';
 import { MessageCircle, Send, Trash2, X } from 'lucide-vue-next';
@@ -195,7 +196,7 @@ async function send() {
 }
 
 async function deleteMessage(message: BoardMessage) {
-    if (!confirm('Delete this message?')) {
+    if (!(await confirmDialog({ title: 'Delete this message?', confirmText: 'Delete', variant: 'destructive' }))) {
         return;
     }
 
@@ -281,7 +282,12 @@ onBeforeUnmount(() => {
             </div>
 
             <div ref="scrollRef" class="flex-1 space-y-3 overflow-y-auto p-4">
-                <div v-for="message in messages" :key="message.id" class="group flex flex-col" :class="message.user_id === currentUserId ? 'items-end' : 'items-start'">
+                <div
+                    v-for="message in messages"
+                    :key="message.id"
+                    class="group flex flex-col"
+                    :class="message.user_id === currentUserId ? 'items-end' : 'items-start'"
+                >
                     <div
                         class="max-w-[85%] rounded-lg px-3 py-2 text-sm"
                         :class="message.user_id === currentUserId ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'"
@@ -310,11 +316,7 @@ onBeforeUnmount(() => {
             <div class="relative border-t border-border">
                 <ul v-if="mentionMatches.length" class="absolute bottom-full left-0 w-full border-b border-border bg-background shadow-sm">
                     <li v-for="member in mentionMatches" :key="member.id">
-                        <button
-                            type="button"
-                            class="block w-full px-3 py-1.5 text-left text-sm hover:bg-accent"
-                            @click="selectMention(member.name)"
-                        >
+                        <button type="button" class="block w-full px-3 py-1.5 text-left text-sm hover:bg-accent" @click="selectMention(member.name)">
                             {{ member.name }}
                         </button>
                     </li>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import type { BoardList, Card } from '@/types';
 import { router } from '@inertiajs/vue3';
@@ -24,8 +25,15 @@ function restoreList(list: BoardList) {
     );
 }
 
-function deleteList(list: BoardList) {
-    if (!confirm(`Permanently delete the list "${list.name}" and all its cards? This cannot be undone.`)) {
+async function deleteList(list: BoardList) {
+    if (
+        !(await confirmDialog({
+            title: `Permanently delete the list "${list.name}" and all its cards?`,
+            description: 'This cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 
@@ -48,8 +56,15 @@ function restoreCard(card: Card) {
     );
 }
 
-function deleteCard(card: Card) {
-    if (!confirm(`Permanently delete the card "${card.name}"? This cannot be undone.`)) {
+async function deleteCard(card: Card) {
+    if (
+        !(await confirmDialog({
+            title: `Permanently delete the card "${card.name}"?`,
+            description: 'This cannot be undone.',
+            confirmText: 'Delete',
+            variant: 'destructive',
+        }))
+    ) {
         return;
     }
 

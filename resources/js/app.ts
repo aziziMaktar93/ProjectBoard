@@ -6,6 +6,7 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import CelebrationOverlay from './components/CelebrationOverlay.vue';
+import ConfirmDialog from './components/ConfirmDialog.vue';
 import Toaster from './components/Toaster.vue';
 import TooltipProvider from './components/ui/tooltip/TooltipProvider.vue';
 import { initializeTheme } from './composables/useAppearance';
@@ -35,6 +36,7 @@ createInertiaApp({
                 h(TooltipProvider, { delayDuration: 200, disableHoverableContent: true }, () => [
                     h(App, props),
                     h(Toaster),
+                    h(ConfirmDialog),
                     h(CelebrationOverlay),
                 ]),
         })

@@ -3,6 +3,7 @@ import ColorSwatchPicker from '@/components/boards/ColorSwatchPicker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { confirmDialog } from '@/composables/useConfirm';
 import { useMonthCalendar } from '@/composables/useMonthCalendar';
 import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -110,8 +111,8 @@ function submitEditEvent(eventId: number) {
     });
 }
 
-function deleteEvent(eventId: number) {
-    if (!confirm('Delete this event? This cannot be undone.')) {
+async function deleteEvent(eventId: number) {
+    if (!(await confirmDialog({ title: 'Delete this event?', description: 'This cannot be undone.', confirmText: 'Delete', variant: 'destructive' }))) {
         return;
     }
 

@@ -22,14 +22,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBoardFilters } from '@/composables/useBoardFilters';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { washGradient } from '@/lib/colorGradient';
 import type { Board, BoardList, BreadcrumbItem, Card, SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Archive, CalendarDays, CheckSquare, MoreHorizontal, Tag, Users, X } from 'lucide-vue-next';
-import { VueDraggable } from 'vue-draggable-plus';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
 
 const props = defineProps<{
     board: Board;
@@ -241,8 +242,8 @@ onMounted(() => {
     }
 });
 
-function archiveBoard() {
-    if (!confirm(`Archive the board "${props.board.name}"?`)) {
+async function archiveBoard() {
+    if (!(await confirmDialog({ title: `Archive the board "${props.board.name}"?`, confirmText: 'Archive' }))) {
         return;
     }
 
@@ -316,8 +317,8 @@ function clearSelection() {
     selectedCardIds.value = new Set();
 }
 
-function bulkArchive() {
-    if (!confirm(`Archive ${selectedCardIds.value.size} selected card(s)?`)) {
+async function bulkArchive() {
+    if (!(await confirmDialog({ title: `Archive ${selectedCardIds.value.size} selected card(s)?`, confirmText: 'Archive' }))) {
         return;
     }
 
@@ -382,7 +383,10 @@ function bulkAddLabel(labelId: number) {
     <Head :title="board.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div v-if="reorderError" class="mx-4 mt-4 flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
+        <div
+            v-if="reorderError"
+            class="mx-4 mt-4 flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950"
+        >
             <p class="text-sm text-red-600 dark:text-red-500">{{ reorderError }}</p>
             <Tooltip>
                 <TooltipTrigger as-child>
@@ -430,12 +434,7 @@ function bulkAddLabel(labelId: number) {
 
                 <div class="flex items-center gap-2">
                     <BoardFilterBar v-model:filters="filters" :labels="board.labels ?? []" :members="board.members ?? []" />
-                    <Button
-                        v-if="canEdit"
-                        :variant="selectMode ? 'default' : 'outline'"
-                        size="sm"
-                        @click="toggleSelectMode"
-                    >
+                    <Button v-if="canEdit" :variant="selectMode ? 'default' : 'outline'" size="sm" @click="toggleSelectMode">
                         <CheckSquare class="size-3.5" />
                         <span class="hidden sm:inline">{{ selectMode ? 'Cancel select' : 'Select' }}</span>
                     </Button>
@@ -552,9 +551,7 @@ function bulkAddLabel(labelId: number) {
 
             <Popover v-if="(board.labels ?? []).length">
                 <PopoverTrigger as-child>
-                    <Button variant="outline" size="sm" :disabled="bulkProcessing">
-                        <Tag class="size-3.5" /> Add label
-                    </Button>
+                    <Button variant="outline" size="sm" :disabled="bulkProcessing"> <Tag class="size-3.5" /> Add label </Button>
                 </PopoverTrigger>
                 <PopoverContent class="w-56">
                     <p class="mb-2 text-xs font-semibold text-muted-foreground">Add label to selected cards</p>
@@ -572,13 +569,9 @@ function bulkAddLabel(labelId: number) {
                 </PopoverContent>
             </Popover>
 
-            <Button variant="outline" size="sm" :disabled="bulkProcessing" @click="bulkArchive">
-                <Archive class="size-3.5" /> Archive
-            </Button>
+            <Button variant="outline" size="sm" :disabled="bulkProcessing" @click="bulkArchive"> <Archive class="size-3.5" /> Archive </Button>
 
-            <Button variant="ghost" size="sm" @click="clearSelection">
-                <X class="size-3.5" /> Cancel
-            </Button>
+            <Button variant="ghost" size="sm" @click="clearSelection"> <X class="size-3.5" /> Cancel </Button>
         </div>
 
         <CardDetailModal

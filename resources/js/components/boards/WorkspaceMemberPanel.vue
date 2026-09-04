@@ -3,6 +3,7 @@ import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import type { SharedData, User, Workspace } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
@@ -70,10 +71,10 @@ function addMember(user: User) {
     );
 }
 
-function removeMember(user: User) {
+async function removeMember(user: User) {
     const label = user.id === currentUserId ? 'leave this workspace' : `remove ${user.name} from this workspace`;
 
-    if (!confirm(`Are you sure you want to ${label}?`)) {
+    if (!(await confirmDialog({ title: `Are you sure you want to ${label}?`, confirmText: 'Confirm', variant: 'destructive' }))) {
         return;
     }
 
@@ -117,11 +118,7 @@ function removeMember(user: User) {
                 <div class="space-y-2">
                     <h3 class="text-sm font-medium text-muted-foreground">Members ({{ members.length }})</h3>
                     <ul class="space-y-1">
-                        <li
-                            v-for="member in members"
-                            :key="member.id"
-                            class="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
-                        >
+                        <li v-for="member in members" :key="member.id" class="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
                             <div class="flex items-center gap-2">
                                 <MemberAvatar :user="member" size="xs" />
                                 <p class="font-medium">
