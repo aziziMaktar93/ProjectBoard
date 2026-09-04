@@ -7,7 +7,7 @@ const { toasts } = useToast();
 
 <template>
     <Teleport to="body">
-        <div class="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+        <div class="pointer-events-none fixed right-4 top-4 z-[100] flex flex-col gap-2">
             <TransitionGroup name="toast">
                 <div
                     v-for="toast in toasts"
@@ -37,6 +37,6 @@ const { toasts } = useToast();
 .toast-enter-from,
 .toast-leave-to {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px);
 }
 </style>
