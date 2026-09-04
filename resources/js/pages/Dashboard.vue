@@ -3,9 +3,11 @@ import DashboardChatWidget from '@/components/DashboardChatWidget.vue';
 import MemberAvatar from '@/components/MemberAvatar.vue';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatTimestamp, sentenceFor } from '@/lib/activitySentence';
+import CompletionTrendChart from '@/components/dashboard/CompletionTrendChart.vue';
+import TaskStatusDonut from '@/components/dashboard/TaskStatusDonut.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { BoardTaskCount, BreadcrumbItem, CardActivity, DashboardStats, MemberWorkload } from '@/types';
+import { formatTimestamp, sentenceFor } from '@/lib/activitySentence';
+import type { BoardTaskCount, BreadcrumbItem, CardActivity, CompletionTrendPoint, DashboardStats, MemberWorkload } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { AlertTriangle, CheckCircle2, Clock, Columns3, Download, Kanban, ListChecks, ListFilter, ListTodo, Percent, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -16,6 +18,7 @@ const props = defineProps<{
     tasksByList: BoardTaskCount[] | null;
     workload: MemberWorkload[];
     recentActivity: CardActivity[];
+    completionTrend: CompletionTrendPoint[];
     hasBoards: boolean;
     workspaces: { id: number; name: string }[];
     boards: { id: number; name: string; workspace_id: number }[];
@@ -26,6 +29,9 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
 
 const maxBoardCount = computed(() => Math.max(1, ...props.tasksByBoard.map((b) => b.count)));
+const otherTasksCount = computed(() =>
+    Math.max(0, props.stats.total - props.stats.completed - props.stats.overdue - props.stats.dueSoon),
+);
 const maxListCount = computed(() => Math.max(1, ...(props.tasksByList ?? []).map((l) => l.count)));
 const maxWorkloadCount = computed(() => Math.max(1, ...props.workload.map((w) => w.count)));
 
@@ -156,7 +162,10 @@ function clearFilters() {
                 </div>
             </div>
 
-            <div v-if="!hasBoards" class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-300 p-12 text-center dark:border-neutral-700">
+            <div
+                v-if="!hasBoards"
+                class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-300 p-12 text-center dark:border-neutral-700"
+            >
                 <p class="text-sm text-muted-foreground">No boards yet — create a workspace and board to see your task overview here.</p>
                 <Button as-child size="sm">
                     <Link :href="route('workspaces.index')">Go to Workspaces</Link>
@@ -202,7 +211,9 @@ function clearFilters() {
                         class="rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-amber-900/40 dark:from-amber-950/70 dark:to-orange-950/70"
                     >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium uppercase tracking-wide text-amber-700/80 dark:text-amber-300/80">Due within 7 days</span>
+                            <span class="text-xs font-medium uppercase tracking-wide text-amber-700/80 dark:text-amber-300/80"
+                                >Due within 7 days</span
+                            >
                             <div class="rounded-full bg-white/70 p-1.5 dark:bg-white/10">
                                 <Clock class="size-4 text-amber-600 dark:text-amber-400" />
                             </div>
@@ -213,7 +224,9 @@ function clearFilters() {
                         class="rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-purple-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-violet-900/40 dark:from-violet-950/70 dark:to-purple-950/70"
                     >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium uppercase tracking-wide text-violet-700/80 dark:text-violet-300/80">Checklist progress</span>
+                            <span class="text-xs font-medium uppercase tracking-wide text-violet-700/80 dark:text-violet-300/80"
+                                >Checklist progress</span
+                            >
                             <div class="rounded-full bg-white/70 p-1.5 dark:bg-white/10">
                                 <Percent class="size-4 text-violet-600 dark:text-violet-400" />
                             </div>
@@ -232,7 +245,9 @@ function clearFilters() {
                         class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-pink-50 to-rose-100 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-pink-900/40 dark:from-pink-950/70 dark:to-rose-950/70"
                     >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium uppercase tracking-wide text-pink-700/80 dark:text-pink-300/80">Checklist due dates</span>
+                            <span class="text-xs font-medium uppercase tracking-wide text-pink-700/80 dark:text-pink-300/80"
+                                >Checklist due dates</span
+                            >
                             <div class="rounded-full bg-white/70 p-1.5 dark:bg-white/10">
                                 <ListTodo class="size-4 text-pink-600 dark:text-pink-400" />
                             </div>
@@ -241,6 +256,30 @@ function clearFilters() {
                             <span class="text-2xl font-semibold">{{ stats.checklistItemsOverdue }}</span> overdue
                         </p>
                         <p class="text-xs text-pink-700/80 dark:text-pink-300/80">{{ stats.checklistItemsDueSoon }} due within 7 days</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div
+                        class="rounded-xl border border-neutral-200/60 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-900/40"
+                    >
+                        <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Task status</h2>
+                        <p v-if="stats.total === 0" class="mt-3 text-sm text-muted-foreground">No active tasks yet.</p>
+                        <TaskStatusDonut
+                            v-else
+                            class="mt-3"
+                            :completed="stats.completed"
+                            :overdue="stats.overdue"
+                            :due-soon="stats.dueSoon"
+                            :other="otherTasksCount"
+                        />
+                    </div>
+
+                    <div
+                        class="rounded-xl border border-indigo-200/60 bg-gradient-to-br from-white to-indigo-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-indigo-900/40 dark:from-neutral-900 dark:to-indigo-950/40"
+                    >
+                        <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Completion trend (14 days)</h2>
+                        <CompletionTrendChart :series="completionTrend" />
                     </div>
                 </div>
 
@@ -271,18 +310,25 @@ function clearFilters() {
                         v-else
                         class="rounded-xl border border-blue-200/60 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm transition duration-200 hover:shadow-md dark:border-blue-900/40 dark:from-neutral-900 dark:to-blue-950/40"
                     >
-                        <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Tasks by board</h2>
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Tasks by board</h2>
+                            <div class="flex items-center gap-3 text-[10px] text-muted-foreground">
+                                <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-emerald-500" /> Completed</span>
+                                <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-blue-400" /> Pending</span>
+                            </div>
+                        </div>
                         <p v-if="tasksByBoard.length === 0" class="mt-3 text-sm text-muted-foreground">No active tasks yet.</p>
                         <ul v-else class="mt-3 space-y-3">
                             <li v-for="board in tasksByBoard" :key="board.name">
                                 <div class="mb-1 flex items-center justify-between text-sm">
                                     <span class="truncate text-neutral-700 dark:text-neutral-300">{{ board.name }}</span>
-                                    <span class="font-medium text-neutral-900 dark:text-neutral-100">{{ board.count }}</span>
+                                    <span class="font-medium text-neutral-900 dark:text-neutral-100">{{ board.completed ?? 0 }}/{{ board.count }}</span>
                                 </div>
-                                <div class="h-2 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                                <div class="flex h-2 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                                    <div class="h-full bg-emerald-500" :style="{ width: `${((board.completed ?? 0) / maxBoardCount) * 100}%` }" />
                                     <div
-                                        class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-                                        :style="{ width: `${(board.count / maxBoardCount) * 100}%` }"
+                                        class="h-full bg-blue-400"
+                                        :style="{ width: `${((board.count - (board.completed ?? 0)) / maxBoardCount) * 100}%` }"
                                     />
                                 </div>
                             </li>

@@ -6,11 +6,13 @@ use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
 use App\Models\CardActivity;
+use App\Models\ChecklistItem;
 use App\Services\CardActivityDescriber;
 use App\Services\DashboardStatsService;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,6 +28,7 @@ class DashboardController extends Controller
             'tasksByList' => $data['tasksByList'],
             'workload' => $data['workload'],
             'recentActivity' => $data['recentActivity'],
+            'completionTrend' => $data['completionTrend'],
             'hasBoards' => $data['allBoardIds']->isNotEmpty(),
             'workspaces' => $data['workspaces'],
             'boards' => $data['boards'],
@@ -130,11 +133,43 @@ class DashboardController extends Controller
             'tasksByList' => $tasksByList,
             'workload' => $workload,
             'recentActivity' => $recentActivity,
+            'completionTrend' => $this->buildCompletionTrend($boardIds),
             'allBoardIds' => $allBoardIds,
             'workspaces' => $workspaces,
             'boards' => $boards,
             'selectedWorkspaceId' => $selectedWorkspaceId,
             'selectedBoardId' => $selectedBoardId,
         ];
+    }
+
+    /**
+     * Daily count of checklist items completed over the last 14 days, scoped
+     * to the same board set as the rest of the dashboard, zero-filled so the
+     * series always has one point per day even on quiet days.
+     *
+     * @param  Collection<int, int>  $boardIds
+     * @return Collection<int, array{date: string, count: int}>
+     */
+    private function buildCompletionTrend(Collection $boardIds): Collection
+    {
+        $days = 14;
+        $start = now()->timezone('Asia/Kuala_Lumpur')->subDays($days - 1)->startOfDay();
+
+        $completedByDate = ChecklistItem::query()
+            ->where('is_checked', true)
+            ->where('completed_at', '>=', $start)
+            ->whereHas('checklist.card', fn ($query) => $query->whereNull('archived_at'))
+            ->whereHas('checklist.card.boardList', fn ($query) => $query->whereIn('board_id', $boardIds)->whereNull('archived_at'))
+            ->get(['completed_at'])
+            ->groupBy(fn (ChecklistItem $item) => $item->completed_at->timezone('Asia/Kuala_Lumpur')->toDateString());
+
+        return collect(range(0, $days - 1))->map(function (int $offset) use ($start, $completedByDate) {
+            $date = $start->copy()->addDays($offset);
+
+            return [
+                'date' => $date->format('M j'),
+                'count' => $completedByDate->get($date->toDateString(), collect())->count(),
+            ];
+        });
     }
 }

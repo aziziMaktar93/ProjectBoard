@@ -323,6 +323,29 @@ test('the dashboard reports no boards for a brand new user', function () {
     );
 });
 
+test('the dashboard reports a 14-day completion trend zero-filled around a real count', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $checklist->items()->create([
+        'name' => 'Step',
+        'is_checked' => true,
+        'position' => 0,
+        'completed_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('completionTrend', 14)
+            ->where('completionTrend.13.count', 1)
+            ->where('completionTrend.0.count', 0)
+    );
+});
+
 test('a user can download a PDF dashboard report', function () {
     SnappyPdf::fake();
 

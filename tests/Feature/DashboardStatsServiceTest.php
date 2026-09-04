@@ -65,8 +65,27 @@ test('build groups tasks by board and merges card and checklist-item workload', 
 
     $result = app(DashboardStatsService::class)->build($cards);
 
-    expect($result['tasksByBoard']->first())->toBe(['name' => 'Engineering', 'count' => 1]);
+    expect($result['tasksByBoard']->first())->toBe(['name' => 'Engineering', 'count' => 1, 'completed' => 0]);
     expect($result['workload']->first()['count'])->toBe(2);
+});
+
+test('build counts completed cards per board for the stacked breakdown', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($workspace)->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+
+    $doneCard = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($doneCard)->create();
+    $checklist->items()->create(['name' => 'Step', 'is_checked' => true, 'position' => 0]);
+
+    Card::factory()->for($list)->create();
+
+    $cards = Card::with(['boardList.board', 'checklists.items.members', 'members'])->get();
+
+    $result = app(DashboardStatsService::class)->build($cards);
+
+    expect($result['tasksByBoard']->first())->toBe(['name' => 'Engineering', 'count' => 2, 'completed' => 1]);
 });
 
 test('build caps tasksByBoard at 8 by default', function () {

@@ -248,6 +248,12 @@ export interface DashboardStats {
 export interface BoardTaskCount {
     name: string;
     count: number;
+    completed?: number;
+}
+
+export interface CompletionTrendPoint {
+    date: string;
+    count: number;
 }
 
 export interface MemberWorkload {

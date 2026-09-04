@@ -39,10 +39,10 @@ class DashboardStatsService
 
         $tasksByBoard = $cards
             ->groupBy(fn (Card $card) => $card->boardList->board->name)
-            ->map(fn ($group) => $group->count())
-            ->sortDesc()
+            ->map(fn ($group) => ['count' => $group->count(), 'completed' => $group->filter($isCompleted)->count()])
+            ->sortByDesc(fn (array $data) => $data['count'])
             ->when($limit !== null, fn ($collection) => $collection->take($limit))
-            ->map(fn ($count, $name) => ['name' => $name, 'count' => $count])
+            ->map(fn (array $data, string $name) => ['name' => $name, 'count' => $data['count'], 'completed' => $data['completed']])
             ->values();
 
         $workload = $cards
