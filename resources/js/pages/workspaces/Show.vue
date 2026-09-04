@@ -49,11 +49,7 @@ watch(search, (value) => {
     }
 
     debounceTimer = setTimeout(() => {
-        router.get(
-            route('workspaces.show', props.workspace.id),
-            { search: value },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        router.get(route('workspaces.show', props.workspace.id), { search: value }, { preserveState: true, preserveScroll: true, replace: true });
     }, 300);
 });
 
@@ -138,6 +134,21 @@ function saveWorkspaceName() {
 
 function onWorkspaceColorChange(color: string | null) {
     router.patch(route('workspaces.update', props.workspace.id), { background_color: color }, { preserveScroll: true });
+}
+
+function archiveWorkspace() {
+    if (!confirm(`Archive the workspace "${props.workspace.name}"?`)) {
+        return;
+    }
+
+    router.patch(
+        route('workspaces.archive', props.workspace.id),
+        {},
+        {
+            onSuccess: () => showToast('Workspace archived'),
+            onError: () => showToast('Could not archive workspace, try again.', 'error'),
+        },
+    );
 }
 
 function deleteWorkspace() {
@@ -227,6 +238,7 @@ function deleteWorkspace() {
                         </HoverLabel>
                         <DropdownMenuContent align="end" class="w-56">
                             <DropdownMenuItem @click="startEditingWorkspaceName">Rename workspace</DropdownMenuItem>
+                            <DropdownMenuItem @click="archiveWorkspace">Archive workspace</DropdownMenuItem>
                             <DropdownMenuItem @click="deleteWorkspace">Delete workspace</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>Workspace color</DropdownMenuLabel>

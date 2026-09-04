@@ -21,6 +21,7 @@ class WorkspaceController extends Controller
         $search = trim((string) $request->string('search'));
 
         $workspaces = $request->user()->workspaces()
+            ->whereNull('archived_at')
             ->when($search !== '', fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($search).'%']))
             ->addSelect([
                 'is_favourite' => DB::table('workspace_user')
@@ -124,6 +125,36 @@ class WorkspaceController extends Controller
         $workspace->update($request->validated());
 
         return back();
+    }
+
+    public function archived(Request $request): Response
+    {
+        $workspaces = $request->user()->workspaces()
+            ->whereNotNull('archived_at')
+            ->orderByDesc('archived_at')
+            ->get();
+
+        return Inertia::render('workspaces/Archived', [
+            'workspaces' => $workspaces,
+        ]);
+    }
+
+    public function archive(Request $request, Workspace $workspace): RedirectResponse
+    {
+        Gate::authorize('update', $workspace);
+
+        $workspace->update(['archived_at' => now()]);
+
+        return to_route('workspaces.index');
+    }
+
+    public function restore(Request $request, Workspace $workspace): RedirectResponse
+    {
+        Gate::authorize('update', $workspace);
+
+        $workspace->update(['archived_at' => null]);
+
+        return to_route('workspaces.archived');
     }
 
     public function destroy(Request $request, Workspace $workspace): RedirectResponse

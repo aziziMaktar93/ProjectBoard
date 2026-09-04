@@ -109,6 +109,57 @@ test('a non-owner member cannot delete the workspace', function () {
     expect(Workspace::find($workspace->id))->not->toBeNull();
 });
 
+test('the workspace owner can archive and restore it', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+
+    $response = $this->actingAs($owner)->patch("/workspaces/{$workspace->id}/archive");
+
+    $response->assertRedirect('/workspaces');
+    expect($workspace->fresh()->archived_at)->not->toBeNull();
+
+    $response = $this->actingAs($owner)->patch("/workspaces/{$workspace->id}/restore");
+
+    $response->assertRedirect('/workspaces/archived');
+    expect($workspace->fresh()->archived_at)->toBeNull();
+});
+
+test('a non-owner member cannot archive the workspace', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    $member = User::factory()->create();
+    $workspace->members()->attach($member->id);
+
+    $response = $this->actingAs($member)->patch("/workspaces/{$workspace->id}/archive");
+
+    $response->assertForbidden();
+    expect($workspace->fresh()->archived_at)->toBeNull();
+});
+
+test('archived workspaces are excluded from the workspaces index', function () {
+    $owner = User::factory()->create();
+    $active = Workspace::factory()->for($owner, 'owner')->create(['name' => 'Active']);
+    Workspace::factory()->for($owner, 'owner')->create(['name' => 'Archived', 'archived_at' => now()]);
+
+    $response = $this->actingAs($owner)->get('/workspaces');
+
+    $response->assertInertia(
+        fn ($page) => $page->has('workspaces.data', 1)->where('workspaces.data.0.id', $active->id)
+    );
+});
+
+test('the archived workspaces page lists only the user\'s archived workspaces', function () {
+    $owner = User::factory()->create();
+    $archived = Workspace::factory()->for($owner, 'owner')->create(['archived_at' => now()]);
+    Workspace::factory()->for($owner, 'owner')->create();
+
+    $response = $this->actingAs($owner)->get('/workspaces/archived');
+
+    $response->assertInertia(
+        fn ($page) => $page->component('workspaces/Archived')->has('workspaces', 1)->where('workspaces.0.id', $archived->id)
+    );
+});
+
 test('a workspace board tile includes card count, members, and checklist progress', function () {
     $owner = User::factory()->create();
     $workspace = Workspace::factory()->for($owner, 'owner')->create();

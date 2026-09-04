@@ -138,9 +138,7 @@ export interface CardActivity {
     };
 }
 
-export type AiToolAction =
-    | { type: 'create_lists'; names: string[] }
-    | { type: 'create_cards'; list_name: string; card_names: string[] };
+export type AiToolAction = { type: 'create_lists'; names: string[] } | { type: 'create_cards'; list_name: string; card_names: string[] };
 
 export interface AiMessage {
     id: number;
@@ -262,6 +260,7 @@ export interface Workspace {
     owner_id: number;
     name: string;
     background_color: string | null;
+    archived_at?: string | null;
     created_at: string;
     updated_at: string;
     boards_count?: number;

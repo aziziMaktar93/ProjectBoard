@@ -89,39 +89,42 @@ function toggleFavourite(workspace: Workspace) {
         <div class="flex flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-lg font-semibold">Your workspaces</h1>
-                <Dialog v-model:open="showCreate">
-                    <DialogTrigger as-child>
-                        <Button size="sm">New workspace</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>New workspace</DialogTitle>
-                        </DialogHeader>
-                        <form class="space-y-4" @submit.prevent="submit">
-                            <div class="grid gap-2">
-                                <Label for="workspace-name">Name</Label>
-                                <Input id="workspace-name" v-model="form.name" required autofocus />
-                                <InputError :message="form.errors.name" />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label for="workspace-color">Color</Label>
-                                <div class="flex items-center gap-2">
-                                    <input
-                                        id="workspace-color"
-                                        v-model="form.background_color"
-                                        type="color"
-                                        class="h-9 w-14 cursor-pointer rounded-md border border-input bg-transparent p-1"
-                                    />
-                                    <span class="text-sm text-muted-foreground">{{ form.background_color }}</span>
+                <div class="flex items-center gap-2">
+                    <Link :href="route('workspaces.archived')" class="text-sm text-muted-foreground underline">Archived workspaces</Link>
+                    <Dialog v-model:open="showCreate">
+                        <DialogTrigger as-child>
+                            <Button size="sm">New workspace</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>New workspace</DialogTitle>
+                            </DialogHeader>
+                            <form class="space-y-4" @submit.prevent="submit">
+                                <div class="grid gap-2">
+                                    <Label for="workspace-name">Name</Label>
+                                    <Input id="workspace-name" v-model="form.name" required autofocus />
+                                    <InputError :message="form.errors.name" />
                                 </div>
-                                <InputError :message="form.errors.background_color" />
-                            </div>
-                            <DialogFooter>
-                                <Button type="submit" :disabled="form.processing">Create</Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                                <div class="grid gap-2">
+                                    <Label for="workspace-color">Color</Label>
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            id="workspace-color"
+                                            v-model="form.background_color"
+                                            type="color"
+                                            class="h-9 w-14 cursor-pointer rounded-md border border-input bg-transparent p-1"
+                                        />
+                                        <span class="text-sm text-muted-foreground">{{ form.background_color }}</span>
+                                    </div>
+                                    <InputError :message="form.errors.background_color" />
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit" :disabled="form.processing">Create</Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div class="flex items-center gap-2">

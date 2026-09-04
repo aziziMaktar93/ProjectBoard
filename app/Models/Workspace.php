@@ -21,7 +21,18 @@ class Workspace extends Model
         'owner_id',
         'name',
         'background_color',
+        'archived_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
 
     public function owner(): BelongsTo
     {
