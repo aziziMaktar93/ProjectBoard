@@ -6,7 +6,7 @@ use App\Models\Workspace;
 test('the members page lists everyone the user shares a workspace with', function () {
     $user = User::factory()->create(['name' => 'Zack Owner']);
     $teammate = User::factory()->create(['name' => 'Dana Malik']);
-    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Marketing']);
+    $workspace = Workspace::factory()->for($user, 'owner')->create(['name' => 'Marketing', 'background_color' => '#0079BF']);
     $workspace->members()->attach($teammate->id);
 
     $response = $this->actingAs($user)->get('/members');
@@ -18,6 +18,7 @@ test('the members page lists everyone the user shares a workspace with', functio
             ->has('members', 2)
             ->where('members.0.name', 'Dana Malik')
             ->where('members.0.workspaces.0.name', 'Marketing')
+            ->where('members.0.workspaces.0.background_color', '#0079BF')
     );
 });
 

@@ -12,13 +12,25 @@ interface MemberWithWorkspaces {
     id: number;
     name: string;
     email: string;
-    workspaces: { id: number; name: string }[];
+    workspaces: { id: number; name: string; background_color: string | null }[];
 }
 
 const props = defineProps<{
     members: MemberWithWorkspaces[];
     workspaces: { id: number; name: string }[];
 }>();
+
+const DEFAULT_BADGE_COLOR = '#737373';
+
+function badgeStyle(color: string | null) {
+    const base = color || DEFAULT_BADGE_COLOR;
+
+    return {
+        backgroundColor: `color-mix(in srgb, ${base} 16%, transparent)`,
+        borderColor: `color-mix(in srgb, ${base} 35%, transparent)`,
+        color: base,
+    };
+}
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Members', href: '/members' }];
 
@@ -91,7 +103,8 @@ const filteredMembers = computed(() => {
                             <span
                                 v-for="workspace in member.workspaces"
                                 :key="workspace.id"
-                                class="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+                                class="rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                                :style="badgeStyle(workspace.background_color)"
                             >
                                 {{ workspace.name }}
                             </span>

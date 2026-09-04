@@ -11,7 +11,7 @@ class MemberController extends Controller
 {
     public function index(Request $request): Response
     {
-        $workspaces = $request->user()->workspaces()->orderBy('name')->get(['workspaces.id', 'workspaces.name']);
+        $workspaces = $request->user()->workspaces()->orderBy('name')->get(['workspaces.id', 'workspaces.name', 'workspaces.background_color']);
         $workspaceIds = $workspaces->pluck('id');
 
         $members = User::query()
@@ -26,6 +26,7 @@ class MemberController extends Controller
                 'workspaces' => $member->workspaces->map(fn ($workspace) => [
                     'id' => $workspace->id,
                     'name' => $workspace->name,
+                    'background_color' => $workspace->background_color,
                 ]),
             ]);
 
