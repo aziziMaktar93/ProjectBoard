@@ -116,6 +116,7 @@ class WorkspaceController extends Controller
             'workspace' => $workspace,
             'boards' => $boards,
             'members' => $members,
+            'hasAnyBoards' => $workspace->boards()->exists(),
             'filters' => ['search' => $search],
         ]);
     }
@@ -160,6 +161,12 @@ class WorkspaceController extends Controller
     public function destroy(Request $request, Workspace $workspace): RedirectResponse
     {
         Gate::authorize('delete', $workspace);
+
+        abort_if(
+            $workspace->archived_at === null && $workspace->boards()->exists(),
+            422,
+            'Archive the workspace before deleting it, unless it has no boards.'
+        );
 
         $workspace->delete();
 

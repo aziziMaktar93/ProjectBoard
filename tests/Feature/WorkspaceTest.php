@@ -42,7 +42,19 @@ test('a user can view a workspace they are a member of', function () {
     $response = $this->actingAs($owner)->get("/workspaces/{$workspace->id}");
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('workspaces/Show')->where('workspace.id', $workspace->id));
+    $response->assertInertia(
+        fn ($page) => $page->component('workspaces/Show')->where('workspace.id', $workspace->id)->where('hasAnyBoards', false)
+    );
+});
+
+test('the workspace page reports hasAnyBoards true even when the board list is search-filtered out', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    Board::factory()->for($workspace)->for($owner)->create(['name' => 'Marketing']);
+
+    $response = $this->actingAs($owner)->get("/workspaces/{$workspace->id}?search=doesnotmatch");
+
+    $response->assertInertia(fn ($page) => $page->where('hasAnyBoards', true)->has('boards.data', 0));
 });
 
 test('a user cannot view a workspace they are not a member of', function () {
@@ -90,6 +102,28 @@ test('a non-owner member cannot rename the workspace', function () {
 test('the workspace owner can delete it', function () {
     $owner = User::factory()->create();
     $workspace = Workspace::factory()->for($owner, 'owner')->create();
+
+    $response = $this->actingAs($owner)->delete("/workspaces/{$workspace->id}");
+
+    $response->assertRedirect('/workspaces');
+    expect(Workspace::find($workspace->id))->toBeNull();
+});
+
+test('a workspace with boards cannot be deleted unless it is archived first', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create();
+    Board::factory()->for($workspace)->for($owner)->create();
+
+    $response = $this->actingAs($owner)->delete("/workspaces/{$workspace->id}");
+
+    $response->assertStatus(422);
+    expect(Workspace::find($workspace->id))->not->toBeNull();
+});
+
+test('an archived workspace with boards can be permanently deleted by its owner', function () {
+    $owner = User::factory()->create();
+    $workspace = Workspace::factory()->for($owner, 'owner')->create(['archived_at' => now()]);
+    Board::factory()->for($workspace)->for($owner)->create();
 
     $response = $this->actingAs($owner)->delete("/workspaces/{$workspace->id}");
 

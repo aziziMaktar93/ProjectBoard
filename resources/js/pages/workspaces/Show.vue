@@ -29,6 +29,7 @@ const props = defineProps<{
     workspace: Workspace;
     boards: Paginated<Board>;
     members: User[];
+    hasAnyBoards: boolean;
     filters: {
         search: string;
     };
@@ -156,7 +157,7 @@ async function deleteWorkspace() {
     if (
         !(await confirmDialog({
             title: `Delete the workspace "${props.workspace.name}"?`,
-            description: 'This permanently deletes all its boards too.',
+            description: 'This cannot be undone.',
             confirmText: 'Delete',
             variant: 'destructive',
         }))
@@ -247,7 +248,7 @@ async function deleteWorkspace() {
                         <DropdownMenuContent align="end" class="w-56">
                             <DropdownMenuItem @click="startEditingWorkspaceName">Rename workspace</DropdownMenuItem>
                             <DropdownMenuItem @click="archiveWorkspace">Archive workspace</DropdownMenuItem>
-                            <DropdownMenuItem @click="deleteWorkspace">Delete workspace</DropdownMenuItem>
+                            <DropdownMenuItem v-if="!hasAnyBoards" @click="deleteWorkspace">Delete workspace</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>Workspace color</DropdownMenuLabel>
                             <div class="px-2 pb-1">
