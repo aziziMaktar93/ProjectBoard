@@ -12,13 +12,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import { stripGradient } from '@/lib/colorGradient';
 import type { BoardList, Card } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { ChevronsLeftRight, MoreHorizontal, Plus } from 'lucide-vue-next';
-import { VueDraggable } from 'vue-draggable-plus';
 import { nextTick, ref } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
 
 const props = defineProps<{
     list: BoardList;
@@ -56,7 +57,11 @@ function submitAddCard() {
     });
 }
 
-function archiveList() {
+async function archiveList() {
+    if (!(await confirmDialog({ title: `Archive the list "${props.list.name}"?`, confirmText: 'Archive' }))) {
+        return;
+    }
+
     router.patch(
         route('board-lists.archive', props.list.id),
         {},

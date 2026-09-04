@@ -10,6 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
 import { isCardChecklistComplete } from '@/lib/cardCompletion';
 import { stripGradient } from '@/lib/colorGradient';
@@ -74,7 +75,11 @@ const isOverdue = computed(() => {
     return isPastDue && !isCardChecklistComplete(props.card);
 });
 
-function archive() {
+async function archive() {
+    if (!(await confirmDialog({ title: `Archive the card "${props.card.name}"?`, confirmText: 'Archive' }))) {
+        return;
+    }
+
     router.patch(
         route('cards.archive', props.card.id),
         {},
@@ -187,7 +192,7 @@ function onColorChange(color: string | null) {
                     <DropdownMenuTrigger as-child>
                         <button
                             type="button"
-                            class="rounded p-0.5 text-neutral-400 opacity-0 hover:bg-neutral-100 hover:text-neutral-700 group-hover:opacity-100 focus-visible:opacity-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                            class="rounded p-0.5 text-neutral-400 opacity-0 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
                             aria-label="Card actions"
                         >
                             <MoreHorizontal class="size-4" />
