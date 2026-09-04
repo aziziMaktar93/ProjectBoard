@@ -54,7 +54,12 @@ const total = computed(() => props.series.reduce((sum, point) => sum + point.cou
             </defs>
             <path :d="areaPath" :fill="`url(#${gradientId})`" />
             <path :d="linePath" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            <circle v-for="point in points" :key="point.date" :cx="point.x" :cy="point.y" r="2" fill="#6366f1" />
+            <g v-for="point in points" :key="point.date">
+                <circle :cx="point.x" :cy="point.y" r="2" fill="#6366f1" />
+                <circle :cx="point.x" :cy="point.y" r="8" fill="transparent" class="cursor-default transition hover:fill-indigo-500/15">
+                    <title>{{ point.date }}: {{ point.count }} completed</title>
+                </circle>
+            </g>
         </svg>
         <div class="flex justify-between text-[10px] text-muted-foreground">
             <span>{{ series[0]?.date }}</span>
