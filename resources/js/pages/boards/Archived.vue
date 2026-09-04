@@ -60,7 +60,11 @@ async function destroy(board: Board) {
             <p v-if="boards.length === 0" class="text-sm text-muted-foreground">No archived boards.</p>
 
             <ul class="space-y-2">
-                <li v-for="board in boards" :key="board.id" class="flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+                <li
+                    v-for="board in boards"
+                    :key="board.id"
+                    class="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-card p-3 text-sm shadow-sm dark:border-neutral-700"
+                >
                     <span>{{ board.name }}</span>
                     <div class="flex gap-2">
                         <Button variant="ghost" size="sm" @click="restore(board)">Restore</Button>

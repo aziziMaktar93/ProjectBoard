@@ -60,7 +60,11 @@ async function destroy(workspace: Workspace) {
             <p v-if="workspaces.length === 0" class="text-sm text-muted-foreground">No archived workspaces.</p>
 
             <ul class="space-y-2">
-                <li v-for="workspace in workspaces" :key="workspace.id" class="flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+                <li
+                    v-for="workspace in workspaces"
+                    :key="workspace.id"
+                    class="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-card p-3 text-sm shadow-sm dark:border-neutral-700"
+                >
                     <span>{{ workspace.name }}</span>
                     <div v-if="workspace.owner_id === currentUserId" class="flex gap-2">
                         <Button variant="ghost" size="sm" @click="restore(workspace)">Restore</Button>
