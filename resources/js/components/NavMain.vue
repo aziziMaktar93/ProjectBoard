@@ -12,7 +12,7 @@ const page = usePage<SharedData>();
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel class="px-2 text-[11px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">Platform</SidebarGroupLabel>
+        <SidebarGroupLabel class="px-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Platform</SidebarGroupLabel>
         <SidebarMenu class="gap-1">
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton

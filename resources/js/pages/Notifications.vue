@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatTimestamp } from '@/lib/activitySentence';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { formatTimestamp } from '@/lib/activitySentence';
 import type { AppNotification, BreadcrumbItem, Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { AtSign, Check, ListChecks, MessageSquare, Search, UserPlus, X } from 'lucide-vue-next';
@@ -85,11 +85,7 @@ function sentenceFor(notification: AppNotification): string {
 }
 
 function markAsRead(notification: AppNotification) {
-    router.patch(
-        route('notifications.read', notification.id),
-        {},
-        { preserveScroll: true, preserveState: true },
-    );
+    router.patch(route('notifications.read', notification.id), {}, { preserveScroll: true, preserveState: true });
 }
 
 function markAllAsRead() {
@@ -160,8 +156,7 @@ function goToPage(url: string | null) {
                                 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400': notification.type === 'mention',
                                 'bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400':
                                     notification.type === 'checklist_item_assigned',
-                                'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400':
-                                    notification.type === 'card_assigned',
+                                'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400': notification.type === 'card_assigned',
                                 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400': notification.type === 'board_message_mention',
                             }"
                         >

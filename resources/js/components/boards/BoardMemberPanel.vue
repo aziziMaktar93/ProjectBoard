@@ -98,12 +98,7 @@ function updateMemberRole(user: User, role: string) {
                                     </SelectContent>
                                 </Select>
                                 <span v-else class="text-xs capitalize text-muted-foreground">{{ member.pivot?.role ?? 'editor' }}</span>
-                                <Button
-                                    v-if="canEdit || member.id === currentUserId"
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="removeMember(member)"
-                                >
+                                <Button v-if="canEdit || member.id === currentUserId" variant="ghost" size="sm" @click="removeMember(member)">
                                     {{ member.id === currentUserId ? 'Leave' : 'Remove' }}
                                 </Button>
                             </div>

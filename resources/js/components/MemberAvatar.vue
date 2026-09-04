@@ -22,15 +22,8 @@ const gradient = computed(() => tileGradient(colorForUser(props.user.id)));
 </script>
 
 <template>
-    <Avatar
-        :class="size === 'xs' ? 'size-6 text-[10px]' : 'size-8 text-xs'"
-        class="ring-2 ring-white dark:ring-neutral-900"
-        :title="user.name"
-    >
-        <AvatarFallback
-            class="flex h-full w-full items-center justify-center font-semibold text-white"
-            :style="{ backgroundImage: gradient }"
-        >
+    <Avatar :class="size === 'xs' ? 'size-6 text-[10px]' : 'size-8 text-xs'" class="ring-2 ring-white dark:ring-neutral-900" :title="user.name">
+        <AvatarFallback class="flex h-full w-full items-center justify-center font-semibold text-white" :style="{ backgroundImage: gradient }">
             {{ getInitials(user.name) }}
         </AvatarFallback>
     </Avatar>

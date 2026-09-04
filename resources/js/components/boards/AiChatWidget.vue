@@ -170,9 +170,7 @@ function actionSummary(message: AiMessage): string {
                                 <Button v-if="canEdit && !isApplied(message)" size="sm" class="mt-1.5 w-full" @click="applyMessage(message)">
                                     Add to board
                                 </Button>
-                                <p v-else-if="isApplied(message)" class="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                                    Added
-                                </p>
+                                <p v-else-if="isApplied(message)" class="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">Added</p>
                             </div>
                         </div>
                     </div>

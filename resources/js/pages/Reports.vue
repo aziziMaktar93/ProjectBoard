@@ -48,7 +48,11 @@ const reportCards = computed(() => [
     { title: 'Progress %', description: 'Checklist completion percentage per board and per card.', href: progressUrl.value },
     { title: 'On-Time vs Late Completion', description: 'Checklist items compared against their due date.', href: onTimeUrl.value },
     { title: 'Member Performance', description: 'Completed, overdue, and average days late per member.', href: memberPerformanceUrl.value },
-    { title: 'Checklist Completion Timeline', description: 'Every checklist item grouped by board, card, and checklist.', href: checklistTimelineUrl.value },
+    {
+        title: 'Checklist Completion Timeline',
+        description: 'Every checklist item grouped by board, card, and checklist.',
+        href: checklistTimelineUrl.value,
+    },
 ]);
 </script>
 
@@ -63,7 +67,9 @@ const reportCards = computed(() => [
                     <p class="text-sm text-muted-foreground">Download reports across every board you belong to.</p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 dark:border-white/10 dark:bg-white/5">
+                <div
+                    class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 dark:border-white/10 dark:bg-white/5"
+                >
                     <div class="flex items-center gap-1.5 pl-2 text-xs font-medium text-muted-foreground">
                         <ListFilter class="size-3.5" />
                         Scope

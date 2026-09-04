@@ -151,11 +151,7 @@ function renderSegments(content: string): RenderedSegment[] {
 
             <template v-else>
                 <div ref="scrollRef" class="flex-1 space-y-3 overflow-y-auto p-4">
-                    <div
-                        v-for="message in messages"
-                        :key="message.id"
-                        :class="message.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
-                    >
+                    <div v-for="message in messages" :key="message.id" :class="message.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
                         <div
                             class="max-w-[85%] rounded-lg px-3 py-2 text-sm"
                             :class="message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'"

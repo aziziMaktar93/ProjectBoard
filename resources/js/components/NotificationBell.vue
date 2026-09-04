@@ -60,9 +60,7 @@ function markAllAsRead() {
                 </button>
             </div>
 
-            <p v-if="!notifications || !notifications.recent.length" class="py-6 text-center text-sm text-muted-foreground">
-                No notifications yet.
-            </p>
+            <p v-if="!notifications || !notifications.recent.length" class="py-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
             <ul v-else class="max-h-80 space-y-1 overflow-y-auto">
                 <li v-for="notification in notifications.recent" :key="notification.id">
                     <Link

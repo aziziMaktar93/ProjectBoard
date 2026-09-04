@@ -109,9 +109,7 @@ defineExpose({ open });
             </DialogHeader>
 
             <div class="max-h-96 overflow-y-auto px-3 pb-3">
-                <p v-if="query.trim().length < 2" class="py-6 text-center text-sm text-muted-foreground">
-                    Type at least 2 characters to search.
-                </p>
+                <p v-if="query.trim().length < 2" class="py-6 text-center text-sm text-muted-foreground">Type at least 2 characters to search.</p>
                 <p v-else-if="searching" class="py-6 text-center text-sm text-muted-foreground">Searching...</p>
                 <p v-else-if="hasSearched && !boards.length && !cards.length" class="py-6 text-center text-sm text-muted-foreground">
                     No boards or cards matched "{{ query }}".

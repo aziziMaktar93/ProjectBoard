@@ -15,9 +15,7 @@ defineProps<{
         <div class="flex items-center gap-2">
             <SidebarTrigger class="-ml-1" />
             <template v-if="breadcrumbs.length > 0">
-                <div
-                    class="rounded-lg border border-black/5 bg-black/[0.03] px-3 py-1.5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
-                >
+                <div class="rounded-lg border border-black/5 bg-black/[0.03] px-3 py-1.5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
                     <Breadcrumb>
                         <BreadcrumbList>
                             <template v-for="(item, index) in breadcrumbs" :key="index">

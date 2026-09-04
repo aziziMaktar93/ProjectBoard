@@ -18,7 +18,9 @@ const year = new Date().getFullYear();
         <div class="pointer-events-none absolute -left-24 top-1/3 h-72 w-72 rounded-full bg-blue-500/25 blur-3xl" />
         <div class="pointer-events-none absolute right-10 top-10 h-56 w-56 rounded-full bg-sky-400/10 blur-3xl" />
         <div class="pointer-events-none absolute bottom-0 right-1/3 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
-        <div class="pointer-events-none absolute right-[12%] top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full bg-blue-500/20 blur-3xl lg:block" />
+        <div
+            class="pointer-events-none absolute right-[12%] top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full bg-blue-500/20 blur-3xl lg:block"
+        />
 
         <div
             class="dot-grid-drift pointer-events-none absolute left-0 top-0 hidden h-64 w-64 opacity-30 lg:block"
@@ -221,9 +223,7 @@ const year = new Date().getFullYear();
                     {{ greeting }},
                     <span class="text-2xl sm:text-3xl" role="img" :aria-label="greeting">{{ greetingEmoji }}</span>
                 </h1>
-                <p class="max-w-sm text-sm leading-relaxed text-blue-100/80">
-                    Plan sprints, track cards, and ship work together — all in one board.
-                </p>
+                <p class="max-w-sm text-sm leading-relaxed text-blue-100/80">Plan sprints, track cards, and ship work together — all in one board.</p>
                 <div class="h-1 w-24 overflow-hidden rounded-full bg-white/10">
                     <div class="h-full w-2/3 rounded-full bg-blue-400" />
                 </div>

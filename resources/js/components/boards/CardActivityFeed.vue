@@ -144,7 +144,7 @@ const activities = computed(() => props.card.activities ?? []);
                     v-model="commentBody"
                     rows="2"
                     placeholder="Write a comment... (type @ to mention someone)"
-                    class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    class="focus-visible:outline-hidden flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     @input="onCommentInput"
                     @keydown="onCommentKeydown"
                 />
@@ -175,7 +175,9 @@ const activities = computed(() => props.card.activities ?? []);
                 <MemberAvatar :user="activity.user" size="sm" />
                 <div class="min-w-0 flex-1">
                     <template v-if="activity.type === 'comment'">
-                        <div class="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+                        <div
+                            class="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
+                        >
                             <p class="font-medium text-neutral-900 dark:text-neutral-100">{{ activity.user.name }}</p>
                             <p class="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">{{ activity.body }}</p>
                         </div>

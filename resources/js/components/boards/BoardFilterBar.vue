@@ -21,9 +21,7 @@ const DUE_DATE_OPTIONS: { value: BoardFilters['dueDate']; label: string }[] = [
     { value: 'none', label: 'No due date' },
 ];
 
-const activeFilterCount = computed(
-    () => filters.value.labelIds.length + filters.value.memberIds.length + (filters.value.dueDate !== 'any' ? 1 : 0),
-);
+const activeFilterCount = computed(() => filters.value.labelIds.length + filters.value.memberIds.length + (filters.value.dueDate !== 'any' ? 1 : 0));
 
 function toggleLabel(labelId: number) {
     filters.value.labelIds = filters.value.labelIds.includes(labelId)
@@ -104,9 +102,7 @@ function clearFilters() {
                     </ul>
                 </div>
 
-                <Button v-if="activeFilterCount > 0" variant="ghost" size="sm" class="w-full" @click="clearFilters">
-                    Clear filters
-                </Button>
+                <Button v-if="activeFilterCount > 0" variant="ghost" size="sm" class="w-full" @click="clearFilters"> Clear filters </Button>
             </div>
         </PopoverContent>
     </Popover>

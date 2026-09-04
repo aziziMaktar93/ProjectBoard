@@ -13,8 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { showToast } from '@/composables/useToast';
-import { stripGradient } from '@/lib/colorGradient';
 import { isCardChecklistComplete } from '@/lib/cardCompletion';
+import { stripGradient } from '@/lib/colorGradient';
 import type { Card, CardAttachment, CardLabel, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { CalendarDays, Image, Paintbrush, Paperclip, SquareCheck, Tag, Users } from 'lucide-vue-next';
@@ -137,10 +137,7 @@ const dueDateLabel = computed(() => {
 });
 
 const isOverdue = computed(
-    () =>
-        !!props.card?.due_date &&
-        props.card.due_date < new Date().toISOString().slice(0, 10) &&
-        !isCardChecklistComplete(props.card),
+    () => !!props.card?.due_date && props.card.due_date < new Date().toISOString().slice(0, 10) && !isCardChecklistComplete(props.card),
 );
 
 const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h-[calc(85vh-15rem)]' : 'max-h-[calc(85vh-5rem)]'));
@@ -155,11 +152,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                 :alt="card.cover_attachment.name"
                 class="-mx-6 -mt-6 h-40 w-[calc(100%+3rem)] object-cover sm:rounded-t-lg"
             />
-            <div
-                v-else-if="card.color"
-                class="-mx-6 -mt-6 h-3 sm:rounded-t-lg"
-                :style="{ backgroundImage: stripGradient(card.color) }"
-            />
+            <div v-else-if="card.color" class="-mx-6 -mt-6 h-3 sm:rounded-t-lg" :style="{ backgroundImage: stripGradient(card.color) }" />
 
             <DialogHeader>
                 <DialogTitle>Edit card</DialogTitle>
@@ -179,7 +172,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                                 v-model="form.description"
                                 rows="3"
                                 placeholder="Add a more detailed description..."
-                                class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                class="focus-visible:outline-hidden flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             />
                             <InputError :message="form.errors.description" />
                         </div>
@@ -193,10 +186,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                         <p v-if="card.description" class="whitespace-pre-line text-sm text-muted-foreground">{{ card.description }}</p>
                     </div>
 
-                    <div
-                        v-if="canEdit"
-                        class="flex flex-wrap items-center gap-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-700"
-                    >
+                    <div v-if="canEdit" class="flex flex-wrap items-center gap-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-700">
                         <Popover>
                             <PopoverTrigger as-child>
                                 <Button variant="outline" size="sm"><Users class="size-3.5" /> Members</Button>
@@ -229,9 +219,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                                         :model-value="card.due_date ?? ''"
                                         @change="setDueDate(($event.target as HTMLInputElement).value)"
                                     />
-                                    <Button v-if="card.due_date" type="button" variant="ghost" size="sm" @click="setDueDate('')">
-                                        Clear
-                                    </Button>
+                                    <Button v-if="card.due_date" type="button" variant="ghost" size="sm" @click="setDueDate('')"> Clear </Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -278,20 +266,20 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                                         :key="attachment.id"
                                         type="button"
                                         class="aspect-video overflow-hidden rounded-md ring-2 ring-offset-1"
-                                        :class="card.cover_attachment_id === attachment.id ? 'ring-primary' : 'ring-transparent hover:ring-neutral-300'"
+                                        :class="
+                                            card.cover_attachment_id === attachment.id ? 'ring-primary' : 'ring-transparent hover:ring-neutral-300'
+                                        "
                                         :aria-label="`Use ${attachment.name} as cover`"
                                         @click="setCover(attachment.id)"
                                     >
-                                        <img :src="route('card-attachments.view', attachment.id)" :alt="attachment.name" class="size-full object-cover" />
+                                        <img
+                                            :src="route('card-attachments.view', attachment.id)"
+                                            :alt="attachment.name"
+                                            class="size-full object-cover"
+                                        />
                                     </button>
                                 </div>
-                                <Button
-                                    v-if="card.cover_attachment_id"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="mt-2 w-full"
-                                    @click="setCover(null)"
-                                >
+                                <Button v-if="card.cover_attachment_id" variant="ghost" size="sm" class="mt-2 w-full" @click="setCover(null)">
                                     Remove cover
                                 </Button>
                             </PopoverContent>
@@ -345,7 +333,7 @@ const gridMaxHeightClass = computed(() => (props.card?.cover_attachment ? 'max-h
                 </div>
 
                 <div
-                    class="space-y-3 overflow-y-auto border-t border-neutral-200 pb-4 pt-4 md:border-t-0 md:border-l md:pl-4 md:pt-0 dark:border-neutral-700"
+                    class="space-y-3 overflow-y-auto border-t border-neutral-200 pb-4 pt-4 dark:border-neutral-700 md:border-l md:border-t-0 md:pl-4 md:pt-0"
                 >
                     <Label>Comments and activity</Label>
                     <CardActivityFeed :card="card" :board-members="boardMembers" :can-edit="canEdit" />
