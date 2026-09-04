@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient } from '@/lib/colorGradient';
 import type { BreadcrumbItem, Paginated, Workspace } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Search, Star, X } from 'lucide-vue-next';
+import { Archive, Search, Star, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -90,7 +90,12 @@ function toggleFavourite(workspace: Workspace) {
             <div class="flex items-center justify-between">
                 <h1 class="text-lg font-semibold">Your workspaces</h1>
                 <div class="flex items-center gap-2">
-                    <Link :href="route('workspaces.archived')" class="text-sm text-muted-foreground underline">Archived workspaces</Link>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="route('workspaces.archived')">
+                            <Archive class="size-3.5" />
+                            Archived workspaces
+                        </Link>
+                    </Button>
                     <Dialog v-model:open="showCreate">
                         <DialogTrigger as-child>
                             <Button size="sm">New workspace</Button>

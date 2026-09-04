@@ -5,6 +5,7 @@ import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, SharedData, Workspace } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 defineProps<{
     workspaces: Workspace[];
@@ -54,7 +55,12 @@ async function destroy(workspace: Workspace) {
         <div class="flex flex-col gap-4 p-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-lg font-semibold">Archived workspaces</h1>
-                <Link :href="route('workspaces.index')" class="text-sm text-muted-foreground underline">Back to workspaces</Link>
+                <Button as-child variant="outline" size="sm">
+                    <Link :href="route('workspaces.index')">
+                        <ArrowLeft class="size-3.5" />
+                        Back to workspaces
+                    </Link>
+                </Button>
             </div>
 
             <p v-if="workspaces.length === 0" class="text-sm text-muted-foreground">No archived workspaces.</p>

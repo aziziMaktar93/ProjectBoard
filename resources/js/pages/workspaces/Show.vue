@@ -22,7 +22,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { tileGradient, washGradient } from '@/lib/colorGradient';
 import type { Board, BreadcrumbItem, Paginated, SharedData, User, Workspace } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { MoreHorizontal, Search, Star, X } from 'lucide-vue-next';
+import { Archive, MoreHorizontal, Search, Star, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -198,7 +198,12 @@ async function deleteWorkspace() {
                     </h1>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Link :href="route('boards.archived', workspace.id)" class="text-sm text-muted-foreground underline">Archived boards</Link>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="route('boards.archived', workspace.id)">
+                            <Archive class="size-3.5" />
+                            Archived boards
+                        </Link>
+                    </Button>
                     <Button variant="outline" size="sm" @click="showMembers = true">Members ({{ members.length }})</Button>
                     <Dialog v-model:open="showCreateBoard">
                         <DialogTrigger as-child>
