@@ -67,13 +67,53 @@
     @else
         <table class="data">
             <thead>
-                <tr><th>Board</th><th>Open tasks</th></tr>
+                <tr><th>Board</th><th>Completed</th><th>Total tasks</th><th style="width: 160px;">Progress</th></tr>
             </thead>
             <tbody>
                 @foreach ($tasksByBoard as $row)
-                    <tr><td>{{ $row['name'] }}</td><td>{{ $row['count'] }}</td></tr>
+                    @php
+                        $boardCompleted = $row['completed'] ?? 0;
+                        $boardPercent = $row['count'] > 0 ? round($boardCompleted / $row['count'] * 100) : 0;
+                    @endphp
+                    <tr>
+                        <td>{{ $row['name'] }}</td>
+                        <td>{{ $boardCompleted }}</td>
+                        <td>{{ $row['count'] }}</td>
+                        <td>
+                            <span class="progress-track">
+                                <span class="progress-fill {{ $boardPercent === 100 ? 'complete' : '' }}" style="width: {{ $boardPercent }}%"></span>
+                            </span>
+                            <span class="progress-percent">{{ $boardPercent }}%</span>
+                        </td>
+                    </tr>
                 @endforeach
             </tbody>
+        </table>
+    @endif
+
+    <span class="section-title">Completion trend (last 14 days)</span>
+    @if ($completionTrend->isEmpty() || $completionTrend->sum('count') === 0)
+        <p class="muted">No checklist items completed in this period.</p>
+    @else
+        @php $trendMax = max(1, $completionTrend->max('count')); @endphp
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                @foreach ($completionTrend as $point)
+                    <td style="text-align: center; vertical-align: bottom; padding: 2px;">
+                        <div style="height: {{ max(2, round($point['count'] / $trendMax * 40)) }}px; background-color: #6366f1; border-radius: 2px;"></div>
+                    </td>
+                @endforeach
+            </tr>
+            <tr>
+                @foreach ($completionTrend as $point)
+                    <td style="text-align: center; padding: 1px; font-size: 8px; color: #4b5563; font-weight: 700;">{{ $point['count'] }}</td>
+                @endforeach
+            </tr>
+            <tr>
+                @foreach ($completionTrend as $point)
+                    <td style="text-align: center; padding: 1px; font-size: 7px; color: #9ca3af;">{{ $point['date'] }}</td>
+                @endforeach
+            </tr>
         </table>
     @endif
 

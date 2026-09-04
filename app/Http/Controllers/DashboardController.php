@@ -57,6 +57,7 @@ class DashboardController extends Controller
             'tasksByBoard' => $data['tasksByBoard'],
             'tasksByList' => $data['tasksByList'],
             'workload' => $data['workload'],
+            'completionTrend' => $data['completionTrend'],
             'recentActivity' => $data['recentActivity']->map(fn (CardActivity $activity) => [
                 'description' => app(CardActivityDescriber::class)->describe($activity),
                 'user_name' => $activity->user->name,
