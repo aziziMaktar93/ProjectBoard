@@ -45,20 +45,22 @@
         <table class="data">
             <thead>
                 <tr>
-                    <th width="16%">Item</th>
-                    <th width="13%">Checklist</th>
-                    <th width="12%">Workspace</th>
-                    <th width="12%">Board</th>
-                    <th width="14%">Assigned</th>
-                    <th width="11%">Due</th>
-                    <th width="12%">Completed</th>
-                    <th width="10%">Days late</th>
+                    <th width="14%">Item</th>
+                    <th width="12%">Card</th>
+                    <th width="11%">Checklist</th>
+                    <th width="11%">Workspace</th>
+                    <th width="11%">Board</th>
+                    <th width="13%">Assigned</th>
+                    <th width="10%">Due</th>
+                    <th width="11%">Completed</th>
+                    <th width="7%">Days late</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($lateDetails as $row)
                     <tr>
                         <td>{{ $row['item_name'] }}</td>
+                        <td>{{ $row['card_name'] }}</td>
                         <td>{{ $row['checklist_name'] }}</td>
                         <td>{{ $row['workspace_name'] }}</td>
                         <td>{{ $row['board_name'] }}</td>
@@ -85,19 +87,21 @@
         <table class="data">
             <thead>
                 <tr>
-                    <th width="18%">Item</th>
-                    <th width="14%">Checklist</th>
-                    <th width="13%">Workspace</th>
-                    <th width="13%">Board</th>
-                    <th width="16%">Assigned</th>
-                    <th width="13%">Due</th>
-                    <th width="13%">Completed</th>
+                    <th width="16%">Item</th>
+                    <th width="13%">Card</th>
+                    <th width="12%">Checklist</th>
+                    <th width="12%">Workspace</th>
+                    <th width="12%">Board</th>
+                    <th width="14%">Assigned</th>
+                    <th width="11%">Due</th>
+                    <th width="10%">Completed</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($onTimeDetails as $row)
                     <tr>
                         <td>{{ $row['item_name'] }}</td>
+                        <td>{{ $row['card_name'] }}</td>
                         <td>{{ $row['checklist_name'] }}</td>
                         <td>{{ $row['workspace_name'] }}</td>
                         <td>{{ $row['board_name'] }}</td>

@@ -46,6 +46,7 @@ class ReportsController extends Controller
 
         $mapItem = fn (ChecklistItem $item) => [
             'item_name' => $item->name,
+            'card_name' => $item->checklist->card->name,
             'checklist_name' => $item->checklist->name,
             'workspace_name' => $item->checklist->card->boardList->board->workspace->name,
             'board_name' => $item->checklist->card->boardList->board->name,
@@ -87,7 +88,9 @@ class ReportsController extends Controller
         $memberStats = [];
 
         foreach ($cards as $card) {
-            $items = $card->checklists->flatMap(fn ($checklist) => $checklist->items);
+            $items = $card->checklists->flatMap(
+                fn ($checklist) => $checklist->items->each(fn ($item) => $item->setRelation('checklist', $checklist))
+            );
             $cardComplete = $items->isNotEmpty() && $items->every(fn ($item) => $item->is_checked);
             $cardStatus = $cardComplete ? 'Done' : ($card->due_date && $card->due_date < $today ? 'Overdue' : 'Pending');
 
@@ -118,6 +121,8 @@ class ReportsController extends Controller
                     $memberStats[$member->id]['tasks'][] = [
                         'name' => $item->name,
                         'type' => 'Checklist Item',
+                        'card_name' => $card->name,
+                        'checklist_name' => $item->checklist->name,
                         'workspace_name' => $card->boardList->board->workspace->name,
                         'board_name' => $card->boardList->board->name,
                         'due_date' => $item->due_date,

@@ -56,6 +56,29 @@ test('the on-time-completion report separates on-time from late items', function
     SnappyPdf::assertDontSee('Never completed');
 });
 
+test('the on-time-completion report includes the card name for each item', function () {
+    SnappyPdf::fake();
+
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create(['name' => 'GPPK100']);
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'UI']);
+
+    ChecklistItem::factory()->for($checklist)->create([
+        'name' => 'FORM',
+        'due_date' => '2026-09-01',
+        'completed_at' => '2026-09-05 10:00:00',
+        'is_checked' => true,
+    ]);
+
+    $response = $this->actingAs($user)->get('/reports/on-time-completion');
+
+    $response->assertOk();
+    SnappyPdf::assertViewHas('lateDetails', fn ($rows) => $rows->first()['card_name'] === 'GPPK100');
+    SnappyPdf::assertSee('GPPK100');
+});
+
 test('the on-time-completion report respects the board filter', function () {
     SnappyPdf::fake();
 
@@ -180,6 +203,32 @@ test('the member-performance report counts pending tasks separately from overdue
 
         return $row['pending'] === 1 && $row['completed'] === 0 && $row['overdue'] === 0;
     });
+});
+
+test('the member-performance report includes the card and checklist name for a checklist item task', function () {
+    SnappyPdf::fake();
+
+    $owner = User::factory()->create();
+    $board = Board::factory()->for($owner)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $member = User::factory()->create(['name' => 'Priya']);
+    $board->workspace->members()->attach($member->id);
+    $board->members()->attach($member->id);
+
+    $card = Card::factory()->for($list)->create(['name' => 'GPPK100']);
+    $checklist = Checklist::factory()->for($card)->create(['name' => 'UI']);
+    $item = ChecklistItem::factory()->for($checklist)->create(['name' => 'FORM', 'is_checked' => true]);
+    $item->members()->attach($member->id);
+
+    $response = $this->actingAs($owner)->get('/reports/member-performance');
+
+    $response->assertOk();
+    SnappyPdf::assertViewHas('rows', function ($rows) use ($member) {
+        $task = $rows->firstWhere(fn ($row) => $row['user']->id === $member->id)['tasks']->first();
+
+        return $task['card_name'] === 'GPPK100' && $task['checklist_name'] === 'UI';
+    });
+    SnappyPdf::assertSee('GPPK100');
 });
 
 test('the member-performance report computes average days late', function () {

@@ -109,7 +109,12 @@
                         <tbody>
                             @foreach ($row['tasks'] as $task)
                                 <tr>
-                                    <td>{{ $task['name'] }}</td>
+                                    <td>
+                                        {{ $task['name'] }}
+                                        @if ($task['type'] === 'Checklist Item')
+                                            <br><span class="muted" style="font-size: 9px;">{{ $task['card_name'] }} &middot; {{ $task['checklist_name'] }}</span>
+                                        @endif
+                                    </td>
                                     <td><span class="type-tag">{{ $task['type'] }}</span></td>
                                     <td>{{ $task['workspace_name'] }}</td>
                                     <td>{{ $task['board_name'] }}</td>
