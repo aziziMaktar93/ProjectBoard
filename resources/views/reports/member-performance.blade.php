@@ -97,25 +97,24 @@
                     <table class="data">
                         <thead>
                             <tr>
-                                <th width="30%">Task</th>
-                                <th width="14%">Type</th>
-                                <th width="14%">Workspace</th>
-                                <th width="14%">Board</th>
-                                <th width="12%">Due</th>
-                                <th width="12%">Completed</th>
-                                <th width="14%">Status</th>
+                                <th width="18%">Task</th>
+                                <th width="10%">Type</th>
+                                <th width="12%">Card</th>
+                                <th width="11%">Checklist</th>
+                                <th width="11%">Workspace</th>
+                                <th width="11%">Board</th>
+                                <th width="9%">Due</th>
+                                <th width="9%">Completed</th>
+                                <th width="9%">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($row['tasks'] as $task)
                                 <tr>
-                                    <td>
-                                        {{ $task['name'] }}
-                                        @if ($task['type'] === 'Checklist Item')
-                                            <br><span class="muted" style="font-size: 9px;">{{ $task['card_name'] }} &middot; {{ $task['checklist_name'] }}</span>
-                                        @endif
-                                    </td>
+                                    <td>{{ $task['name'] }}</td>
                                     <td><span class="type-tag">{{ $task['type'] }}</span></td>
+                                    <td>{{ $task['card_name'] ?? '—' }}</td>
+                                    <td>{{ $task['checklist_name'] ?? '—' }}</td>
                                     <td>{{ $task['workspace_name'] }}</td>
                                     <td>{{ $task['board_name'] }}</td>
                                     <td>{{ $task['due_date'] ? \Carbon\Carbon::parse($task['due_date'])->format('M j, Y') : '—' }}</td>

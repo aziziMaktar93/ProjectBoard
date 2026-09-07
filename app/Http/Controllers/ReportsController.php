@@ -100,6 +100,8 @@ class ReportsController extends Controller
                 $memberStats[$member->id]['tasks'][] = [
                     'name' => $card->name,
                     'type' => 'Card',
+                    'card_name' => null,
+                    'checklist_name' => null,
                     'workspace_name' => $card->boardList->board->workspace->name,
                     'board_name' => $card->boardList->board->name,
                     'due_date' => $card->due_date,
