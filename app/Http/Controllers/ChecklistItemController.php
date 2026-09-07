@@ -29,6 +29,14 @@ class ChecklistItemController extends Controller
     {
         $validated = $request->validated();
 
+        // Checkbox and status stay in sync: whichever one the request changes
+        // drives the other, so they can never disagree (e.g. checked but "To Do").
+        if (array_key_exists('is_checked', $validated)) {
+            $validated['status'] = $validated['is_checked'] ? 'done' : 'to_do';
+        } elseif (array_key_exists('status', $validated)) {
+            $validated['is_checked'] = $validated['status'] === 'done';
+        }
+
         if (array_key_exists('is_checked', $validated) && $validated['is_checked'] !== $checklistItem->is_checked) {
             $validated['completed_at'] = $validated['is_checked'] ? now() : null;
 

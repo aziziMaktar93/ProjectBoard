@@ -4,11 +4,12 @@ import ChecklistItemMemberPicker from '@/components/boards/ChecklistItemMemberPi
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { celebrate } from '@/composables/useCelebration';
 import { confirmDialog } from '@/composables/useConfirm';
 import { showToast } from '@/composables/useToast';
-import type { Checklist, ChecklistItem, User } from '@/types';
+import type { Checklist, ChecklistItem, ChecklistItemStatus, User } from '@/types';
 import { router, useForm } from '@inertiajs/vue3';
 import { CalendarDays, CircleCheck, Clock, Trash2, Users } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
@@ -20,9 +21,26 @@ const props = defineProps<{
     boardMembers: User[];
 }>();
 
-const hideChecked = ref(false);
+const STATUS_FILTER_OPTIONS: { value: 'all' | ChecklistItemStatus; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'to_do', label: 'To Do' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'done', label: 'Done' },
+];
+
+const STATUS_OPTIONS: { value: ChecklistItemStatus; label: string; activeClass: string }[] = [
+    { value: 'to_do', label: 'To Do', activeClass: 'bg-neutral-300 text-neutral-800 dark:bg-neutral-600 dark:text-neutral-100' },
+    { value: 'in_progress', label: 'In Progress', activeClass: 'bg-blue-500 text-white' },
+    { value: 'done', label: 'Done', activeClass: 'bg-emerald-500 text-white' },
+];
+
+const statusFilter = ref<'all' | ChecklistItemStatus>('all');
 const showAddItem = ref(false);
 const newItemName = ref('');
+
+function onStatusFilterChange(value: string) {
+    statusFilter.value = value as 'all' | ChecklistItemStatus;
+}
 
 const isEditingName = ref(false);
 const nameInput = ref<HTMLInputElement | null>(null);
@@ -54,7 +72,9 @@ function saveName() {
     });
 }
 
-const visibleItems = computed(() => (hideChecked.value ? props.checklist.items.filter((item) => !item.is_checked) : props.checklist.items));
+const visibleItems = computed(() =>
+    statusFilter.value === 'all' ? props.checklist.items : props.checklist.items.filter((item) => item.status === statusFilter.value),
+);
 
 const progress = computed(() => {
     const total = props.checklist.items.length;
@@ -76,6 +96,14 @@ watch(progress, (current: number, previous: number) => {
 
 function toggleItem(item: ChecklistItem) {
     router.patch(route('checklist-items.update', item.id), { is_checked: !item.is_checked }, { preserveScroll: true });
+}
+
+function setItemStatus(item: ChecklistItem, status: ChecklistItemStatus) {
+    if (item.status === status) {
+        return;
+    }
+
+    router.patch(route('checklist-items.update', item.id), { status }, { preserveScroll: true });
 }
 
 const editingItemId = ref<number | null>(null);
@@ -225,14 +253,17 @@ function duplicateChecklist() {
             </p>
 
             <div class="flex shrink-0 items-center gap-3">
-                <button
-                    v-if="checklist.items.length"
-                    type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground"
-                    @click="hideChecked = !hideChecked"
-                >
-                    {{ hideChecked ? 'Show checked items' : 'Hide checked items' }}
-                </button>
+                <Select v-if="checklist.items.length" :model-value="statusFilter" @update:model-value="onStatusFilterChange">
+                    <SelectTrigger class="h-6 w-auto gap-1 border-none bg-transparent px-1 text-xs text-muted-foreground shadow-none hover:text-foreground">
+                        <span>Show:</span>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="option in STATUS_FILTER_OPTIONS" :key="option.value" :value="option.value">
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <template v-if="canEdit">
                     <button type="button" class="text-xs text-muted-foreground hover:text-foreground" @click="duplicateChecklist">Duplicate</button>
                     <button type="button" class="text-xs text-muted-foreground hover:text-destructive" @click="deleteChecklist">Delete</button>
@@ -248,7 +279,7 @@ function duplicateChecklist() {
         </div>
 
         <ul class="space-y-1">
-            <li v-for="item in visibleItems" :key="item.id" class="group flex items-center gap-2">
+            <li v-for="item in visibleItems" :key="item.id" class="group flex flex-wrap items-center gap-2">
                 <input
                     type="checkbox"
                     :checked="item.is_checked"
@@ -278,6 +309,19 @@ function duplicateChecklist() {
                 >
                     {{ item.name }}
                 </span>
+                <div class="flex shrink-0 overflow-hidden rounded-full border border-neutral-200 text-[10px] font-medium dark:border-neutral-700">
+                    <button
+                        v-for="option in STATUS_OPTIONS"
+                        :key="option.value"
+                        type="button"
+                        :disabled="!canEdit"
+                        class="px-1.5 py-0.5 transition disabled:cursor-not-allowed"
+                        :class="item.status === option.value ? option.activeClass : 'text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+                        @click="setItemStatus(item, option.value)"
+                    >
+                        {{ option.label }}
+                    </button>
+                </div>
                 <span
                     v-if="itemDueDateLabel(item)"
                     class="flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px]"

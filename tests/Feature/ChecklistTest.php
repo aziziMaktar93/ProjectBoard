@@ -3,6 +3,7 @@
 use App\Models\Board;
 use App\Models\BoardList;
 use App\Models\Card;
+use App\Models\CardActivity;
 use App\Models\Checklist;
 use App\Models\ChecklistItem;
 use App\Models\Notification;
@@ -250,6 +251,64 @@ test('a user can check and uncheck a checklist item', function () {
 
     $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => false])->assertRedirect();
     expect($item->fresh()->is_checked)->toBeFalse();
+});
+
+test('checking a checklist item sets its status to done, unchecking sets it back to to_do', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['is_checked' => false, 'status' => 'to_do']);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => true])->assertRedirect();
+    expect($item->fresh()->status)->toBe('done');
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['is_checked' => false])->assertRedirect();
+    expect($item->fresh()->status)->toBe('to_do');
+});
+
+test('setting a checklist item status to done checks it, setting it away from done unchecks it', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['is_checked' => false, 'status' => 'to_do']);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['status' => 'done'])->assertRedirect();
+    expect($item->fresh()->is_checked)->toBeTrue();
+    expect($item->fresh()->completed_at)->not->toBeNull();
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['status' => 'in_progress'])->assertRedirect();
+    expect($item->fresh()->is_checked)->toBeFalse();
+    expect($item->fresh()->completed_at)->toBeNull();
+});
+
+test('setting a checklist item status to in_progress does not check it or log a completion activity', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create(['is_checked' => false, 'status' => 'to_do']);
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['status' => 'in_progress'])->assertRedirect();
+
+    expect($item->fresh()->is_checked)->toBeFalse();
+    expect($item->fresh()->status)->toBe('in_progress');
+    expect(CardActivity::where('type', 'checklist_item_completed')->exists())->toBeFalse();
+});
+
+test('a checklist item status must be one of the allowed values', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    $card = Card::factory()->for($list)->create();
+    $checklist = Checklist::factory()->for($card)->create();
+    $item = ChecklistItem::factory()->for($checklist)->create();
+
+    $this->actingAs($user)->patch("/checklist-items/{$item->id}", ['status' => 'archived'])->assertSessionHasErrors('status');
 });
 
 test('checking a checklist item sets completed_at, unchecking clears it', function () {

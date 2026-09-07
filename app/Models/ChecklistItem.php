@@ -20,6 +20,7 @@ class ChecklistItem extends Model
         'checklist_id',
         'name',
         'is_checked',
+        'status',
         'due_date',
         'completed_at',
         'position',

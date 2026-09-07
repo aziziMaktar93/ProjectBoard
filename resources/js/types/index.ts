@@ -77,11 +77,14 @@ export interface User {
 
 export type BreadcrumbItemType = BreadcrumbItem;
 
+export type ChecklistItemStatus = 'to_do' | 'in_progress' | 'done';
+
 export interface ChecklistItem {
     id: number;
     checklist_id: number;
     name: string;
     is_checked: boolean;
+    status: ChecklistItemStatus;
     due_date: string | null;
     completed_at: string | null;
     position: number;

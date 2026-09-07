@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Checklists;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateChecklistItemRequest extends FormRequest
 {
@@ -29,6 +30,7 @@ class UpdateChecklistItemRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'is_checked' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['to_do', 'in_progress', 'done'])],
             'due_date' => ['sometimes', 'nullable', 'date'],
         ];
     }
