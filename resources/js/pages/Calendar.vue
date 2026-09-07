@@ -10,7 +10,21 @@ import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Columns3, Kanban, ListChecks, ListFilter, Plus, Trash2, X } from 'lucide-vue-next';
+import {
+    CalendarDays,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Columns3,
+    Kanban,
+    ListChecks,
+    ListFilter,
+    Plus,
+    Printer,
+    Trash2,
+    X,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -72,6 +86,10 @@ function onBoardChange(value: string) {
 }
 
 const hasActiveFilters = computed(() => selectedWorkspace.value !== ALL || selectedBoard.value !== ALL);
+
+function printCalendar() {
+    window.print();
+}
 
 function clearFilters() {
     selectedWorkspace.value = ALL;
@@ -249,7 +267,7 @@ async function deleteEvent(eventId: number) {
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 print:hidden">
                     <div
                         v-if="workspaces.length"
                         class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 dark:border-white/10 dark:bg-white/5"
@@ -302,6 +320,10 @@ async function deleteEvent(eventId: number) {
                     <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Next month" @click="goToMonth(1)">
                         <ChevronRight class="size-4" />
                     </Button>
+                    <Button variant="outline" size="sm" class="gap-1.5" @click="printCalendar">
+                        <Printer class="size-3.5" />
+                        Print
+                    </Button>
                 </div>
             </div>
 
@@ -315,9 +337,9 @@ async function deleteEvent(eventId: number) {
                 </Button>
             </div>
 
-            <div v-else class="-mx-4 overflow-x-auto px-4 pb-2">
+            <div v-else class="-mx-4 overflow-x-auto px-4 pb-2 print:mx-0 print:overflow-visible print:px-0">
                 <div
-                    class="grid min-w-[700px] grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700"
+                    class="grid min-w-[700px] grid-cols-7 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-700 print:min-w-0"
                 >
                     <div
                         v-for="weekday in WEEKDAYS"
@@ -345,7 +367,7 @@ async function deleteEvent(eventId: number) {
                                 <PopoverTrigger as-child>
                                     <button
                                         type="button"
-                                        class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
+                                        class="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100 print:hidden"
                                         aria-label="Add event"
                                         @click="startAddEvent(day.key)"
                                     >
