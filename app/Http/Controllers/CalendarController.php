@@ -15,10 +15,22 @@ class CalendarController extends Controller
 {
     public function index(Request $request): Response
     {
-        $boardIds = $request->user()->boardMemberships()->pluck('boards.id');
+        $allBoardIds = $request->user()->boardMemberships()->pluck('boards.id');
+        $workspaces = $request->user()->workspaces()->orderBy('name')->get(['workspaces.id', 'workspaces.name']);
+        $memberWorkspaceIds = $workspaces->pluck('id');
 
-        $workspaceIds = $request->user()->workspaces()->pluck('workspaces.id');
-        $teammateIds = User::whereHas('workspaces', fn ($query) => $query->whereIn('workspaces.id', $workspaceIds))
+        $selectedBoardId = $request->integer('board_id') ?: null;
+        $selectedWorkspaceId = $request->integer('workspace_id') ?: null;
+
+        $boardIds = $allBoardIds;
+
+        if ($selectedBoardId && $allBoardIds->contains($selectedBoardId)) {
+            $boardIds = collect([$selectedBoardId]);
+        } elseif ($selectedWorkspaceId && $memberWorkspaceIds->contains($selectedWorkspaceId)) {
+            $boardIds = Board::whereIn('id', $allBoardIds)->where('workspace_id', $selectedWorkspaceId)->pluck('id');
+        }
+
+        $teammateIds = User::whereHas('workspaces', fn ($query) => $query->whereIn('workspaces.id', $memberWorkspaceIds))
             ->pluck('id');
 
         $cards = Card::query()
@@ -63,12 +75,13 @@ class CalendarController extends Controller
                 'is_checked' => $item->is_checked,
             ]);
 
-        $boards = Board::whereIn('id', $boardIds)
+        $boards = Board::whereIn('id', $allBoardIds)
             ->with('workspace:id,name')
             ->orderBy('name')
             ->get(['id', 'workspace_id', 'name'])
             ->map(fn (Board $board) => [
                 'id' => $board->id,
+                'workspace_id' => $board->workspace_id,
                 'name' => $board->name,
                 'workspace_name' => $board->workspace->name,
             ]);
@@ -77,7 +90,12 @@ class CalendarController extends Controller
             'cards' => $cards,
             'events' => $events,
             'boards' => $boards,
+            'workspaces' => $workspaces,
             'checklistItems' => $checklistItems,
+            'filters' => [
+                'workspace_id' => $selectedWorkspaceId,
+                'board_id' => $selectedBoardId,
+            ],
         ]);
     }
 

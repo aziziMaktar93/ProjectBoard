@@ -10,13 +10,14 @@ import { showToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BoardEvent, BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, ListChecks, Plus, Trash2 } from 'lucide-vue-next';
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Columns3, Kanban, ListChecks, ListFilter, Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
     cards: { id: number; name: string; due_date: string; color: string | null; board_id: number; is_completed: boolean }[];
     events: BoardEvent[];
-    boards: { id: number; name: string; workspace_name: string }[];
+    boards: { id: number; workspace_id: number; name: string; workspace_name: string }[];
+    workspaces: { id: number; name: string }[];
     checklistItems: {
         id: number;
         card_id: number;
@@ -27,6 +28,7 @@ const props = defineProps<{
         due_date: string;
         is_checked: boolean;
     }[];
+    filters: { workspace_id: number | null; board_id: number | null };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Calendar', href: '/calendar' }];
@@ -34,6 +36,48 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Calendar', href: '/calendar' }]
 const { WEEKDAYS, monthLabel, todayKey, gridDays, goToMonth, goToToday } = useMonthCalendar();
 
 const currentUserId = usePage<SharedData>().props.auth.user.id;
+
+const ALL = 'all';
+const selectedWorkspace = ref<string>(props.filters.workspace_id ? String(props.filters.workspace_id) : ALL);
+const selectedBoard = ref<string>(props.filters.board_id ? String(props.filters.board_id) : ALL);
+
+const availableBoards = computed(() =>
+    selectedWorkspace.value === ALL ? props.boards : props.boards.filter((b) => String(b.workspace_id) === selectedWorkspace.value),
+);
+
+function fetchCalendar() {
+    router.get(
+        route('calendar'),
+        {
+            workspace_id: selectedWorkspace.value === ALL ? undefined : selectedWorkspace.value,
+            board_id: selectedBoard.value === ALL ? undefined : selectedBoard.value,
+        },
+        { preserveState: true, preserveScroll: true, replace: true },
+    );
+}
+
+function onWorkspaceChange(value: string) {
+    selectedWorkspace.value = value;
+
+    if (selectedBoard.value !== ALL && !availableBoards.value.some((b) => String(b.id) === selectedBoard.value)) {
+        selectedBoard.value = ALL;
+    }
+
+    fetchCalendar();
+}
+
+function onBoardChange(value: string) {
+    selectedBoard.value = value;
+    fetchCalendar();
+}
+
+const hasActiveFilters = computed(() => selectedWorkspace.value !== ALL || selectedBoard.value !== ALL);
+
+function clearFilters() {
+    selectedWorkspace.value = ALL;
+    selectedBoard.value = ALL;
+    fetchCalendar();
+}
 
 const boardsById = computed(() => new Map(props.boards.map((board) => [board.id, board])));
 
@@ -205,7 +249,52 @@ async function deleteEvent(eventId: number) {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <div
+                        v-if="workspaces.length"
+                        class="flex flex-wrap items-center gap-1.5 rounded-xl border border-black/5 bg-black/[0.03] p-1.5 dark:border-white/10 dark:bg-white/5"
+                    >
+                        <div class="flex items-center gap-1.5 pl-2 text-xs font-medium text-muted-foreground">
+                            <ListFilter class="size-3.5" />
+                            Filter
+                        </div>
+
+                        <Select :model-value="selectedWorkspace" @update:model-value="onWorkspaceChange">
+                            <SelectTrigger class="h-8 w-44 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm dark:bg-neutral-900/80">
+                                <span class="flex min-w-0 items-center gap-1.5 truncate">
+                                    <Kanban class="size-3.5 shrink-0 text-muted-foreground" />
+                                    <SelectValue placeholder="All workspaces" />
+                                </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="ALL">All workspaces</SelectItem>
+                                <SelectItem v-for="workspace in workspaces" :key="workspace.id" :value="String(workspace.id)">
+                                    {{ workspace.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select :model-value="selectedBoard" @update:model-value="onBoardChange">
+                            <SelectTrigger class="h-8 w-44 gap-1.5 border-transparent bg-white/80 text-xs shadow-sm dark:bg-neutral-900/80">
+                                <span class="flex min-w-0 items-center gap-1.5 truncate">
+                                    <Columns3 class="size-3.5 shrink-0 text-muted-foreground" />
+                                    <SelectValue placeholder="All boards" />
+                                </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="ALL">All boards</SelectItem>
+                                <SelectItem v-for="board in availableBoards" :key="board.id" :value="String(board.id)">
+                                    {{ board.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Button v-if="hasActiveFilters" variant="ghost" size="sm" class="h-8 gap-1 text-xs" @click="clearFilters">
+                            <X class="size-3.5" />
+                            Clear
+                        </Button>
+                    </div>
+
                     <Button variant="outline" size="sm" class="size-8 p-0" aria-label="Previous month" @click="goToMonth(-1)">
                         <ChevronLeft class="size-4" />
                     </Button>

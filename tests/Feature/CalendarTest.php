@@ -120,6 +120,62 @@ test('a general event is not visible to a user who shares no workspace with the 
     $response->assertInertia(fn ($page) => $page->has('events', 0));
 });
 
+test('the global calendar can be filtered by board', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering']);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+
+    $otherBoard = Board::factory()->for($user)->create(['name' => 'Marketing', 'workspace_id' => $board->workspace_id]);
+    $otherList = BoardList::factory()->for($otherBoard)->create();
+    Card::factory()->for($otherList)->create(['name' => 'Launch campaign', 'due_date' => '2026-09-06']);
+
+    $response = $this->actingAs($user)->get("/calendar?board_id={$board->id}");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('cards', 1)
+            ->where('cards.0.name', 'Ship it')
+            ->where('filters.board_id', $board->id)
+    );
+});
+
+test('the global calendar can be filtered by workspace', function () {
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->for($user, 'owner')->create();
+    $board = Board::factory()->for($user)->create(['name' => 'Engineering', 'workspace_id' => $workspace->id]);
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['name' => 'Ship it', 'due_date' => '2026-09-05']);
+
+    $otherWorkspace = Workspace::factory()->for($user, 'owner')->create();
+    $otherBoard = Board::factory()->for($user)->create(['name' => 'Marketing', 'workspace_id' => $otherWorkspace->id]);
+    $otherList = BoardList::factory()->for($otherBoard)->create();
+    Card::factory()->for($otherList)->create(['name' => 'Launch campaign', 'due_date' => '2026-09-06']);
+
+    $response = $this->actingAs($user)->get("/calendar?workspace_id={$workspace->id}");
+
+    $response->assertInertia(
+        fn ($page) => $page
+            ->has('cards', 1)
+            ->where('cards.0.name', 'Ship it')
+            ->has('boards', 2)
+            ->where('filters.workspace_id', $workspace->id)
+    );
+});
+
+test('the global calendar ignores a board_id filter for a board the user is not a member of', function () {
+    $user = User::factory()->create();
+    $board = Board::factory()->for($user)->create();
+    $list = BoardList::factory()->for($board)->create();
+    Card::factory()->for($list)->create(['due_date' => '2026-09-05']);
+
+    $otherBoard = Board::factory()->create();
+
+    $response = $this->actingAs($user)->get("/calendar?board_id={$otherBoard->id}");
+
+    $response->assertInertia(fn ($page) => $page->has('cards', 1));
+});
+
 test('a guest cannot view the calendar', function () {
     $response = $this->get('/calendar');
 
